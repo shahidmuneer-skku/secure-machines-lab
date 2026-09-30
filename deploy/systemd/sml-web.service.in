@@ -1,0 +1,35 @@
+[Unit]
+Description=SML web (Next.js)
+After=network-online.target sml-api.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/web
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+# API_ORIGIN and STORAGE_ORIGIN come from apps/web/.env.production.local (read by Next itself).
+ExecStart=@NODE@ @ROOT@/apps/web/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=3
+# The image optimizer caches resized images here.
+ReadWritePaths=@ROOT@/apps/web/.next/cache
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=sml.target

@@ -1,0 +1,38 @@
+[Unit]
+Description=SML API (Django on uvicorn)
+Documentation=file://@ROOT@/docs/operations.md
+After=network-online.target docker.service
+Wants=network-online.target
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/api
+Environment=DJANGO_SETTINGS_MODULE=sml.settings.prod
+Environment=SML_API_WORKERS=4
+EnvironmentFile=@ROOT@/.env
+ExecStart=@ROOT@/apps/api/.venv/bin/uvicorn sml.asgi:application --host 127.0.0.1 --port 8000 \
+    --workers ${SML_API_WORKERS} --proxy-headers --forwarded-allow-ips 127.0.0.1 --no-server-header \
+    --timeout-graceful-shutdown 20
+Restart=on-failure
+RestartSec=3
+ReadWritePaths=@ROOT@/var
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=sml.target

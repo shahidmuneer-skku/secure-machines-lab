@@ -1,0 +1,7 @@
+[Unit]
+Description=Secure Machines Lab (API, background workers, web, model workers)
+Wants=sml-api.service sml-celery.service sml-beat.service sml-web.service
+After=network-online.target docker.service
+
+[Install]
+WantedBy=multi-user.target

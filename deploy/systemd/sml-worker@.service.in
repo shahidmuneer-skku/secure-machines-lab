@@ -1,0 +1,33 @@
+[Unit]
+Description=SML model worker on GPU %i
+After=network-online.target docker.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/worker
+Environment=SML_WORKER_CONCURRENCY=1
+EnvironmentFile=@ROOT@/.env
+ExecStart=@ROOT@/apps/worker/.venv/bin/python -m sml_worker --all --gpu %i \
+    --concurrency ${SML_WORKER_CONCURRENCY} --name gpu%i
+# Let running detections finish (Celery warm shutdown), then stop the model subprocesses too.
+TimeoutStopSec=600
+KillMode=mixed
+Restart=on-failure
+RestartSec=10
+# Model scripts run from the owner's conda envs and write into MODELS_ROOT, and need the GPU
+# devices, so the sandbox here is lighter than for the web-facing services.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+
+[Install]
+WantedBy=sml.target

@@ -1,0 +1,34 @@
+[Unit]
+Description=SML scheduler (Celery beat: renewals, expiry, retention, reconciliation)
+After=network-online.target docker.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/api
+Environment=DJANGO_SETTINGS_MODULE=sml.settings.prod
+EnvironmentFile=@ROOT@/.env
+# Exactly one beat may run per deployment.
+ExecStart=@ROOT@/apps/api/.venv/bin/celery -A sml beat --loglevel INFO
+Restart=on-failure
+RestartSec=5
+ReadWritePaths=@ROOT@/var
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=sml.target

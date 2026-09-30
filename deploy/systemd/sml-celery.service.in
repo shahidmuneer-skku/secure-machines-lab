@@ -1,0 +1,37 @@
+[Unit]
+Description=SML background worker (dispatch, results, reports, maintenance)
+After=network-online.target docker.service sml-api.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/api
+Environment=DJANGO_SETTINGS_MODULE=sml.settings.prod
+Environment=SML_CELERY_CONCURRENCY=4
+EnvironmentFile=@ROOT@/.env
+ExecStart=@ROOT@/apps/api/.venv/bin/celery -A sml worker -Q sml.default,sml.results,sml.reports,sml.maintenance \
+    -n api@%H --concurrency ${SML_CELERY_CONCURRENCY} --loglevel INFO
+# Warm shutdown: finish the current tasks before stopping.
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=5
+ReadWritePaths=@ROOT@/var
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=sml.target
