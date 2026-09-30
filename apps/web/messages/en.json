@@ -718,7 +718,7 @@
       "vram": "{used}/{total} GB VRAM",
       "busy": "Running {target}",
       "idle": "Idle",
-      "since": "up {when}",
+      "since": "started {when}",
       "noWorkers": "No workers are online — jobs will wait in the queue.",
       "queuesEyebrow": "Queues",
       "queuesTitle": "Queues",
@@ -802,7 +802,7 @@
       "save": "Save",
       "saved": "Saved",
       "badJson": "The JSON is invalid.",
-      "jsonHint": "Names and texts are localized objects ({\"en\": …, \"ko\": …, \"de\": …}). Prices: KRW in won, USD in cents. Deleting archives a product.",
+      "jsonHint": "Names and texts are localized objects ('{\"en\": …, \"ko\": …, \"de\": …}'). Prices: KRW in won, USD in cents. Deleting archives a product.",
       "received": "Received",
       "provider": "Provider",
       "event": "Event"
