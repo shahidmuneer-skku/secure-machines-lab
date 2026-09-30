@@ -185,3 +185,16 @@ def test_random_operation_sequences_keep_the_ledger_consistent(user, seed):
         summary = credits.get_balance(user)
         assert summary.balance >= 0
         assert wallet_ok(user), f"invariant broken after step {step} ({op})"
+
+
+def test_nightly_audit_finds_tampered_wallets_only(user, make_user):
+    from sml.core.models import AuditLog
+
+    other = make_user()
+    give(user, 10)
+    give(other, 10)
+    assert credits.audit_ledgers() == []
+    # A manual database edit that removed credits without a ledger entry.
+    CreditBucket.objects.filter(wallet__user=other).update(amount_remaining=3)
+    assert credits.audit_ledgers() == [str(credits.ensure_wallet(other).pk)]
+    assert AuditLog.objects.filter(action="credits.ledger_mismatch").count() == 1

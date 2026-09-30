@@ -77,6 +77,13 @@ def release_stale_holds() -> int:
     return _release()
 
 
+@shared_task(name="sml.maintenance.audit_ledgers", ignore_result=True)
+def audit_ledgers() -> int:
+    from sml.credits.services import audit_ledgers as _audit
+
+    return len(_audit())
+
+
 @shared_task(name="sml.maintenance.purge_expired", ignore_result=True)
 def purge_expired() -> int:
     from .retention_tasks import purge_expired as _purge

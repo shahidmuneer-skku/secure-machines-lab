@@ -394,3 +394,36 @@ def verify_wallet(wallet: CreditWallet) -> bool:
     """Ledger/bucket consistency check used by tests and the reconciliation task."""
     remaining = wallet.buckets.aggregate(t=Sum("amount_remaining"))["t"] or 0
     return _ledger_sum(wallet) == remaining
+
+
+def audit_ledgers() -> list[str]:
+    """Nightly check of the ledger invariant for every wallet. Returns the inconsistent wallet ids.
+
+    Both totals are read in one repeatable-read snapshot; suspects are re-checked under the
+    wallet lock so a reservation in flight is never reported as corruption.
+    """
+    from django.db import connection
+
+    from sml.core import audit
+
+    outermost = not connection.in_atomic_block
+    with transaction.atomic():
+        if connection.vendor == "postgresql" and outermost:
+            with connection.cursor() as cur:
+                cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        ledger = dict(LedgerEntry.objects.values("wallet_id").annotate(t=Sum("delta")).values_list("wallet_id", "t"))
+        buckets = dict(CreditBucket.objects.values("wallet_id").annotate(t=Sum("amount_remaining"))
+                       .values_list("wallet_id", "t"))
+    suspects = [w for w in set(ledger) | set(buckets) if (ledger.get(w) or 0) != (buckets.get(w) or 0)]
+    confirmed: list[str] = []
+    for wallet_id in suspects:
+        with transaction.atomic():
+            wallet = CreditWallet.objects.select_for_update().get(pk=wallet_id)
+            if not verify_wallet(wallet):
+                confirmed.append(str(wallet_id))
+                logger.error("Credit ledger mismatch for wallet %s (user %s)", wallet_id, wallet.user_id)
+    if confirmed:
+        audit.record("credits.ledger_mismatch", target_type="credits.creditwallet",
+                     after={"count": len(confirmed), "wallets": confirmed[:100]})
+    return confirmed
+
