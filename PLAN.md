@@ -72,10 +72,17 @@ packages/contracts  OpenAPI schema + generated TypeScript types
 All milestones 1–11 are implemented. See CHANGELOG.md for the feature list and docs/ for
 architecture, operations and model onboarding.
 
-Verified: API 151 tests, worker 19, web 25 (incl. KO/DE ICU parity); ruff, eslint (0 warnings),
-tsc, production build, `manage.py check --deploy`, `nginx -t`, `systemd-analyze verify`; browser
-checks of the KO/DE UI, the admin MFA flow and the data-admin 2FA flow; real model inference on
-GPU 0.
+Verified: API 152 tests, worker 27, web 25 unit (incl. KO/DE ICU parity) + 9 end-to-end; ruff,
+eslint (0 warnings), tsc, production build, `manage.py check --deploy`, `nginx -t`,
+`systemd-analyze verify`; browser checks of the KO/DE UI, admin MFA and data-admin 2FA flows.
 
-Remaining before launch: the owner inputs above, then production deployment
-(docs/operations.md).
+Real inference on GPU 0 (one job, all 15 image models + audits, `iu.png`):
+- Working: Center, QAD, SKKU, SKKU-AIGC, SKKU-G, SKKU-P, SKKU-Phys, SKKU-SNet; audits face,
+  anti-spoofing, metadata.
+- Hard-coded `/home/dev25/fakedetector/...` paths in the model code (files exist locally):
+  B2, Effort (deepfake + AI-gen), SKKU-R, SKKU-P2, SKKU-P3; Xception video.
+- Weights missing: Xception image (`deepfake_detection-main/pretrained_model/xception/`),
+  safety check (`nsfw_detection/nsfw-image-detection-384/model/`, only config.json present).
+
+Remaining before launch: the owner inputs above, the model provisioning items, then production
+deployment (docs/operations.md).

@@ -31,5 +31,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   session verified with two-factor authentication.
 - API keys cannot raise their own rate limit above the platform limit.
 - Payment amount mismatches are persisted and flagged for review.
+- Model failures show users a classified message only; stack traces and server paths are kept
+  for staff. Model scripts receive an allow-listed environment without platform secrets.
+- Tasks never picked up by a worker fail after 24 hours so credits are always released.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors
   without server details.

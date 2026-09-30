@@ -75,6 +75,8 @@ cd apps/api    && uv run ruff check . && uv run pytest          # needs the comp
 cd apps/worker && uv run ruff check sml_worker tests && uv run pytest tests
 cd apps/web    && npx eslint . --max-warnings 0 && npx tsc --noEmit && npx vitest run
 cd apps/web    && npm run gen:api && git diff --exit-code ../../packages/contracts
+# end to end, against a running stack (signed-in tests need an account):
+cd apps/web    && E2E_EMAIL=... E2E_PASSWORD=... npm run test:e2e
 ```
 
 CI runs the same checks (`.github/workflows/ci.yml`).
