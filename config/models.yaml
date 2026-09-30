@@ -49,14 +49,17 @@ models:
     default_selected: true
     trial: true
     media:
-      image:
-        conda_env: mixture3
-        cwd: "{models_root}"
-        argv: ["{python}", "deepfake_detection-main/image_detecotors/test_for_ifake.py",
-               "--img_path", "{input}",
-               "--weight_path", "deepfake_detection-main/pretrained_model/xception/training_all_manipulation.pt",
-               "--artifact_stem", "{stem}"]
-        parser: standard
+      # Image support disabled 2026-09-30 (owner decision): the weights file
+      # deepfake_detection-main/pretrained_model/xception/training_all_manipulation.pt was not copied
+      # to this server. Restore the file and uncomment this block to re-enable.
+      # image:
+      #   conda_env: mixture3
+      #   cwd: "{models_root}"
+      #   argv: ["{python}", "deepfake_detection-main/image_detecotors/test_for_ifake.py",
+      #          "--img_path", "{input}",
+      #          "--weight_path", "deepfake_detection-main/pretrained_model/xception/training_all_manipulation.pt",
+      #          "--artifact_stem", "{stem}"]
+      #   parser: standard
       video:
         conda_env: mixture3
         cwd: "{models_root}"

@@ -26,6 +26,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
 
+### Changed
+- Xception is offered for video only until its image weights are restored.
+
 ### Security
 - The Django data admin no longer accepts password-only logins; it requires a superuser
   session verified with two-factor authentication.

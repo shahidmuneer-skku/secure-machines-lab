@@ -76,13 +76,20 @@ Verified: API 152 tests, worker 27, web 25 unit (incl. KO/DE ICU parity) + 9 end
 eslint (0 warnings), tsc, production build, `manage.py check --deploy`, `nginx -t`,
 `systemd-analyze verify`; browser checks of the KO/DE UI, admin MFA and data-admin 2FA flows.
 
-Real inference on GPU 0 (one job, all 15 image models + audits, `iu.png`):
-- Working: Center, QAD, SKKU, SKKU-AIGC, SKKU-G, SKKU-P, SKKU-Phys, SKKU-SNet; audits face,
-  anti-spoofing, metadata.
-- Hard-coded `/home/dev25/fakedetector/...` paths in the model code (files exist locally):
-  B2, Effort (deepfake + AI-gen), SKKU-R, SKKU-P2, SKKU-P3; Xception video.
-- Weights missing: Xception image (`deepfake_detection-main/pretrained_model/xception/`),
-  safety check (`nsfw_detection/nsfw-image-detection-384/model/`, only config.json present).
+Real inference on GPU 0 (all 14 image models + 4 audit steps on one image, first attempt):
+all succeeded; one combined verdict, 1 credit charged. Video models were not tested here
+(the owner is testing them).
+
+Model provisioning done on 2026-09-30 (owner decisions):
+- Old-server paths: 25 source/config files under fakedetector/detection_models rewritten from
+  /home/dev25/... to this server (30 lines). Backup, diff and notes in
+  /home/shahidmuneer/fakedetector/path-migration-20260930/. Historical outputs untouched; the
+  separate long-video-processor repo was not changed.
+- Xception: image support disabled in config/models.yaml (weights file missing); video kept.
+- Safety step: Marqo/nsfw-image-detection-384 weights downloaded (config identical to the
+  local one).
+- Known leftover: console scripts in the copied conda envs (pip, hf, …) still have
+  /home/dev25 shebangs; model runs call `python` directly and are unaffected.
 
 Remaining before launch: the owner inputs above, the model provisioning items, then production
 deployment (docs/operations.md).
