@@ -14,6 +14,8 @@ const TONE: Record<string, string> = {
   canceled: "text-muted-foreground",
   skipped: "text-muted-foreground",
   expired: "text-muted-foreground",
+  blocked: "text-fake",
+  unverified: "text-warn",
 }
 
 /** Status pill with an LED dot. Always carries text (never color alone). */

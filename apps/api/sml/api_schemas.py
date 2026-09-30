@@ -312,6 +312,79 @@ class WorkerInfoSerializer(serializers.Serializer):
     gpu_stats = GpuStatsSerializer(allow_null=True)
 
 
+class HealthCheckSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["ok", "error"])
+    latency_ms = serializers.IntegerField()
+
+
+class SystemGpuSerializer(serializers.Serializer):
+    host = serializers.CharField()
+    index = serializers.CharField()
+    workers = serializers.IntegerField(help_text="Worker processes serving models on this GPU.")
+    stats = GpuStatsSerializer(allow_null=True)
+    reserved_mb = serializers.IntegerField(help_text="Memory reserved by running model tasks.")
+    running = serializers.IntegerField(help_text="Model tasks holding a GPU reservation.")
+    waiting = serializers.IntegerField(help_text="Model tasks waiting for GPU memory.")
+
+
+class StreamGpuSerializer(serializers.Serializer):
+    index = serializers.CharField()
+    name = serializers.CharField()
+    mem_used_mb = serializers.IntegerField()
+    mem_total_mb = serializers.IntegerField()
+    util = serializers.IntegerField()
+
+
+class SystemStreamSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["ok", "error"])
+    busy = serializers.BooleanField()
+    waiting = serializers.IntegerField()
+    model_loaded = serializers.BooleanField()
+    gpu = StreamGpuSerializer(allow_null=True)
+    active_sessions = serializers.IntegerField()
+
+
+class LoadedLlmSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    vram_mb = serializers.IntegerField()
+    context = serializers.IntegerField(allow_null=True)
+    pinned = serializers.BooleanField()
+
+
+class SystemAgentsSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["ok", "error"])
+    loaded = LoadedLlmSerializer(many=True)
+    running = serializers.IntegerField()
+    waiting = serializers.IntegerField()
+    workers = serializers.IntegerField()
+
+
+class SystemWorkersSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    gpu = serializers.IntegerField()
+    agents = serializers.IntegerField()
+
+
+class SystemConfigurationSerializer(serializers.Serializer):
+    debug = serializers.BooleanField()
+    maintenance_mode = serializers.BooleanField()
+    email = serializers.CharField()
+    storage = serializers.ChoiceField(choices=["s3", "local"])
+    captcha = serializers.BooleanField()
+    toss = serializers.ChoiceField(choices=["off", "test", "live"])
+    stripe = serializers.ChoiceField(choices=["off", "test", "live"])
+
+
+class AdminSystemSerializer(serializers.Serializer):
+    checked_at = serializers.FloatField()
+    checks = serializers.DictField(child=HealthCheckSerializer())
+    gpus = SystemGpuSerializer(many=True)
+    stream = SystemStreamSerializer()
+    agents = SystemAgentsSerializer()
+    workers = SystemWorkersSerializer()
+    configuration = SystemConfigurationSerializer()
+
+
 class ModelStatsSerializer(serializers.Serializer):
     runs = serializers.IntegerField()
     failed = serializers.IntegerField()
@@ -376,6 +449,7 @@ class AdminJobDetailSerializer(JobDetailSerializer):
 
 class CreditAdjustResultSerializer(serializers.Serializer):
     balance = serializers.IntegerField()
+    applied = serializers.IntegerField(help_text="The change made; a removal is capped at the available balance.")
     entry_id = serializers.UUIDField()
 
 

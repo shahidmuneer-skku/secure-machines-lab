@@ -20,7 +20,7 @@ from django.db.models import F, Q, Sum
 from django.utils import timezone
 
 from sml.core.events import publish_to_user
-from sml.core.exceptions import InsufficientCredits
+from sml.core.exceptions import Conflict, InsufficientCredits
 from sml.core.models import PlatformSettings
 
 from .models import CreditBucket, CreditHold, CreditSource, CreditWallet, LedgerEntry, LedgerKind
@@ -364,6 +364,9 @@ def admin_adjust(user: Any, delta: int, *, actor: Any, reason: str,
         wallet = _locked_wallet(user)
         _expire_due(wallet, now)
         available = _available(wallet, now)
+        if available == 0:
+            raise Conflict("This account has no credits to remove.")
+        # Removes at most what is available (credits held by running jobs stay with the jobs).
         take_total = min(amount, available)
         remaining = take_total
         for bucket in (_live_buckets(wallet, now).select_for_update()

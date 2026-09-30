@@ -283,6 +283,23 @@ export interface paths {
         patch: operations["admin_settings_partial_update"];
         trace?: never;
     };
+    "/api/v1/admin/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Service health, GPUs with their queues, loaded AI model and configuration */
+        get: operations["admin_system_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/tasks/{id}/retry": {
         parameters: {
             query?: never;
@@ -373,6 +390,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Block a user: they are signed out everywhere and cannot sign in or use API keys */
         post: operations["admin_users_disable_create"];
         delete?: never;
         options?: never;
@@ -389,6 +407,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Unblock a user */
         post: operations["admin_users_enable_create"];
         delete?: never;
         options?: never;
@@ -1570,6 +1589,18 @@ export interface components {
             };
             oldest_waiting_seconds: number;
         };
+        AdminSystem: {
+            /** Format: double */
+            checked_at: number;
+            checks: {
+                [key: string]: components["schemas"]["HealthCheck"];
+            };
+            gpus: components["schemas"]["SystemGpu"][];
+            stream: components["schemas"]["SystemStream"];
+            agents: components["schemas"]["SystemAgents"];
+            workers: components["schemas"]["SystemWorkers"];
+            configuration: components["schemas"]["SystemConfiguration"];
+        };
         AdminUser: {
             /** Format: uuid */
             readonly id: string;
@@ -1783,6 +1814,10 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: "";
+        BlockUserRequest: {
+            /** @description Kept on the account and in the audit log. */
+            reason?: string;
+        };
         CaseMedia: {
             /** Format: uuid */
             id: string;
@@ -1827,6 +1862,8 @@ export interface components {
         };
         CreditAdjustResult: {
             balance: number;
+            /** @description The change made; a removal is capped at the available balance. */
+            applied: number;
             /** Format: uuid */
             entry_id: string;
         };
@@ -1964,6 +2001,10 @@ export interface components {
             mem_used_mb: number;
             mem_total_mb: number;
             temp_c: number;
+        };
+        HealthCheck: {
+            status: components["schemas"]["StatusA3dEnum"];
+            latency_ms: number;
         };
         IdLabel: {
             id: string;
@@ -2194,6 +2235,12 @@ export interface components {
             progress: number;
             message: string;
             updated_at: string | null;
+        };
+        LoadedLlm: {
+            name: string;
+            vram_mb: number;
+            context: number | null;
+            pinned: boolean;
         };
         /**
          * @description * `en` - English
@@ -2972,12 +3019,31 @@ export interface components {
          * @enum {string}
          */
         ScopesEnum: "detect:write" | "jobs:read" | "jobs:write" | "reports:read" | "credits:read" | "news:write";
+        /**
+         * @description * `ok` - ok
+         *     * `error` - error
+         * @enum {string}
+         */
+        StatusA3dEnum: "ok" | "error";
+        /**
+         * @description * `s3` - s3
+         *     * `local` - local
+         * @enum {string}
+         */
+        StorageEnum: "s3" | "local";
         StreamCatalog: {
             online: boolean;
             models: components["schemas"]["StreamModel"][];
             price_per_minute: number;
             max_bytes: number;
             max_seconds: number;
+        };
+        StreamGpu: {
+            index: string;
+            name: string;
+            mem_used_mb: number;
+            mem_total_mb: number;
+            util: number;
         };
         StreamModel: {
             model_id: string;
@@ -3020,6 +3086,13 @@ export interface components {
             face_crop?: boolean | null;
             locale?: components["schemas"]["LocaleEnum"];
         };
+        /**
+         * @description * `off` - off
+         *     * `test` - test
+         *     * `live` - live
+         * @enum {string}
+         */
+        StripeEnum: "off" | "test" | "live";
         Subscription: {
             /** Format: uuid */
             readonly id: string;
@@ -3053,6 +3126,48 @@ export interface components {
          * @enum {string}
          */
         SupportEnum: "always" | "optional" | "none";
+        SystemAgents: {
+            status: components["schemas"]["StatusA3dEnum"];
+            loaded: components["schemas"]["LoadedLlm"][];
+            running: number;
+            waiting: number;
+            workers: number;
+        };
+        SystemConfiguration: {
+            debug: boolean;
+            maintenance_mode: boolean;
+            email: string;
+            storage: components["schemas"]["StorageEnum"];
+            captcha: boolean;
+            toss: components["schemas"]["TossEnum"];
+            stripe: components["schemas"]["StripeEnum"];
+        };
+        SystemGpu: {
+            host: string;
+            index: string;
+            /** @description Worker processes serving models on this GPU. */
+            workers: number;
+            stats: components["schemas"]["GpuStats"] | null;
+            /** @description Memory reserved by running model tasks. */
+            reserved_mb: number;
+            /** @description Model tasks holding a GPU reservation. */
+            running: number;
+            /** @description Model tasks waiting for GPU memory. */
+            waiting: number;
+        };
+        SystemStream: {
+            status: components["schemas"]["StatusA3dEnum"];
+            busy: boolean;
+            waiting: number;
+            model_loaded: boolean;
+            gpu: components["schemas"]["StreamGpu"] | null;
+            active_sessions: number;
+        };
+        SystemWorkers: {
+            total: number;
+            gpu: number;
+            agents: number;
+        };
         /**
          * @description * `model` - Model
          *     * `audit` - Audit step
@@ -3092,6 +3207,13 @@ export interface components {
             order_id: string;
             amount: number;
         };
+        /**
+         * @description * `off` - off
+         *     * `test` - test
+         *     * `live` - live
+         * @enum {string}
+         */
+        TossEnum: "off" | "test" | "live";
         TrialDetectResponse: {
             /** Format: uuid */
             job_id: string;
@@ -3831,6 +3953,25 @@ export interface operations {
             };
         };
     };
+    admin_system_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSystem"];
+                };
+            };
+        };
+    };
     admin_tasks_retry_create: {
         parameters: {
             query?: never;
@@ -4045,7 +4186,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BlockUserRequest"];
+                "multipart/form-data": components["schemas"]["BlockUserRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BlockUserRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {

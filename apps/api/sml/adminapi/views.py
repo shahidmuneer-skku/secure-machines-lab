@@ -22,6 +22,7 @@ from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,10 +48,12 @@ from sml.jobs.models import Job, JobTask
 from sml.jobs.serializers import JobDetailSerializer, JobListSerializer
 from sml.jobs.services import cancel_job
 
+from . import system
 from .serializers import (
     AccessPolicySerializer,
     AdminUserSerializer,
     AuditLogSerializer,
+    BlockUserSerializer,
     CreditAdjustSerializer,
     CreditPackAdminSerializer,
     PaymentAdminSerializer,
@@ -148,7 +151,10 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
     def _set_active(self, request: Request, active: bool) -> Response:
         user = self.get_object()
         if user == request.user:
-            raise Conflict("You cannot disable your own account.")
+            raise Conflict("You cannot block your own account.")
+        if user.groups.filter(name="super_admin").exists() and not request.user.groups.filter(
+                name="super_admin").exists():
+            raise PermissionDenied("Only a super admin can block or unblock a super admin.")
         user.is_active = active
         user.disabled_reason = "" if active else str(request.data.get("reason", ""))[:255]
         user.save(update_fields=["is_active", "disabled_reason"])
@@ -159,12 +165,14 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
                      after={"reason": user.disabled_reason})
         return Response(AdminUserSerializer(user).data)
 
-    @extend_schema(tags=TAG, request=None)
+    @extend_schema(tags=TAG, request=BlockUserSerializer, responses=AdminUserSerializer,
+                   summary="Block a user: they are signed out everywhere and cannot sign in or use API keys")
     @action(detail=True, methods=["post"])
     def disable(self, request: Request, pk: str) -> Response:
+        BlockUserSerializer(data=request.data).is_valid(raise_exception=True)
         return self._set_active(request, False)
 
-    @extend_schema(tags=TAG, request=None)
+    @extend_schema(tags=TAG, request=None, responses=AdminUserSerializer, summary="Unblock a user")
     @action(detail=True, methods=["post"])
     def enable(self, request: Request, pk: str) -> Response:
         return self._set_active(request, True)
@@ -214,8 +222,9 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
         expires = timezone.now() + timedelta(days=d["expires_in_days"]) if d.get("expires_in_days") else None
         entry = credits.admin_adjust(user, d["delta"], actor=request.user, reason=d["reason"], expires_at=expires)
         audit.record("admin.credits_adjusted", request=request, target=user,
-                     after={"delta": d["delta"], "reason": d["reason"]})
-        return Response({"balance": credits.get_balance(user).balance, "entry_id": str(entry.pk)})
+                     after={"requested": d["delta"], "applied": entry.delta, "reason": d["reason"]})
+        return Response({"balance": credits.get_balance(user).balance, "applied": entry.delta,
+                         "entry_id": str(entry.pk)})
 
     @extend_schema(tags=TAG, request=None, responses=schemas.CountSerializer)
     @action(detail=True, methods=["post"], url_path="reset-mfa")
@@ -374,6 +383,15 @@ class QueueView(APIView):
                          "tasks_by_queue": by_queue,
                          "oldest_waiting_seconds": int((timezone.now() - oldest.created_at).total_seconds())
                          if oldest else 0})
+
+
+class SystemView(APIView):
+    permission_classes = admin_permissions("view_system")
+
+    @extend_schema(tags=TAG, responses=schemas.AdminSystemSerializer,
+                   summary="Service health, GPUs with their queues, loaded AI model and configuration")
+    def get(self, request: Request) -> Response:
+        return Response(system.snapshot())
 
 
 class WorkerView(APIView):

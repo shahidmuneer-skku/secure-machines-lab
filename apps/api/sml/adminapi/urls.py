@@ -17,6 +17,7 @@ urlpatterns = [
     path("admin/tasks/<uuid:pk>/retry", views.FailedTaskRetryView.as_view(), name="admin-task-retry"),
     path("admin/queues", views.QueueView.as_view(), name="admin-queues"),
     path("admin/workers", views.WorkerView.as_view(), name="admin-workers"),
+    path("admin/system", views.SystemView.as_view(), name="admin-system"),
     path("admin/models", views.ModelAdminView.as_view(), name="admin-models"),
     path("admin/pricing", views.PricingView.as_view(), name="admin-pricing"),
     path("admin/settings", views.PlatformSettingsView.as_view(), name="admin-settings"),

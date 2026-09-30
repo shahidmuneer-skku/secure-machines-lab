@@ -25,6 +25,11 @@ def _redis() -> redis.Redis | None:
     return _client()
 
 
+def redis_or_none() -> redis.Redis | None:
+    """The Redis holding live state, or None when events are kept in memory (tests)."""
+    return _redis()
+
+
 def task_progress(task_ids: list[str]) -> dict[str, dict[str, Any]]:
     r = _redis()
     if r is None or not task_ids:

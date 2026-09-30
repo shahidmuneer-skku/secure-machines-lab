@@ -97,6 +97,11 @@ trial allowance, retention, engines, maintenance mode, announcement) are edited 
 ## Monitoring
 
 - `GET /api/healthz` (process up) and `GET /api/readyz` (database, Redis, broker).
+- **Admin → Overview → System health** (refreshes every 15 s): database, Redis, task queue,
+  file storage, long-video service and AI model server; each detector GPU with memory in use,
+  running tasks, tasks waiting for memory and reserved memory; the long-video GPU; the loaded
+  Ollama model; and settings that still need attention before launch (email delivery, payment
+  keys in test mode, CAPTCHA, debug). Backed by `GET /api/v1/admin/system` (`view_system`).
 - **Admin → Queues**: depth and consumers per queue, the oldest waiting task, and workers with
   GPU temperature, utilisation and memory. **Admin → Overview**: jobs, failures and revenue.
 - Logs: `journalctl -u sml-api -u sml-celery -u sml-worker@0 -f`. Production logs are JSON and
@@ -141,8 +146,19 @@ Inspect it in the RabbitMQ UI. The task itself fails with `QUEUE_TIMEOUT` after
 
 **A customer paid but has no credits.** Admin → Billing → Payments shows the payment state and
 Webhooks shows delivery errors. A payment flagged "Amount mismatch" granted nothing on purpose:
-compare with the provider dashboard, then grant credits in Admin → Users → the user → Credits
+compare with the provider dashboard, then add credits in Admin → Users → the user → Credits
 (with a reason; audited) or refund.
+
+**Adding or removing credits.** Admin → Users → the user (or **My account** for your own) →
+Credits: choose Add or Remove, the amount and a reason. Added credits can expire after a number
+of days. A removal is confirmed first and takes at most the available balance; credits held by
+running jobs are not touched. Every change appears in the user's ledger with your name and in
+the audit log (`admin.credits_adjusted`). Needs the `grant_credits` capability.
+
+**Blocking a user.** Admin → Users → the row menu (or the user's page) → Block user, with a
+reason. The user is signed out everywhere, cannot sign in and their API keys are rejected; data
+and credits are kept. Unblock restores access. Nobody can block their own account, and only a
+super admin can block another super admin. Filter the list by **Blocked** to review them.
 
 **Refunds.** Admin → Billing → Payments → Refund shows the amount the policy allows; "company
 fault" overrides the policy with a full refund. The payment's remaining credits are revoked.

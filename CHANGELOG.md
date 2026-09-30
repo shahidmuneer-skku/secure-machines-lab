@@ -23,6 +23,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   payments and refunds, webhooks, API usage, audit log, platform settings, maintenance mode.
 - Korean and German translations with automated ICU parity checks.
 - Branded account emails and security notifications in three languages.
+- Admin: add or remove credits for any account including one's own (explicit direction,
+  balance preview, confirmation for removals); block and unblock users with a reason from the
+  list or the user page; a Blocked filter; a system health panel with service checks, per-GPU
+  running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
 
@@ -37,5 +41,7 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Model failures show users a classified message only; stack traces and server paths are kept
   for staff. Model scripts receive an allow-listed environment without platform secrets.
 - Tasks never picked up by a worker fail after 24 hours so credits are always released.
+- Only a super admin can block another super admin; removing credits from an empty wallet is
+  refused instead of writing a zero entry.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors
   without server details.

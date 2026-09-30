@@ -81,6 +81,11 @@ class CreditAdjustSerializer(serializers.Serializer):
         return value
 
 
+class BlockUserSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True,
+                                   help_text="Kept on the account and in the audit log.")
+
+
 class PriceRuleUpdateSerializer(serializers.Serializer):
     prices = serializers.DictField(child=serializers.IntegerField(min_value=0))
 

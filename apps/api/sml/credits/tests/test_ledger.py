@@ -10,7 +10,7 @@ import pytest
 import time_machine
 from django.utils import timezone
 
-from sml.core.exceptions import InsufficientCredits
+from sml.core.exceptions import Conflict, InsufficientCredits
 from sml.credits import services as credits
 from sml.credits.models import CreditBucket, CreditHold, CreditSource, LedgerEntry, LedgerKind
 
@@ -181,7 +181,11 @@ def test_random_operation_sequences_keep_the_ledger_consistent(user, seed):
             hold = holds.pop(rng.randrange(len(holds)))
             (credits.capture if op == "capture" else credits.release)(hold)
         elif op == "adjust":
-            credits.admin_adjust(user, rng.choice([-1, 1]) * rng.randint(1, 10), actor=None, reason="test")
+            delta = rng.choice([-1, 1]) * rng.randint(1, 10)
+            try:
+                credits.admin_adjust(user, delta, actor=None, reason="test")
+            except Conflict:
+                assert delta < 0 and credits.get_balance(user).balance == 0  # nothing to remove
         summary = credits.get_balance(user)
         assert summary.balance >= 0
         assert wallet_ok(user), f"invariant broken after step {step} ({op})"
@@ -222,3 +226,9 @@ def test_settle_bounds(user, amount, status, balance):
     assert credits.get_balance(user).balance == balance
     assert wallet_ok(user)
     assert credits.settle(hold, 1).status == status  # idempotent once settled
+
+
+def test_admin_deduction_from_an_empty_wallet_is_refused(user, make_user):
+    with pytest.raises(Conflict):
+        credits.admin_adjust(user, -5, actor=make_user(roles=("admin",)), reason="chargeback")
+    assert not LedgerEntry.objects.filter(wallet__user=user, kind=LedgerKind.ADMIN_DEDUCT).exists()

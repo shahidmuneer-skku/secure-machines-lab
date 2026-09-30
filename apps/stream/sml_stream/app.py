@@ -24,7 +24,10 @@ import contextlib
 import io
 import json
 import logging
+import os
 import re
+import shutil
+import subprocess
 import threading
 import time
 from collections.abc import AsyncIterator
@@ -69,10 +72,35 @@ def _action(msg: dict[str, Any]) -> str:
         return ""
 
 
+_gpu_stats_cache: tuple[float, dict[str, Any] | None] = (0.0, None)
+
+
+def _gpu_stats() -> dict[str, Any] | None:
+    """Name and memory of the service's GPU (nvidia-smi, PCI bus order like CUDA_VISIBLE_DEVICES)."""
+    global _gpu_stats_cache
+    if time.monotonic() - _gpu_stats_cache[0] < 5:
+        return _gpu_stats_cache[1]
+    stats = None
+    index = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")[0].strip()
+    smi = shutil.which("nvidia-smi")
+    if smi and index.isdigit():
+        with contextlib.suppress(OSError, subprocess.SubprocessError, ValueError, IndexError):
+            # Fixed arguments; the index is validated as digits above.
+            out = subprocess.run([smi, "-i", index, "--format=csv,noheader,nounits",  # noqa: S603
+                                  "--query-gpu=name,memory.used,memory.total,utilization.gpu"],
+                                 capture_output=True, text=True, timeout=5, check=True).stdout
+            name, used, total, util = [c.strip() for c in out.strip().splitlines()[0].split(",")]
+            stats = {"index": index, "name": name, "mem_used_mb": int(float(used)),
+                     "mem_total_mb": int(float(total)), "util": int(float(util))}
+    _gpu_stats_cache = (time.monotonic(), stats)
+    return stats
+
+
 @app.get("/stream/health")
 async def health() -> JSONResponse:
+    gpu = await asyncio.get_running_loop().run_in_executor(None, _gpu_stats)
     return JSONResponse({"status": "ok", "busy": _gpu.locked(), "waiting": _waiting,
-                         "model_loaded": engines._builtin is not None})
+                         "model_loaded": engines._builtin is not None, "gpu": gpu})
 
 
 @app.get("/stream/models")

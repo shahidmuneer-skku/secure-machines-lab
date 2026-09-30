@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import time
 
 import pytest
@@ -127,3 +128,28 @@ def test_uploads_larger_than_paid_are_refused(service):
                 messages.append(ws.receive_json())
     assert any(m.get("type") == "error" and "larger" in m.get("message", "") for m in messages)
     assert service["reports"][-1][2]["status"] == "error"
+
+
+def test_health_reports_queue_and_gpu(service, monkeypatch):
+    monkeypatch.setattr(app_module, "_gpu_stats", lambda: {"index": "2", "name": "RTX A5000", "mem_used_mb": 900,
+                                                           "mem_total_mb": 24564, "util": 0})
+    with TestClient(app_module.app) as client:
+        body = client.get("/stream/health").json()
+    assert body["status"] == "ok" and body["busy"] is False and body["waiting"] == 0
+    assert body["gpu"]["name"] == "RTX A5000"
+
+
+def test_gpu_stats_parse_nvidia_smi(monkeypatch):
+    calls = []
+
+    def run(args, **_kwargs):  # type: ignore[no-untyped-def]
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, stdout="NVIDIA RTX A5000, 1575, 23028, 3\n")
+
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2")
+    monkeypatch.setattr(app_module, "_gpu_stats_cache", (0.0, None))
+    monkeypatch.setattr(app_module.shutil, "which", lambda _name: "/usr/bin/nvidia-smi")
+    monkeypatch.setattr(app_module.subprocess, "run", run)
+    assert app_module._gpu_stats() == {"index": "2", "name": "NVIDIA RTX A5000", "mem_used_mb": 1575,
+                                       "mem_total_mb": 23028, "util": 3}
+    assert "--format=csv,noheader,nounits" in calls[0]

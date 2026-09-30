@@ -1470,6 +1470,41 @@
                 }
             }
         },
+        "/api/v1/admin/system": {
+            "get": {
+                "operationId": "admin_system_retrieve",
+                "summary": "Service health, GPUs with their queues, loaded AI model and configuration",
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSystem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/tasks/{id}/retry": {
             "post": {
                 "operationId": "admin_tasks_retry_create",
@@ -1941,6 +1976,7 @@
         "/api/v1/admin/users/{id}/disable": {
             "post": {
                 "operationId": "admin_users_disable_create",
+                "summary": "Block a user: they are signed out everywhere and cannot sign in or use API keys",
                 "parameters": [
                     {
                         "in": "path",
@@ -1956,6 +1992,25 @@
                 "tags": [
                     "admin"
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BlockUserRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BlockUserRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BlockUserRequest"
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -1987,6 +2042,7 @@
         "/api/v1/admin/users/{id}/enable": {
             "post": {
                 "operationId": "admin_users_enable_create",
+                "summary": "Unblock a user",
                 "parameters": [
                     {
                         "in": "path",
@@ -6080,6 +6136,48 @@
                     "tasks_by_queue"
                 ]
             },
+            "AdminSystem": {
+                "type": "object",
+                "properties": {
+                    "checked_at": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "checks": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/HealthCheck"
+                        }
+                    },
+                    "gpus": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SystemGpu"
+                        }
+                    },
+                    "stream": {
+                        "$ref": "#/components/schemas/SystemStream"
+                    },
+                    "agents": {
+                        "$ref": "#/components/schemas/SystemAgents"
+                    },
+                    "workers": {
+                        "$ref": "#/components/schemas/SystemWorkers"
+                    },
+                    "configuration": {
+                        "$ref": "#/components/schemas/SystemConfiguration"
+                    }
+                },
+                "required": [
+                    "agents",
+                    "checked_at",
+                    "checks",
+                    "configuration",
+                    "gpus",
+                    "stream",
+                    "workers"
+                ]
+            },
             "AdminUser": {
                 "type": "object",
                 "properties": {
@@ -6880,6 +6978,16 @@
                     ""
                 ]
             },
+            "BlockUserRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "description": "Kept on the account and in the audit log.",
+                        "maxLength": 255
+                    }
+                }
+            },
             "CaseMedia": {
                 "type": "object",
                 "properties": {
@@ -7029,12 +7137,17 @@
                     "balance": {
                         "type": "integer"
                     },
+                    "applied": {
+                        "type": "integer",
+                        "description": "The change made; a removal is capped at the available balance."
+                    },
                     "entry_id": {
                         "type": "string",
                         "format": "uuid"
                     }
                 },
                 "required": [
+                    "applied",
                     "balance",
                     "entry_id"
                 ]
@@ -7524,6 +7637,21 @@
                     "name",
                     "temp_c",
                     "util"
+                ]
+            },
+            "HealthCheck": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/StatusA3dEnum"
+                    },
+                    "latency_ms": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "latency_ms",
+                    "status"
                 ]
             },
             "IdLabel": {
@@ -8315,6 +8443,30 @@
                     "message",
                     "progress",
                     "updated_at"
+                ]
+            },
+            "LoadedLlm": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "vram_mb": {
+                        "type": "integer"
+                    },
+                    "context": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "pinned": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "context",
+                    "name",
+                    "pinned",
+                    "vram_mb"
                 ]
             },
             "LocaleEnum": {
@@ -10938,6 +11090,22 @@
                 "type": "string",
                 "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases"
             },
+            "StatusA3dEnum": {
+                "enum": [
+                    "ok",
+                    "error"
+                ],
+                "type": "string",
+                "description": "* `ok` - ok\n* `error` - error"
+            },
+            "StorageEnum": {
+                "enum": [
+                    "s3",
+                    "local"
+                ],
+                "type": "string",
+                "description": "* `s3` - s3\n* `local` - local"
+            },
             "StreamCatalog": {
                 "type": "object",
                 "properties": {
@@ -10966,6 +11134,33 @@
                     "models",
                     "online",
                     "price_per_minute"
+                ]
+            },
+            "StreamGpu": {
+                "type": "object",
+                "properties": {
+                    "index": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "mem_used_mb": {
+                        "type": "integer"
+                    },
+                    "mem_total_mb": {
+                        "type": "integer"
+                    },
+                    "util": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "index",
+                    "mem_total_mb",
+                    "mem_used_mb",
+                    "name",
+                    "util"
                 ]
             },
             "StreamModel": {
@@ -11086,6 +11281,15 @@
                     "model_id"
                 ]
             },
+            "StripeEnum": {
+                "enum": [
+                    "off",
+                    "test",
+                    "live"
+                ],
+                "type": "string",
+                "description": "* `off` - off\n* `test` - test\n* `live` - live"
+            },
             "Subscription": {
                 "type": "object",
                 "properties": {
@@ -11167,6 +11371,170 @@
                 ],
                 "type": "string",
                 "description": "* `always` - always\n* `optional` - optional\n* `none` - none"
+            },
+            "SystemAgents": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/StatusA3dEnum"
+                    },
+                    "loaded": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LoadedLlm"
+                        }
+                    },
+                    "running": {
+                        "type": "integer"
+                    },
+                    "waiting": {
+                        "type": "integer"
+                    },
+                    "workers": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "loaded",
+                    "running",
+                    "status",
+                    "waiting",
+                    "workers"
+                ]
+            },
+            "SystemConfiguration": {
+                "type": "object",
+                "properties": {
+                    "debug": {
+                        "type": "boolean"
+                    },
+                    "maintenance_mode": {
+                        "type": "boolean"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "storage": {
+                        "$ref": "#/components/schemas/StorageEnum"
+                    },
+                    "captcha": {
+                        "type": "boolean"
+                    },
+                    "toss": {
+                        "$ref": "#/components/schemas/TossEnum"
+                    },
+                    "stripe": {
+                        "$ref": "#/components/schemas/StripeEnum"
+                    }
+                },
+                "required": [
+                    "captcha",
+                    "debug",
+                    "email",
+                    "maintenance_mode",
+                    "storage",
+                    "stripe",
+                    "toss"
+                ]
+            },
+            "SystemGpu": {
+                "type": "object",
+                "properties": {
+                    "host": {
+                        "type": "string"
+                    },
+                    "index": {
+                        "type": "string"
+                    },
+                    "workers": {
+                        "type": "integer",
+                        "description": "Worker processes serving models on this GPU."
+                    },
+                    "stats": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/GpuStats"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "reserved_mb": {
+                        "type": "integer",
+                        "description": "Memory reserved by running model tasks."
+                    },
+                    "running": {
+                        "type": "integer",
+                        "description": "Model tasks holding a GPU reservation."
+                    },
+                    "waiting": {
+                        "type": "integer",
+                        "description": "Model tasks waiting for GPU memory."
+                    }
+                },
+                "required": [
+                    "host",
+                    "index",
+                    "reserved_mb",
+                    "running",
+                    "stats",
+                    "waiting",
+                    "workers"
+                ]
+            },
+            "SystemStream": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/StatusA3dEnum"
+                    },
+                    "busy": {
+                        "type": "boolean"
+                    },
+                    "waiting": {
+                        "type": "integer"
+                    },
+                    "model_loaded": {
+                        "type": "boolean"
+                    },
+                    "gpu": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StreamGpu"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "active_sessions": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "active_sessions",
+                    "busy",
+                    "gpu",
+                    "model_loaded",
+                    "status",
+                    "waiting"
+                ]
+            },
+            "SystemWorkers": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer"
+                    },
+                    "gpu": {
+                        "type": "integer"
+                    },
+                    "agents": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "agents",
+                    "gpu",
+                    "total"
+                ]
             },
             "TaskKindEnum": {
                 "enum": [
@@ -11277,6 +11645,15 @@
                     "order_id",
                     "payment_key"
                 ]
+            },
+            "TossEnum": {
+                "enum": [
+                    "off",
+                    "test",
+                    "live"
+                ],
+                "type": "string",
+                "description": "* `off` - off\n* `test` - test\n* `live` - live"
             },
             "TrialDetectResponse": {
                 "type": "object",

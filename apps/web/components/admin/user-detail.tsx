@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Ban, CheckCircle2, KeyRound, LogOut, Loader2 } from "lucide-react"
+import { ArrowLeft, Ban, CheckCircle2, KeyRound, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { useMemo, useState } from "react"
@@ -10,6 +10,12 @@ import { toast } from "sonner"
 import { Eyebrow } from "@/components/sml/eyebrow"
 import { HudCard } from "@/components/sml/hud-card"
 import { StatusChip } from "@/components/sml/status-chip"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,15 +24,18 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useCatalog } from "@/hooks/use-catalog"
 import { useDraft } from "@/hooks/use-draft"
-import { useCan } from "@/hooks/use-me"
+import { useCan, useMe } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
 import { formatDateTime } from "@/lib/format"
 
+import { BlockUserDialog } from "./block-user-dialog"
 import { AdminError, Loading } from "./common"
+import { CreditAdjust } from "./credit-adjust"
 
 const MODULES = ["detect", "long_video", "news"] as const
 const AUDIT = ["face", "safety", "fas", "metadata"] as const
@@ -92,9 +101,8 @@ export function AdminUserDetail({ id }: { id: string }) {
   const accessDraft = useDraft<AccessForm | null>(serverAccess, null)
   const access = accessDraft.value
   const setAccess = accessDraft.set
-  const [delta, setDelta] = useState("")
-  const [reason, setReason] = useState("")
-  const [expires, setExpires] = useState("")
+  const me = useMe()
+  const [blockOpen, setBlockOpen] = useState(false)
 
   const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: qk.admin("user", id) }),
     qc.invalidateQueries({ queryKey: ["admin", "users"] })])
@@ -108,39 +116,61 @@ export function AdminUserDetail({ id }: { id: string }) {
       retention_days_override: access!.retention_days_override ? Number(access!.retention_days_override) : null,
       unlimited_credits: access!.unlimited_credits, notes: access!.notes } as never })),
     onSuccess: async () => { toast.success(t("accessSaved")); await refresh(); accessDraft.reset() }, onError })
-  const adjust = useMutation({
-    mutationFn: async () => data(await api.POST("/api/v1/admin/users/{id}/credits", { params: { path: { id } }, body: {
-      delta: Number(delta), reason, expires_in_days: expires ? Number(expires) : null } })),
-    onSuccess: (r) => { toast.success(t("creditsAdjusted", { balance: r.balance })); setDelta(""); setReason(""); refresh() }, onError })
   const action = useMutation({
-    mutationFn: async (a: "disable" | "enable" | "reset-mfa" | "revoke-sessions") => {
-      const path = { path: { id } }
-      if (a === "disable") return api.POST("/api/v1/admin/users/{id}/disable", { params: path })
-      if (a === "enable") return api.POST("/api/v1/admin/users/{id}/enable", { params: path })
-      if (a === "reset-mfa") return api.POST("/api/v1/admin/users/{id}/reset-mfa", { params: path })
-      return api.POST("/api/v1/admin/users/{id}/revoke-sessions", { params: path })
+    mutationFn: async (a: "reset-mfa" | "revoke-sessions") => {
+      const params = { path: { id } }
+      return data(a === "reset-mfa" ? await api.POST("/api/v1/admin/users/{id}/reset-mfa", { params })
+        : await api.POST("/api/v1/admin/users/{id}/revoke-sessions", { params }))
     },
     onSuccess: () => { toast.success(t("done")); refresh() }, onError })
 
   if (user.isLoading) return <Loading />
   if (user.error || !user.data) return <AdminError error={user.error} />
   const u = user.data
+  const isSelf = me.data?.id === u.id
   const modelIds = (catalog.data?.models ?? []).map((m) => m.id).concat((catalog.data?.long_video_models ?? []).map((m) => m.id))
   return (
     <div className="space-y-5">
       <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground"><Link href="/admin/users"><ArrowLeft className="size-4" /> {t("back")}</Link></Button>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold">{u.email}</h1>
-        <StatusChip status={u.is_active ? "active" : "canceled"} />
+        {isSelf && <Badge variant="secondary">{t("you")}</Badge>}
+        <StatusChip status={u.is_active ? "active" : "blocked"} />
         <span className="text-sm text-muted-foreground">{t("balance", { count: u.balance })}</span>
         <div className="ml-auto flex flex-wrap gap-2">
-          {canManage && (u.is_active
-            ? <Button variant="outline" size="sm" onClick={() => action.mutate("disable")}><Ban className="size-4" /> {t("disable")}</Button>
-            : <Button variant="outline" size="sm" onClick={() => action.mutate("enable")}><CheckCircle2 className="size-4" /> {t("enable")}</Button>)}
+          {canManage && (isSelf ? (
+            <Tooltip>
+              <TooltipTrigger asChild><span tabIndex={0}><Button variant="outline" size="sm" disabled><Ban className="size-4" /> {t("block")}</Button></span></TooltipTrigger>
+              <TooltipContent>{t("cannotBlockSelf")}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => setBlockOpen(true)}
+              className={u.is_active ? "text-fake hover:text-fake" : undefined}>
+              {u.is_active ? <><Ban className="size-4" /> {t("block")}</> : <><CheckCircle2 className="size-4" /> {t("unblock")}</>}
+            </Button>
+          ))}
           {canManage && <Button variant="outline" size="sm" onClick={() => action.mutate("revoke-sessions")}><LogOut className="size-4" /> {t("revokeSessions")}</Button>}
-          {canManage && u.has_mfa && <Button variant="outline" size="sm" onClick={() => action.mutate("reset-mfa")}><KeyRound className="size-4" /> {t("resetMfa")}</Button>}
+          {canManage && u.has_mfa && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="size-4" /> {t("resetMfa")}</Button></AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>{t("resetMfaTitle", { email: u.email })}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("resetMfaBody")}</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter><AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" onClick={() => action.mutate("reset-mfa")}>{t("resetMfa")}</AlertDialogAction></AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
+      {!u.is_active && (
+        <Alert variant="destructive">
+          <Ban className="size-4" />
+          <AlertTitle>{t("blockedTitle")}</AlertTitle>
+          <AlertDescription>{u.disabled_reason || t("blockedNoReason")}</AlertDescription>
+        </Alert>
+      )}
+      <BlockUserDialog user={u} open={blockOpen} onOpenChange={setBlockOpen} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <HudCard>
@@ -158,24 +188,11 @@ export function AdminUserDetail({ id }: { id: string }) {
           </CardContent>
         </HudCard>
 
-        <HudCard>
+        <HudCard id="credits" className="scroll-mt-20">
           <CardHeader><Eyebrow index={2}>{t("creditsEyebrow")}</Eyebrow><CardTitle className="mt-1 text-base">{t("creditsTitle")}</CardTitle>
             <CardDescription>{t("creditsHint")}</CardDescription></CardHeader>
           <CardContent>
-            {canGrant ? (
-              <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); adjust.mutate() }}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5"><Label htmlFor="delta">{t("delta")}</Label>
-                    <Input id="delta" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="+100 / -20" /></div>
-                  <div className="space-y-1.5"><Label htmlFor="exp">{t("expiresIn")}</Label>
-                    <Input id="exp" inputMode="numeric" value={expires} onChange={(e) => setExpires(e.target.value)} placeholder={t("never")} /></div>
-                </div>
-                <div className="space-y-1.5"><Label htmlFor="reason">{t("reason")}</Label>
-                  <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} /></div>
-                <Button type="submit" size="sm" className="w-fit" disabled={!Number(delta) || !reason || adjust.isPending}>
-                  {adjust.isPending && <Loader2 className="size-4 animate-spin" />} {t("apply")}</Button>
-              </form>
-            ) : <p className="text-sm text-muted-foreground">{t("noPermission")}</p>}
+            {canGrant ? <CreditAdjust user={u} isSelf={isSelf} /> : <p className="text-sm text-muted-foreground">{t("noPermission")}</p>}
           </CardContent>
         </HudCard>
       </div>
