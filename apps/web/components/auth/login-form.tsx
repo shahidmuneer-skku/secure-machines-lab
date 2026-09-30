@@ -5,7 +5,7 @@ import { Fingerprint, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { allauth, AuthError, pendingFlow, type AuthResponse } from "@/lib/auth/allauth"
 import { usePasskeysSupported } from "@/hooks/use-passkeys-supported"
 import { signInWithPasskey } from "@/lib/auth/passkey"
+import { isServerPage } from "@/lib/safe-next"
 
 import { AuthCard } from "./auth-card"
 import { FormError } from "./form-error"
@@ -38,10 +39,19 @@ export function LoginForm({ next }: { next: string }) {
     defaultValues: { email: "", password: "", remember: false },
   })
 
+  // Continue to `next` once signed in; Django-rendered pages (the data admin) need a full load.
+  const continueTo = useCallback(() => {
+    if (isServerPage(next)) {
+      window.location.assign(next)
+      return
+    }
+    router.replace(next)
+    router.refresh()
+  }, [next, router])
+
   const route = (res: AuthResponse) => {
     if (res.status === 200 && res.meta?.is_authenticated) {
-      router.replace(next)
-      router.refresh()
+      continueTo()
       return
     }
     const flow = pendingFlow(res)
@@ -57,10 +67,10 @@ export function LoginForm({ next }: { next: string }) {
   // Already signed in (or mid-2FA)? Continue where the session actually is.
   useEffect(() => {
     allauth.session().then((res) => {
-      if (res.meta?.is_authenticated) router.replace(next)
+      if (res.meta?.is_authenticated) continueTo()
       else if (pendingFlow(res)?.id === "mfa_authenticate") router.replace(`/login/mfa?next=${encodeURIComponent(next)}`)
     }).catch(() => undefined)
-  }, [next, router])
+  }, [continueTo, next, router])
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null)

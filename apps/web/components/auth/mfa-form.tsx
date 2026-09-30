@@ -3,7 +3,7 @@
 import { Fingerprint, KeyRound, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { allauth, AuthError, pendingFlow } from "@/lib/auth/allauth"
 import { usePasskeysSupported } from "@/hooks/use-passkeys-supported"
 import { passkeySecondFactor } from "@/lib/auth/passkey"
+import { isServerPage } from "@/lib/safe-next"
 
 import { AuthCard } from "./auth-card"
 import { FormError } from "./form-error"
@@ -26,19 +27,26 @@ export function MfaForm({ next }: { next: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Continue to `next` once signed in; Django-rendered pages (the data admin) need a full load.
+  const continueTo = useCallback(() => {
+    if (isServerPage(next)) {
+      window.location.assign(next)
+      return
+    }
+    router.replace(next)
+    router.refresh()
+  }, [next, router])
+
   useEffect(() => {
     allauth.session().then((res) => {
-      if (res.meta?.is_authenticated) return router.replace(next)
+      if (res.meta?.is_authenticated) return continueTo()
       const flow = pendingFlow(res)
       if (flow?.id !== "mfa_authenticate") return router.replace(`/login?next=${encodeURIComponent(next)}`)
       setTypes(flow.types ?? [])
     })
-  }, [next, router])
+  }, [continueTo, next, router])
 
-  const done = () => {
-    router.replace(next)
-    router.refresh()
-  }
+  const done = continueTo
 
   const submit = async (value: string) => {
     setBusy(true)

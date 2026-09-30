@@ -10,3 +10,8 @@ export function safeNext(raw: string | null | undefined, fallback = "/app"): str
     return fallback
   }
 }
+
+/** Paths rendered by Django (e.g. /api/django-admin/) are not Next routes and need a full page load. */
+export function isServerPage(path: string): boolean {
+  return path === "/api" || path.startsWith("/api/")
+}

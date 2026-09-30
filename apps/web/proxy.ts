@@ -64,6 +64,13 @@ function preferredLocale(request: NextRequest): string | null {
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
+  // Next's default trailing-slash redirect is off (see next.config.ts); keep it for app pages.
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    // A plain URL: NextURL would re-apply the original trailing slash when formatting.
+    const url = new URL(request.url)
+    url.pathname = pathname.replace(/\/+$/, "") || "/"
+    return NextResponse.redirect(url, 308)
+  }
   const hasSession = SESSION_COOKIES.some((c) => request.cookies.has(c))
 
   if (matches(pathname, PROTECTED) && !hasSession) {

@@ -9,10 +9,16 @@ const API_ORIGIN = process.env.API_ORIGIN ?? "http://127.0.0.1:8000"
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Django URLs end in '/' (the /api rewrite must keep it); proxy.ts strips it for app pages instead.
+  skipTrailingSlashRedirect: true,
   reactStrictMode: true,
   typedRoutes: false,
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${API_ORIGIN}/api/:path*` }]
+    return [
+      // `:path*` drops a trailing slash, which Django URLs need (the admin would redirect-loop).
+      { source: "/api/:path*/", destination: `${API_ORIGIN}/api/:path*/` },
+      { source: "/api/:path*", destination: `${API_ORIGIN}/api/:path*` },
+    ]
   },
   async headers() {
     return [

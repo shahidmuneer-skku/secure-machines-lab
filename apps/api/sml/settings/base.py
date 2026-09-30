@@ -28,7 +28,7 @@ PUBLIC_WEB_URL = env("PUBLIC_WEB_URL", default="http://localhost:3000").rstrip("
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[PUBLIC_WEB_URL])
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "sml.core.admin_apps.SecureAdminConfig",  # Django admin without its password-only login
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
