@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Django URLs end in '/' (the /api rewrite must keep it); proxy.ts strips it for app pages instead.
   skipTrailingSlashRedirect: true,
+  experimental: {
+    // Next buffers request bodies it proxies (10 MB by default), which truncated video uploads to
+    // /api in development. Match nginx: browser uploads up to 200 MB go through /api/v1/uploads,
+    // larger videos go straight to object storage in parts.
+    proxyClientMaxBodySize: "250mb",
+  },
   reactStrictMode: true,
   typedRoutes: false,
   async rewrites() {
