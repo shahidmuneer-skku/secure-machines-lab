@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "gen:api": "cd ../api && DJANGO_SETTINGS_MODULE=sml.settings.dev uv run python manage.py spectacular --file ../../packages/contracts/openapi.json --format openapi-json && cd ../web && openapi-typescript ../../packages/contracts/openapi.json -o ../../packages/contracts/schema.d.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@formatjs/icu-messageformat-parser": "^3.5.20",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",
