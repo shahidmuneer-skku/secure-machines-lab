@@ -22,7 +22,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
-from ..config import config
+from ..config import config, gpu_env
 from ..context import Canceled, TaskContext
 from . import parsers
 from .base import AdapterError, ModelResult
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIRS = ("inference_images", "detected", "inference_csv")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 OOM_MARKERS = ("CUDA out of memory", "torch.cuda.OutOfMemoryError", "CUBLAS_STATUS_ALLOC_FAILED")
+ARCH_MARKERS = ("no kernel image is available", "not compatible with the current PyTorch installation")
 
 
 def page_type_for(media_type: str, family: str) -> str:
@@ -112,9 +113,7 @@ class SubprocessAdapter:
             "OMP_NUM_THREADS": "4",
             "PYTHONUNBUFFERED": "1",
         })
-        gpu = os.environ.get("SML_WORKER_GPU")
-        if gpu not in (None, ""):
-            env["CUDA_VISIBLE_DEVICES"] = gpu
+        env.update(gpu_env())
         return env
 
     # --- run ----------------------------------------------------------------------------
@@ -130,7 +129,7 @@ class SubprocessAdapter:
         stem = staged.stem
         progress_csv = c.models_root / "inference_csv" / f"{stem}.csv"
         ctx.log(f"Starting {self.model.get('display_name', {}).get('en', self.id)} "
-                f"({media_type}, env {self.spec.get('conda_env', '-')}, GPU {os.environ.get('SML_WORKER_GPU', 'any')})")
+                f"({media_type}, env {self.spec.get('conda_env', '-')}, GPU {gpu_env()['CUDA_VISIBLE_DEVICES']})")
         ctx.progress(3, "Loading model weights", force=True)
 
         stdout_lines: deque[str] = deque(maxlen=4000)
@@ -201,6 +200,8 @@ class SubprocessAdapter:
             tail = stderr.strip().splitlines()[-3:] if stderr.strip() else []
             if any(m in stderr for m in OOM_MARKERS):
                 raise AdapterError("GPU_OOM", "The GPU ran out of memory.")
+            if any(m in stderr for m in ARCH_MARKERS):
+                raise AdapterError("GPU_UNSUPPORTED", "This model's environment does not support the assigned GPU.")
             if no_face and self.model.get("face_required"):
                 return ModelResult(no_face=True)
             raise AdapterError("RUNTIME_ERROR", f"Exit code {code}: {' | '.join(tail)[:300]}")
@@ -256,7 +257,7 @@ class SubprocessAdapter:
 
 
 def _label_for(name: str, stem: str) -> str:
-    rest = name[len(stem):].strip("_.") or "original"
-    rest = rest.rsplit(".", 1)[0]
+    base = name.rsplit(".", 1)[0]
+    rest = base[len(stem):].strip("_.") or "original"
     return {"gradcam": "Grad-CAM", "face_gradcam": "Face Grad-CAM", "face_map": "Face map",
             "original": "Original"}.get(rest, rest.replace("_", " "))

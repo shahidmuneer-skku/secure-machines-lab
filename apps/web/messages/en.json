@@ -899,5 +899,192 @@
       "deleteForever": "Delete forever",
       "deleteFailed": "Could not delete the account."
     }
+  },
+  "reports": {
+    "eyebrow": "Workspace · Reports",
+    "title": "Reports",
+    "subtitle": "Every PDF, HWP, CSV and ZIP report you generated, newest first.",
+    "format": {
+      "all": "All",
+      "pdf": "PDF",
+      "hwp": "HWP",
+      "csv": "CSV",
+      "zip": "ZIP"
+    },
+    "emptyTitle": "No reports yet",
+    "emptyHint": "Open a finished job and choose a report format.",
+    "col": {
+      "file": "File",
+      "format": "Format",
+      "version": "Version",
+      "created": "Created",
+      "status": "Status",
+      "download": "Download"
+    },
+    "versionN": "run {run} · v{version}",
+    "more": "Load more"
+  },
+  "longVideo": {
+    "eyebrow": "Workspace · Long-form video",
+    "title": "Long-form video scanner",
+    "subtitle": "Scan hours of footage interval by interval. The timeline fills in live while the scan runs, so you can jump to suspicious segments.",
+    "step1": "Video",
+    "step2": "Settings",
+    "step3": "Review",
+    "uploadTitle": "Upload one long video",
+    "uploadHint": "MP4, WebM, MOV, MKV or AVI up to 4 GB. Large files upload in resumable chunks.",
+    "settingsTitle": "Scan settings",
+    "model": "Scanner model",
+    "interval": "Interval length",
+    "seconds": "{count}s",
+    "intervalHint": "Shorter intervals give a finer timeline and take longer.",
+    "summary": "Summary",
+    "duration": "Duration",
+    "cost": "Cost",
+    "credits": "{count, plural, one {# credit} other {# credits}}",
+    "pricing": "Priced per started minute of video.",
+    "start": "Start scan",
+    "notEnough": "Not enough credits for this video."
+  },
+  "news": {
+    "eyebrow": "Workspace · News verification",
+    "title": "Multimedia news verification",
+    "subtitle": "An OSINT agent verifies a news claim with its images and videos: source, location, time, entities and forensic authenticity.",
+    "failed": "Could not submit the case.",
+    "back": "Back to news verification",
+    "form": {
+      "eyebrow": "New case",
+      "title": "Describe the claim",
+      "hint": "The more context you give, the better the verification.",
+      "caseTitle": "Headline or claim",
+      "titleRequired": "Add a short headline.",
+      "location": "Claimed location",
+      "category": "Category",
+      "violence": "Violence level",
+      "description": "Description",
+      "descriptionHint": "What is claimed, where it circulated, anything you already know.",
+      "link": "Social media link (optional)",
+      "badUrl": "Enter a full URL.",
+      "media": "Images or videos (up to 10)",
+      "submit": "Verify case",
+      "cost": "{count} credits per case",
+      "duration": "Detectors run on each file first, then the agent researches the case. This usually takes several minutes."
+    },
+    "category": {
+      "conflict": "Conflict",
+      "politics": "Politics",
+      "disaster": "Disaster",
+      "health": "Health",
+      "society": "Society",
+      "other": "Other"
+    },
+    "violence": {
+      "none": "None",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "list": {
+      "eyebrow": "Cases",
+      "title": "Your cases",
+      "empty": "No cases yet."
+    },
+    "report": {
+      "eyebrow": "Report",
+      "title": "Verification report"
+    },
+    "case": {
+      "eyebrow": "Case",
+      "title": "Submitted information"
+    },
+    "meta": {
+      "eyebrow": "Findings",
+      "title": "Structured findings",
+      "confidence": "Verification confidence: {value}%",
+      "when": "When",
+      "who": "Who"
+    }
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "title": "Simple, credit-based pricing",
+    "subtitle": "Pay only for the files you analyze. Start free, add credits when you need more.",
+    "credits": "{count, plural, one {# credit} other {# credits}}",
+    "month": "month",
+    "popular": "Most popular",
+    "choose": "Get started",
+    "buy": "Buy credits",
+    "free": {
+      "title": "Free allowances",
+      "trial": "{count} free image checks a day",
+      "trialBody": "Try the detector on the homepage — no account needed.",
+      "bonus": "{count} welcome credits",
+      "bonusBody": "Added when you verify your email. Valid for {days} days.",
+      "daily": "{count} free credits every day",
+      "dailyBody": "Topped up each morning (KST). Unused free credits don't carry over."
+    },
+    "costs": {
+      "eyebrow": "Credit costs",
+      "title": "What each analysis costs",
+      "image": "Image — per file",
+      "video": "Video — {base} credits (first minute) + {extra} per extra minute",
+      "long": "Long-form video — {count} credits per minute",
+      "news": "News verification — {count} credits per case",
+      "explain": "Explain why (AI analyst) — {count} credits",
+      "reports": "PDF / HWP / CSV reports — free",
+      "flat": "Prices are per file, no matter how many detection models you select. Files where analysis fails are never charged."
+    },
+    "plans": {
+      "eyebrow": "Subscriptions",
+      "title": "Monthly plans",
+      "subtitle": "Renews monthly. Cancel anytime — you keep your credits until the period ends."
+    },
+    "packs": {
+      "eyebrow": "Credit packs",
+      "title": "One-time credit packs",
+      "subtitle": "Pay once. Purchased credits are valid for 12 months."
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "expire": {
+        "q": "Do credits expire?",
+        "a": "Daily free credits reset every day, the welcome bonus lasts 30 days, subscription credits last until the end of the billing month and purchased credits for 12 months. We always spend the credits that expire soonest first."
+      },
+      "models": {
+        "q": "Does choosing more models cost more?",
+        "a": "No. The price is per file; you can combine as many detection models as your account allows into one verdict."
+      },
+      "refund": {
+        "q": "Can I get a refund?",
+        "a": "Unused purchased credits can be refunded within 30 days of purchase, pro-rata. Subscriptions are fully refundable within 7 days if unused, otherwise pro-rata. Bonus and free credits are not refundable. See the refund policy for details."
+      },
+      "payment": {
+        "q": "How can I pay?",
+        "a": "Korean cards and easy-pay services through Toss Payments (KRW), and international cards through Stripe (USD). We never see or store your card details."
+      },
+      "api": {
+        "q": "Can I use the API?",
+        "a": "Yes. Every registered account can create API keys. API calls use the same credits as the web app."
+      },
+      "enterprise": {
+        "q": "Do you offer enterprise or on-premise plans?",
+        "a": "Yes — contact us for invoiced billing, higher limits, dedicated GPUs or on-premise deployment."
+      }
+    }
+  },
+  "site": {
+    "representative": "CEO",
+    "bizNo": "Business registration no.",
+    "mailOrderNo": "Mail-order business no.",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "refunds": "Refund Policy",
+    "api": "API docs"
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "germanNote": "Diese Seite ist derzeit nur auf Englisch und Koreanisch verfügbar. Maßgeblich ist die koreanische Fassung.",
+    "koreanPrevails": "If this English text and the Korean version differ, the Korean version prevails."
   }
 }

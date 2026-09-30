@@ -53,6 +53,17 @@ class WorkerConfig:
         return self.conda_root / "envs" / env / "bin" / "python"
 
 
+def gpu_env() -> dict[str, str]:
+    """GPU environment for model subprocesses.
+
+    CUDA's default FASTEST_FIRST ordering would put the RTX PRO 6000 (Blackwell, sm_120)
+    at index 0 — legacy envs (torch cu124) have no kernels for it. PCI_BUS_ID makes indices
+    match nvidia-smi, and unpinned workers default to SML_WORKER_DEFAULT_GPU (an A5000).
+    """
+    gpu = os.environ.get("SML_WORKER_GPU") or os.environ.get("SML_WORKER_DEFAULT_GPU", "0")
+    return {"CUDA_DEVICE_ORDER": "PCI_BUS_ID", "CUDA_VISIBLE_DEVICES": gpu}
+
+
 @lru_cache(maxsize=1)
 def config() -> WorkerConfig:
     _load_dotenv()

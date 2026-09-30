@@ -6,16 +6,14 @@ import type { DashTranslations } from "@/lib/marketing/i18n"
 
 const domain: { ports: { web: number; chatBot: number }; webUrl: string; chatBotFullUrl: string } | null = null
 
+// The detector now lives inside the platform; the assistant card opens the
+// legacy chatbot when configured, otherwise the news-verification agent.
 function getWebUrl(): string {
-  if (process.env.NEXT_PUBLIC_WEB_PUBLIC_URL) return process.env.NEXT_PUBLIC_WEB_PUBLIC_URL
-  if (typeof window !== "undefined") return `${window.location.origin}/deepfakedetector/`
-  return "https://securemachineslab.com/deepfakedetector/"
+  return "/app/detect"
 }
 
 function getChatBotUrl(): string {
-  if (process.env.NEXT_PUBLIC_CHAT_BOT_URL) return process.env.NEXT_PUBLIC_CHAT_BOT_URL
-  if (typeof window !== "undefined") return `${window.location.origin}/forensicsassistant/`
-  return "https://securemachineslab.com/forensicsassistant/"
+  return process.env.NEXT_PUBLIC_CHAT_BOT_URL || "/app/news"
 }
 
 

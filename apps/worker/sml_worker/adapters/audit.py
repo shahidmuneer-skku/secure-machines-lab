@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..config import config
+from ..config import config, gpu_env
 from ..context import TaskContext
 from .base import AdapterError, ModelResult
 
@@ -61,8 +61,7 @@ class AuditAdapter:
         argv = [str(p).format(**values) for p in template]
         cwd = str(self.step.get("cwd", "{models_root}")).format(models_root=c.models_root)
         env = dict(os.environ)
-        if os.environ.get("SML_WORKER_GPU"):
-            env["CUDA_VISIBLE_DEVICES"] = os.environ["SML_WORKER_GPU"]
+        env.update(gpu_env())
         ctx.log(f"Running audit step: {self.step.get('display_name', {}).get('en', self.id)}")
         ctx.progress(10, "Running", force=True)
         start = time.monotonic()
