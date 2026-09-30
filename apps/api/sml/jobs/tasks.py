@@ -6,6 +6,7 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,8 @@ def record_explanation_event(payload: dict) -> None:
 
 @shared_task(name="sml.maintenance.requeue_stale", ignore_result=True)
 def requeue_stale() -> int:
-    """Fail RUNNING tasks whose worker stopped heart-beating well past the model timeout."""
+    """Fail RUNNING tasks whose worker stopped heart-beating well past the model timeout, and
+    DISPATCHED tasks no worker picked up within STALE_DISPATCH_HOURS."""
     from sml.catalog.registry import registry
 
     from .live import task_progress
@@ -60,6 +62,14 @@ def requeue_stale() -> int:
             _record({"event": "finished", "task_id": str(task.pk), "attempt": task.attempt, "status": "failed",
                      "error_code": "WORKER_LOST", "error_message": "The worker stopped responding."})
             count += 1
+    # Safety net: a task whose message was lost or dead-lettered would otherwise keep its job
+    # (and the user's credit hold) open forever. Late deliveries are ignored once it is failed.
+    cutoff = now - timedelta(hours=settings.STALE_DISPATCH_HOURS)
+    for task in JobTask.objects.filter(status=JobTask.Status.DISPATCHED, dispatched_at__lt=cutoff):
+        logger.warning("Task %s was never picked up; failing it", task.pk)
+        _record({"event": "finished", "task_id": str(task.pk), "attempt": task.attempt, "status": "failed",
+                 "error_code": "QUEUE_TIMEOUT", "error_message": "No worker picked this task up in time."})
+        count += 1
     return count
 
 

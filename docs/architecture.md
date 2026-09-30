@@ -62,7 +62,9 @@ sequenceDiagram
 `JobTask` with its own state, attempt counter and log. Tasks are the outbox: the dispatcher
 (`sml/jobs/dispatcher.py`) selects `PENDING` tasks under a PostgreSQL advisory lock, ordered by
 priority then age, skips principals already at their in-flight cap, marks them `DISPATCHED` and
-publishes after commit. A beat task re-dispatches anything stuck in `DISPATCHED`.
+publishes after commit. A sweep every minute fails running tasks whose worker stopped sending
+heartbeats (after the model's timeout plus five minutes; retried once) and tasks no worker picked
+up within `STALE_DISPATCH_HOURS` (24 h), so every job settles and every credit hold is released.
 
 **Priorities and fairness.** Plans map to queue priorities (Business > Pro > Basic > free >
 guest trial; web jobs get +1 over API batches). Each principal (user, or guest device) has an

@@ -374,6 +374,8 @@ CELERY_TASK_DEFAULT_QUEUE = "sml.default"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Beat keeps runtime state; it lives with the other runtime files in var/ (git-ignored).
 CELERY_BEAT_SCHEDULE_FILENAME = str(REPO_ROOT / "var" / "celerybeat-schedule")
+# Tasks never picked up by a worker within this time fail (and are refunded).
+STALE_DISPATCH_HOURS = env.int("STALE_DISPATCH_HOURS", default=24)
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TIMEZONE = "UTC"
 

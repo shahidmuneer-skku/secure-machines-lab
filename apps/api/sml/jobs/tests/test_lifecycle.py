@@ -236,3 +236,33 @@ def test_rerun_creates_a_new_charged_job(user, job_for, worker):
     second = services.rerun_job(first, user=user)
     assert second.parent_id == first.pk and second.run_number == 2
     assert credits.get_balance(user).balance == 3
+
+
+def test_tasks_never_picked_up_fail_and_refund(user, job_for, settings):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from sml.jobs.tasks import requeue_stale
+
+    fund(user, 5)
+    job = job_for(user)
+    dispatch_pending()
+    assert credits.get_balance(user).balance == 4
+    JobTask.objects.filter(job=job).update(dispatched_at=timezone.now() - timedelta(hours=settings.STALE_DISPATCH_HOURS,
+                                                                                     minutes=1))
+    assert requeue_stale() == 3
+    job.refresh_from_db()
+    assert job.status == Job.Status.FAILED
+    assert set(job.tasks.values_list("error_code", flat=True)) == {"QUEUE_TIMEOUT"}
+    assert credits.get_balance(user).balance == 5
+
+
+def test_recently_dispatched_tasks_are_left_alone(user, job_for):
+    from sml.jobs.tasks import requeue_stale
+
+    fund(user)
+    job = job_for(user)
+    dispatch_pending()
+    assert requeue_stale() == 0
+    assert set(job.tasks.values_list("status", flat=True)) == {JobTask.Status.DISPATCHED}
