@@ -1,8 +1,8 @@
 """RabbitMQ queue topology shared by the API side and the model workers.
 
 Every queue is a classic queue with x-max-priority=10 (see ADR 0004). Dead
-lettering is applied by a RabbitMQ policy (deploy/rabbitmq/definitions.json),
-not by queue arguments, so producers and consumers never disagree on arguments.
+lettering is applied by a RabbitMQ policy (`manage.py setup_broker`), not by
+queue arguments, so producers and consumers never disagree on arguments.
 """
 
 from __future__ import annotations

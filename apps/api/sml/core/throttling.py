@@ -8,20 +8,20 @@ from rest_framework.throttling import SimpleRateThrottle
 class PrincipalRateThrottle(SimpleRateThrottle):
     """Default throttle for every endpoint.
 
-    API keys may carry their own per-minute limit, which replaces the default rate.
+    An API key may carry its own per-minute limit. Key owners set it themselves, so it can
+    only tighten the platform rate (THROTTLE_PRINCIPAL), never raise it.
     """
 
     scope = "principal"
 
-    def get_rate(self) -> str | None:
-        return super().get_rate()
-
     def allow_request(self, request, view) -> bool:  # type: ignore[no-untyped-def]
         api_key = getattr(request, "auth", None)
         per_minute = getattr(api_key, "rate_limit_per_minute", None)
-        if per_minute:
-            self.rate = f"{per_minute}/min"
-            self.num_requests, self.duration = self.parse_rate(self.rate)
+        if per_minute and self.num_requests and self.duration:
+            platform_per_minute = self.num_requests * 60 // self.duration
+            if per_minute < platform_per_minute:
+                self.rate = f"{per_minute}/min"
+                self.num_requests, self.duration = self.parse_rate(self.rate)
         elif not (request.user and request.user.is_authenticated):
             self.rate = self.THROTTLE_RATES.get("anon", "60/min")
             self.num_requests, self.duration = self.parse_rate(self.rate)

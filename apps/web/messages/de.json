@@ -1042,7 +1042,7 @@
       "ips": "IP-Erlaubnisliste (optional)",
       "ipsHint": "Eine IP oder CIDR pro Zeile. Leer lassen, um beliebige IPs zu erlauben.",
       "rateLimit": "Ratenbegrenzung pro Minute (optional)",
-      "rateLimitHint": "Standardmäßig wird die Plattformbegrenzung verwendet.",
+      "rateLimitHint": "Kann das Plattformlimit nur senken; leer lassen, um es zu verwenden.",
       "number": "Geben Sie eine Zahl ein.",
       "save": "Änderungen speichern",
       "create": "Schlüssel erstellen"
