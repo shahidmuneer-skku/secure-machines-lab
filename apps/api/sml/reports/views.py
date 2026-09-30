@@ -34,6 +34,7 @@ class JobReportsView(APIView):
 
 class ReportListView(generics.ListAPIView):
     serializer_class = ReportSerializer
+    queryset = Report.objects.none()
     permission_classes = [IsAuthenticated, require_scope("reports:read")]
 
     def get_queryset(self):  # type: ignore[no-untyped-def]

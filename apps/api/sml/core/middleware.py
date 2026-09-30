@@ -65,3 +65,66 @@ class SecurityHeadersMiddleware:
         if path.startswith("/api/") and "Cache-Control" not in response:
             response["Cache-Control"] = "no-store"
         return response
+
+
+class AccessLogMiddleware:
+    """One structured line per API request: method, path, status, duration, principal, request id."""
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
+        self.get_response = get_response
+        import logging
+
+        self.logger = logging.getLogger("sml.access")
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        import time
+
+        started = time.monotonic()
+        response = self.get_response(request)
+        if request.path.startswith("/api/") and not request.path.startswith(("/api/healthz", "/api/readyz")):
+            user = getattr(request, "user", None)
+            key = getattr(request, "sml_api_key", None)
+            principal = (f"key:{key.prefix}" if key is not None
+                         else f"user:{user.pk}" if user is not None and user.is_authenticated else "anon")
+            self.logger.info(
+                "%s %s %s %dms %s", request.method, request.path, response.status_code,
+                int((time.monotonic() - started) * 1000), principal,
+            )
+        return response
+
+
+_MAINTENANCE_EXEMPT = (
+    "/api/_allauth/",          # users must still be able to sign in/out
+    "/api/v1/admin/",          # staff switch maintenance off here
+    "/api/v1/billing/webhooks/",  # never drop provider events
+    "/api/django-admin/",
+)
+
+
+class MaintenanceModeMiddleware:
+    """While maintenance mode is on, reject state-changing API calls (reads keep working)."""
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        if (
+            request.method not in ("GET", "HEAD", "OPTIONS")
+            and request.path.startswith("/api/")
+            and not request.path.startswith(_MAINTENANCE_EXEMPT)
+        ):
+            from .models import PlatformSettings
+
+            if PlatformSettings.load().maintenance_mode:
+                import json
+
+                body = {
+                    "type": "https://securemachineslab.com/docs/errors#maintenance",
+                    "title": "Maintenance", "status": 503, "code": "MAINTENANCE",
+                    "detail": "The platform is in maintenance mode. Please try again shortly.",
+                    "request_id": current_request_id(),
+                }
+                response = HttpResponse(json.dumps(body), status=503, content_type="application/problem+json")
+                response["Retry-After"] = "300"
+                return response
+        return self.get_response(request)

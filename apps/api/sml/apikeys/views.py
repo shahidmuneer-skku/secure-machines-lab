@@ -13,6 +13,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.core import audit
 from sml.core.exceptions import ApiError
 from sml.core.permissions import SessionOnly, require
@@ -109,7 +110,7 @@ class ApiKeyRotateView(APIView):
 class ApiKeyUsageView(APIView):
     permission_classes = PERMS
 
-    @extend_schema(tags=["api-keys"], summary="Daily usage and recent requests for a key")
+    @extend_schema(tags=["api-keys"], responses=schemas.ApiKeyUsageResponseSerializer, summary="Daily usage and recent requests for a key")
     def get(self, request: Request, pk: str) -> Response:
         key = get_object_or_404(ApiKey, pk=pk, user=request.user)
         days = int(request.query_params.get("days", 30))
@@ -128,6 +129,6 @@ class ApiKeyUsageView(APIView):
 class ScopeListView(APIView):
     permission_classes = PERMS
 
-    @extend_schema(tags=["api-keys"], summary="Available API key scopes")
+    @extend_schema(tags=["api-keys"], responses=schemas.IdLabelSerializer(many=True), summary="Available API key scopes")
     def get(self, request: Request) -> Response:
         return Response([{"id": s.value, "label": s.label} for s in Scope])

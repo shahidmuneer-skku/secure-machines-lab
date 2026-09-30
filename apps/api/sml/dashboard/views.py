@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.apikeys.models import ApiKeyUsageDaily
 from sml.credits.models import LedgerEntry, LedgerKind
 from sml.credits.services import get_balance
@@ -20,7 +21,8 @@ from sml.jobs.serializers import JobListSerializer
 
 
 class DashboardSummaryView(APIView):
-    @extend_schema(tags=["account"], summary="Dashboard KPIs and chart data (last N days, default 30)")
+    @extend_schema(tags=["account"], responses=schemas.DashboardSummarySerializer,
+                   summary="Dashboard KPIs and chart data (last N days, default 30)")
     def get(self, request: Request) -> Response:
         user = request.user
         days = min(max(int(request.query_params.get("days", 30)), 7), 365)

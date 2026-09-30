@@ -26,6 +26,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.accounts.models import CAPABILITY_CODENAMES, AccessPolicy, User
 from sml.accounts.rbac import sync_staff_flag
 from sml.apikeys.models import ApiKey, ApiKeyUsageDaily
@@ -78,7 +79,7 @@ SUPPORT_REFUND_LIMIT = {"KRW": 100_000, "USD": 10_000}
 class OverviewView(APIView):
     permission_classes = admin_permissions("view_users")
 
-    @extend_schema(tags=TAG, summary="Platform overview KPIs")
+    @extend_schema(tags=TAG, responses=schemas.AdminOverviewSerializer, summary="Platform overview KPIs")
     def get(self, request: Request) -> Response:
         now = timezone.now()
         day, week, month = now - timedelta(days=1), now - timedelta(days=7), now - timedelta(days=30)
@@ -203,7 +204,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
         audit.record("admin.user_access", request=request, target=user, before=dict(before), after=dict(ser.data))
         return Response(ser.data)
 
-    @extend_schema(tags=TAG, request=CreditAdjustSerializer)
+    @extend_schema(tags=TAG, request=CreditAdjustSerializer, responses=schemas.CreditAdjustResultSerializer)
     @action(detail=True, methods=["post"])
     def credits(self, request: Request, pk: str) -> Response:
         user = self.get_object()
@@ -216,7 +217,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
                      after={"delta": d["delta"], "reason": d["reason"]})
         return Response({"balance": credits.get_balance(user).balance, "entry_id": str(entry.pk)})
 
-    @extend_schema(tags=TAG, request=None)
+    @extend_schema(tags=TAG, request=None, responses=schemas.CountSerializer)
     @action(detail=True, methods=["post"], url_path="reset-mfa")
     def reset_mfa(self, request: Request, pk: str) -> Response:
         user = self.get_object()
@@ -226,7 +227,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
         audit.record("admin.mfa_reset", request=request, target=user, after={"removed": count})
         return Response({"removed": count})
 
-    @extend_schema(tags=TAG, request=None)
+    @extend_schema(tags=TAG, request=None, responses=schemas.CountSerializer)
     @action(detail=True, methods=["post"], url_path="revoke-sessions")
     def revoke_sessions(self, request: Request, pk: str) -> Response:
         user = self.get_object()
@@ -237,7 +238,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Updat
         audit.record("admin.sessions_revoked", request=request, target=user, after={"count": n})
         return Response({"revoked": n})
 
-    @extend_schema(tags=TAG)
+    @extend_schema(tags=TAG, responses={200: dict})
     @action(detail=True, methods=["get"])
     def ledger(self, request: Request, pk: str) -> Response:
         user = self.get_object()
@@ -315,7 +316,7 @@ class AdminJobDetailView(APIView):
         cap = "manage_all_jobs" if self.request.method == "POST" else "view_all_jobs"
         return [p() for p in admin_permissions(cap)]
 
-    @extend_schema(tags=TAG, responses=JobDetailSerializer)
+    @extend_schema(tags=TAG, responses=schemas.AdminJobDetailSerializer)
     def get(self, request: Request, pk: str) -> Response:
         job = get_object_or_404(Job.objects.prefetch_related("tasks", "events", "artifacts"), pk=pk)
         data = JobDetailSerializer(job, context={"request": request}).data
@@ -327,7 +328,7 @@ class AdminJobDetailView(APIView):
                                                        "error_code", "error_message", "duration_ms"))
         return Response(data)
 
-    @extend_schema(tags=TAG, request=None)
+    @extend_schema(tags=TAG, request=None, responses=JobListSerializer)
     def post(self, request: Request, pk: str) -> Response:
         job = cancel_job(get_object_or_404(Job, pk=pk), actor=request.user)
         audit.record("admin.job_canceled", request=request, target=job)
@@ -339,7 +340,8 @@ class AdminJobDetailView(APIView):
 class QueueView(APIView):
     permission_classes = admin_permissions("view_queues")
 
-    @extend_schema(tags=TAG, summary="Queue depth and consumers (RabbitMQ) + task states (DB)")
+    @extend_schema(tags=TAG, responses=schemas.AdminQueuesSerializer,
+                   summary="Queue depth and consumers (RabbitMQ) + task states (DB)")
     def get(self, request: Request) -> Response:
         rabbit: list[dict] = []
         error = None
@@ -374,7 +376,8 @@ class QueueView(APIView):
 class WorkerView(APIView):
     permission_classes = admin_permissions("view_system")
 
-    @extend_schema(tags=TAG, summary="Online workers, their queues, GPUs and current task")
+    @extend_schema(tags=TAG, responses=schemas.WorkerInfoSerializer(many=True),
+                   summary="Online workers, their queues, GPUs and current task")
     def get(self, request: Request) -> Response:
         return Response(sorted(live.workers(), key=lambda w: (w.get("hostname", ""), str(w.get("gpu", "")))))
 
@@ -384,7 +387,7 @@ class ModelAdminView(APIView):
         cap = "manage_models" if self.request.method == "PATCH" else "view_queues"
         return [p() for p in admin_permissions(cap)]
 
-    @extend_schema(tags=TAG, summary="Models with overrides and 24h stats")
+    @extend_schema(tags=TAG, responses=schemas.AdminModelSerializer(many=True), summary="Models with overrides and 24h stats")
     def get(self, request: Request) -> Response:
         since = timezone.now() - timedelta(days=1)
         stats = {r["target"]: r for r in JobTask.objects.filter(kind="model", created_at__gte=since)
@@ -410,7 +413,8 @@ class ModelAdminView(APIView):
 
     @extend_schema(tags=TAG, request={"application/json": {"type": "object", "properties": {
         "model_id": {"type": "string"}, "enabled": {"type": "boolean"}, "weight": {"type": "number"},
-        "default_selected": {"type": "boolean"}, "trial": {"type": "boolean"}, "note": {"type": "string"}}}})
+        "default_selected": {"type": "boolean"}, "trial": {"type": "boolean"}, "note": {"type": "string"}}}},
+        responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:
         model_id = str(request.data.get("model_id", ""))
         if registry().get(model_id) is None:
@@ -438,7 +442,7 @@ class ModelAdminView(APIView):
 class FailedTaskRetryView(APIView):
     permission_classes = admin_permissions("manage_queues")
 
-    @extend_schema(tags=TAG, request=None, summary="Retry a failed task (the job is re-opened)")
+    @extend_schema(tags=TAG, request=None, responses=schemas.OkSerializer, summary="Retry a failed task (the job is re-opened)")
     def post(self, request: Request, pk: str) -> Response:
         task = get_object_or_404(JobTask.objects.select_related("job"), pk=pk, status=JobTask.Status.FAILED)
         job = task.job
@@ -463,13 +467,13 @@ class PricingView(APIView):
         cap = "manage_pricing" if self.request.method == "PUT" else "view_billing"
         return [p() for p in admin_permissions(cap)]
 
-    @extend_schema(tags=TAG, summary="Credit prices")
+    @extend_schema(tags=TAG, responses=schemas.PriceItemSerializer(many=True), summary="Credit prices")
     def get(self, request: Request) -> Response:
         labels = dict(PriceRule.Key.choices)
         return Response([{"key": k, "label": labels.get(k, k), "credits": v}
                          for k, v in pricing.price_table().items()])
 
-    @extend_schema(tags=TAG, request=PriceRuleUpdateSerializer)
+    @extend_schema(tags=TAG, request=PriceRuleUpdateSerializer, responses=schemas.PriceItemSerializer(many=True))
     def put(self, request: Request) -> Response:
         ser = PriceRuleUpdateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -576,14 +580,15 @@ class AdminPaymentListView(generics.ListAPIView):
 class AdminRefundView(APIView):
     permission_classes = admin_permissions("view_billing")
 
-    @extend_schema(tags=TAG, summary="Refund quote under the refund policy")
+    @extend_schema(tags=TAG, responses=schemas.RefundQuoteSerializer, summary="Refund quote under the refund policy")
     def get(self, request: Request, pk: str) -> Response:
         payment = get_object_or_404(Payment, pk=pk)
         q = billing.refund_quote(payment, override_full=request.query_params.get("override_full") == "true")
         return Response({"eligible": q.eligible, "amount": q.amount, "credits_to_revoke": q.credits_to_revoke,
                          "reason": q.reason, "currency": payment.currency})
 
-    @extend_schema(tags=TAG, request=RefundRequestSerializer, summary="Issue a refund")
+    @extend_schema(tags=TAG, request=RefundRequestSerializer, responses={201: schemas.RefundResultSerializer},
+                   summary="Issue a refund")
     def post(self, request: Request, pk: str) -> Response:
         payment = get_object_or_404(Payment, pk=pk)
         ser = RefundRequestSerializer(data=request.data)
@@ -662,7 +667,7 @@ class AuditLogView(generics.ListAPIView):
 class ApiUsageView(APIView):
     permission_classes = admin_permissions("view_api_usage")
 
-    @extend_schema(tags=TAG, summary="API usage per key (last 30 days)")
+    @extend_schema(tags=TAG, responses=schemas.AdminApiUsageSerializer, summary="API usage per key (last 30 days)")
     def get(self, request: Request) -> Response:
         since = timezone.localdate() - timedelta(days=30)
         rows = (ApiKeyUsageDaily.objects.filter(date__gte=since)

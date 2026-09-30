@@ -61,21 +61,25 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "sml.core.middleware.RequestIdMiddleware",
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "sml.core.middleware.SecurityHeadersMiddleware",
+    # Order matters. Each entry states why it sits where it does.
+    "sml.core.middleware.RequestIdMiddleware",           # first: every log line/response gets an id
+    "sml.core.middleware.AccessLogMiddleware",           # wraps everything below to time the request
+    "django.middleware.security.SecurityMiddleware",      # HSTS, SSL redirect, nosniff, referrer policy
+    "whitenoise.middleware.WhiteNoiseMiddleware",         # static files (admin/docs) before any DB work
+    "sml.core.middleware.SecurityHeadersMiddleware",      # CSP/Permissions-Policy/CORP/no-store for the API
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.locale.LocaleMiddleware",          # Accept-Language fallback
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",          # double-submit token + Origin check
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "sml.accounts.middleware.SessionTimeoutMiddleware",
+    "sml.accounts.middleware.SessionTimeoutMiddleware",   # idle/absolute timeouts (needs request.user)
+    "sml.accounts.middleware.UserLocaleMiddleware",       # user's language beats Accept-Language
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
-    "allauth.usersessions.middleware.UserSessionsMiddleware",
-    "sml.apikeys.middleware.ApiKeyUsageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",       # required by django-allauth
+    "allauth.usersessions.middleware.UserSessionsMiddleware",  # tracks IP/UA per session (revocable)
+    "sml.core.middleware.MaintenanceModeMiddleware",      # blocks writes during maintenance
+    "sml.apikeys.middleware.ApiKeyUsageMiddleware",       # per-key request log + daily counters
 ]
 
 ROOT_URLCONF = "sml.urls"
@@ -307,7 +311,27 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
-    "ENUM_NAME_OVERRIDES": {},
+    "ENUM_NAME_OVERRIDES": {
+        "JobStatusEnum": "sml.jobs.models.Job.Status",
+        "JobKindEnum": "sml.jobs.models.Job.Kind",
+        "JobSourceEnum": "sml.jobs.models.Job.Source",
+        "VerdictEnum": "sml.jobs.models.Job.Verdict",
+        "TaskStatusEnum": "sml.jobs.models.JobTask.Status",
+        "TaskKindEnum": "sml.jobs.models.JobTask.Kind",
+        "ExplanationStatusEnum": "sml.jobs.models.Explanation.Status",
+        "ArtifactKindEnum": "sml.jobs.models.Artifact.Kind",
+        "PaymentStatusEnum": "sml.billing.models.Payment.Status",
+        "PaymentKindEnum": "sml.billing.models.Payment.Kind",
+        "SubscriptionStatusEnum": "sml.billing.models.Subscription.Status",
+        "ProviderEnum": "sml.billing.models.Provider",
+        "CurrencyEnum": "sml.billing.models.Currency",
+        "ReportStatusEnum": "sml.reports.models.Report.Status",
+        "ReportFormatEnum": "sml.reports.models.Report.Format",
+        "LedgerKindEnum": "sml.credits.models.LedgerKind",
+        "MediaStatusEnum": "sml.media.models.MediaObject.Status",
+        "LocaleEnum": [("en", "English"), ("ko", "Korean"), ("de", "German")],
+        "MediaTypeEnum": [("image", "Image"), ("video", "Video")],
+    },
     "APPEND_COMPONENTS": {
         "securitySchemes": {
             "ApiKeyAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "sml_live_<id>_<secret>"},
@@ -396,6 +420,7 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
+        "sml.access": {"level": "INFO"},
         "django.db.backends": {"level": "WARNING"},
         "celery": {"level": "INFO"},
     },

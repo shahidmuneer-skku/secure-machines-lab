@@ -11,6 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.catalog import access
 from sml.core import audit
 from sml.core.captcha import captcha_enabled
@@ -26,7 +27,7 @@ class PublicConfigView(APIView):
     permission_classes = [AllowAny]
     authentication_classes: list = []
 
-    @extend_schema(tags=["account"], summary="Public client configuration")
+    @extend_schema(tags=["account"], responses=schemas.PublicConfigSerializer, summary="Public client configuration")
     def get(self, request: Request) -> Response:
         cfg = PlatformSettings.load()
         return Response({
@@ -40,7 +41,7 @@ class PublicConfigView(APIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["account"], responses=MeSerializer, summary="Current user, roles and capabilities")
+    @extend_schema(tags=["account"], responses=schemas.MeResponseSerializer, summary="Current user, roles and capabilities")
     def get(self, request: Request) -> Response:
         data = MeSerializer(request.user).data
         policy = getattr(request.user, "access_policy", None)
@@ -86,7 +87,7 @@ class ConsentView(APIView):
 class DataExportView(APIView):
     permission_classes = [IsAuthenticated, SessionOnly]
 
-    @extend_schema(tags=["account"], summary="Download a JSON export of your personal data (PIPA/GDPR)")
+    @extend_schema(tags=["account"], responses={200: dict}, summary="Download a JSON export of your personal data (PIPA/GDPR)")
     def get(self, request: Request) -> Response:
         user = request.user
         from sml.billing.models import Payment

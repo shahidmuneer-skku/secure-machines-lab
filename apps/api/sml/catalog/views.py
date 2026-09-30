@@ -6,6 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.credits.pricing import price_table
 
 from . import access
@@ -33,7 +34,7 @@ class ModelCatalogView(APIView):
     @extend_schema(tags=["catalog"], parameters=[
         OpenApiParameter("media", str, enum=["image", "video"], required=False),
         OpenApiParameter("lang", str, enum=["en", "ko", "de"], required=False)],
-        summary="Detection models available to the caller")
+        responses=schemas.ModelCatalogSerializer, summary="Detection models available to the caller")
     def get(self, request: Request) -> Response:
         lang = _lang(request)
         media = request.query_params.get("media")
@@ -59,7 +60,8 @@ class ModelCatalogView(APIView):
 
 
 class ModuleCatalogView(APIView):
-    @extend_schema(tags=["catalog"], summary="Modules (detect / long-form video / news) and whether you can use them")
+    @extend_schema(tags=["catalog"], responses=schemas.ModuleInfoSerializer(many=True),
+                   summary="Modules (detect / long-form video / news) and whether you can use them")
     def get(self, request: Request) -> Response:
         prices = price_table()
         return Response([
@@ -79,7 +81,7 @@ class PublicModelCatalogView(APIView):
 
     permission_classes = [AllowAny]
 
-    @extend_schema(tags=["catalog"], summary="Public model catalog")
+    @extend_schema(tags=["catalog"], responses=schemas.ModelInfoSerializer(many=True), summary="Public model catalog")
     def get(self, request: Request) -> Response:
         lang = _lang(request)
         return Response([_model_payload(s, lang) for s in registry().models.values() if s.enabled])

@@ -11,6 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.core.exceptions import ApiError
 from sml.core.idempotency import idempotent
 from sml.core.permissions import SessionOnly, require
@@ -38,7 +39,8 @@ def _lang(request: Request) -> str:
 class CatalogView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(tags=["billing"], summary="Credit packs, subscription plans and available payment methods")
+    @extend_schema(tags=["billing"], responses=schemas.BillingCatalogSerializer,
+                   summary="Credit packs, subscription plans and available payment methods")
     def get(self, request: Request) -> Response:
         ctx = {"lang": _lang(request)}
         providers = enabled_providers()
@@ -54,7 +56,7 @@ class CatalogView(APIView):
 class CheckoutView(APIView):
     permission_classes = BUYER
 
-    @extend_schema(tags=["billing"], request=CheckoutSerializer,
+    @extend_schema(tags=["billing"], request=CheckoutSerializer, responses={201: schemas.CheckoutResponseSerializer},
                    parameters=[OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=True)],
                    summary="Start a checkout. Returns a redirect URL (Stripe) or SDK parameters (Toss)")
     @idempotent()
@@ -142,6 +144,7 @@ class WebhookView(APIView):
 
 class PaymentListView(generics.ListAPIView):
     serializer_class = PaymentSerializer
+    queryset = Payment.objects.none()
     permission_classes = [IsAuthenticated, SessionOnly]
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
@@ -174,6 +177,8 @@ class SubscriptionView(APIView):
 
 
 class SubscriptionActionView(SubscriptionView):
+    http_method_names = ["post"]
+
     @extend_schema(tags=["billing"], request=None, responses=SubscriptionSerializer,
                    summary="cancel (at period end) or resume the subscription")
     def post(self, request: Request, action: str) -> Response:
@@ -192,7 +197,8 @@ class SubscriptionActionView(SubscriptionView):
 class PortalView(APIView):
     permission_classes = [IsAuthenticated, SessionOnly]
 
-    @extend_schema(tags=["billing"], request=None, summary="Stripe customer portal URL (cards, invoices)")
+    @extend_schema(tags=["billing"], request=None, responses=schemas.UrlSerializer,
+                   summary="Stripe customer portal URL (cards, invoices)")
     def post(self, request: Request) -> Response:
         from .providers import get_provider
 

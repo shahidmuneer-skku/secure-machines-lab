@@ -42,3 +42,29 @@ class SessionTimeoutMiddleware:
                 # Throttle session writes to once a minute.
                 session[LAST_SEEN] = now
         return self.get_response(request)
+
+
+class UserLocaleMiddleware:
+    """Activate the signed-in user's language (else the web app's NEXT_LOCALE cookie) for API messages.
+
+    Placed after AuthenticationMiddleware; overrides LocaleMiddleware's Accept-Language guess.
+    """
+
+    SUPPORTED = {"en", "ko", "de"}
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        from django.utils import translation
+
+        user = getattr(request, "user", None)
+        lang = getattr(user, "locale", None) if user is not None and user.is_authenticated else None
+        lang = lang or request.COOKIES.get("NEXT_LOCALE")
+        if lang in self.SUPPORTED:
+            translation.activate(lang)
+            request.LANGUAGE_CODE = lang  # type: ignore[attr-defined]
+        response = self.get_response(request)
+        if lang in self.SUPPORTED:
+            response.headers.setdefault("Content-Language", lang)
+        return response

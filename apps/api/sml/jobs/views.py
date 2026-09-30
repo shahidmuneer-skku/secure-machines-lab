@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.apikeys.permissions import require_scope
 from sml.catalog.registry import registry
 from sml.core.exceptions import ApiError
@@ -93,6 +94,7 @@ class JobFilter(filters.FilterSet):
 
 class JobListCreateView(generics.ListAPIView):
     serializer_class = JobListSerializer
+    queryset = Job.objects.none()
     filterset_class = JobFilter
     parser_classes = [JSONParser]
 
@@ -114,7 +116,7 @@ class JobListCreateView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     @extend_schema(
-        tags=["jobs"], request=JobCreateSerializer, responses={202: JobListSerializer(many=True)},
+        tags=["jobs"], request=JobCreateSerializer, responses={202: schemas.JobCreatedSerializer},
         parameters=[OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=True)],
         summary="Create detection job(s) for uploaded media. Returns 202 immediately; follow progress via SSE.",
     )
@@ -239,7 +241,8 @@ class JobRerunView(APIView):
 class TaskLogView(APIView):
     permission_classes = [IsAuthenticated, require_scope("jobs:read")]
 
-    @extend_schema(tags=["jobs"], summary="Live processing log for one task (what the worker is doing now)")
+    @extend_schema(tags=["jobs"], responses=schemas.TaskLogSerializer,
+                   summary="Live processing log for one task (what the worker is doing now)")
     def get(self, request: Request, pk: str, task_id: str) -> Response:
         job = get_object_or_404(user_jobs(request), pk=pk)
         task = get_object_or_404(job.tasks, pk=task_id)

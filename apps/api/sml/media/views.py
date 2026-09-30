@@ -20,6 +20,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.apikeys.permissions import require_scope
 from sml.core.exceptions import ApiError
 from sml.core.permissions import has_capability
@@ -87,6 +88,7 @@ class MultipartStartView(APIView):
     permission_classes = [IsAuthenticated, require_scope("detect:write")]
 
     @extend_schema(tags=["uploads"], request=MultipartStartSerializer,
+                   responses={201: schemas.MultipartStartResponseSerializer},
                    summary="Start a resumable multipart upload for a large video")
     def post(self, request: Request) -> Response:
         ser = MultipartStartSerializer(data=request.data)

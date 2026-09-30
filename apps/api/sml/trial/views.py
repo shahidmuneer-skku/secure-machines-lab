@@ -16,6 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.core.captcha import captcha_enabled, verify_captcha
 from sml.core.exceptions import ApiError
 from sml.core.middleware import client_ip
@@ -55,7 +56,7 @@ class TrialBase(APIView):
 
 
 class TrialStatusView(TrialBase):
-    @extend_schema(tags=["trial"], summary="Remaining free trial detections today")
+    @extend_schema(tags=["trial"], responses=schemas.TrialStatusSerializer, summary="Remaining free trial detections today")
     def get(self, request: Request) -> Response:
         token, new = _ensure_token(request)
         cfg = PlatformSettings.load()
@@ -74,6 +75,7 @@ class TrialDetectView(TrialBase):
     throttle_classes = [TrialThrottle]
 
     @extend_schema(tags=["trial"], summary="Analyze one image without an account",
+                   responses={202: schemas.TrialDetectResponseSerializer},
                    request={"multipart/form-data": {"type": "object", "properties": {
                        "file": {"type": "string", "format": "binary"}, "captcha_token": {"type": "string"},
                        "locale": {"type": "string"}}}})

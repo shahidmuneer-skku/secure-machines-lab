@@ -67,5 +67,17 @@ packages/contracts  OpenAPI schema + generated TypeScript types
 - [ ] SMTP credentials, Toss + Stripe test keys, Turnstile keys, production domain/TLS details
 - [ ] Anthropic API key (only if the Claude news engine is selected)
 
-## Status
-See `CHANGELOG.md` and `docs/progress/`.
+## Status (2026-09-30)
+Done and verified end to end against the live stack (simulated models):
+- Backend: auth (allauth headless, MFA/passkeys), RBAC, API keys, credits ledger, jobs pipeline + fair
+  dispatcher, SSE progress, reports (PDF/HWP/CSV/ZIP), trial, news + long-video modules, Toss/Stripe
+  providers, admin API, middlewares (request id, access log, maintenance, locale, session timeouts)
+- Worker: subprocess/simulated/metadata(EXIF/C2PA)/audit/long-video/agent adapters, heartbeat
+- Infra: docker compose (Postgres, Redis, RabbitMQ, SeaweedFS S3), bootstrap + broker setup commands
+- Frontend (in progress): design tokens, typed API client, proxy.ts (CSP nonce, auth redirects),
+  auth pages, app shell, dashboard, detect flow, results list, job-detail building blocks
+
+Next: job-detail page assembly (verdict/provenance/explain/reports cards), billing UI (Toss/Stripe
+checkout), API-keys UI, settings (MFA/passkeys/sessions/privacy), homepage copy + trial widget,
+pricing/legal/docs pages, news + long-video pages, admin pages, full EN message catalog + KO/DE
+translations, tests (pytest + vitest + Playwright), nginx/systemd deploy files, docs/ADRs.

@@ -11,6 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.core.models import PlatformSettings
 
 from .models import LedgerEntry, PriceRule
@@ -46,6 +47,7 @@ class LedgerFilter(filters.FilterSet):
 
 class LedgerView(generics.ListAPIView):
     serializer_class = LedgerEntrySerializer
+    queryset = LedgerEntry.objects.none()
     filterset_class = LedgerFilter
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
@@ -83,7 +85,7 @@ class PriceListView(APIView):
 
     permission_classes = [AllowAny]
 
-    @extend_schema(tags=["credits"], responses=PriceRuleSerializer(many=True), summary="Credit prices")
+    @extend_schema(tags=["credits"], responses=schemas.PriceListSerializer, summary="Credit prices")
     def get(self, request: Request) -> Response:
         table = price_table()
         labels = dict(PriceRule.Key.choices)

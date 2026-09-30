@@ -8,6 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from sml import api_schemas as schemas
 from sml.apikeys.permissions import require_scope
 from sml.core.exceptions import ApiError
 from sml.core.idempotency import idempotent
@@ -63,7 +64,8 @@ class NewsCaseListCreateView(APIView):
 class NewsCaseDetailView(APIView):
     permission_classes = [IsAuthenticated, require_scope("jobs:read")]
 
-    @extend_schema(tags=["news"], summary="News case detail with the verification report")
+    @extend_schema(tags=["news"], responses=schemas.NewsCaseDetailSerializer,
+                   summary="News case detail with the verification report")
     def get(self, request: Request, pk: str) -> Response:
         job = get_object_or_404(user_jobs(request).filter(kind=Job.Kind.NEWS), pk=pk)
         data = JobDetailSerializer(job, context={"request": request}).data
