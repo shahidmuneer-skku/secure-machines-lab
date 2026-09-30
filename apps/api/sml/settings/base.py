@@ -179,9 +179,11 @@ ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_SESSION_REMEMBER = None  # user chooses "remember me"
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = False
-ACCOUNT_PASSWORD_RESET_TOKEN_GENERATOR = "allauth.account.forms.EmailAwarePasswordResetTokenGenerator"
+ACCOUNT_PASSWORD_RESET_TOKEN_GENERATOR = "allauth.account.forms.EmailAwarePasswordResetTokenGenerator"  # noqa: S105
 ACCOUNT_REAUTHENTICATION_TIMEOUT = 300
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[Secure Machines Lab] "
+# Security notifications (password/email changed, 2FA and passkey changes) go to the account owner.
+ACCOUNT_EMAIL_NOTIFICATIONS = True
 ACCOUNT_RATE_LIMITS = {
     "login": "30/m/ip",
     "login_failed": "10/m/ip,5/5m/key",
@@ -208,6 +210,7 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Secure Machines Lab <no-reply@securemachineslab.com>")
+SUPPORT_EMAIL = env("SUPPORT_EMAIL", default="support@securemachineslab.com")
 
 # --- i18n -----------------------------------------------------------------------
 LANGUAGE_CODE = "en"

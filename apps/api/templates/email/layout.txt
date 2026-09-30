@@ -1,0 +1,20 @@
+{% autoescape off %}{{ heading }}
+
+{% for p in paragraphs %}{{ p }}
+
+{% endfor %}{% if code %}{{ common.code_label }}: {{ code }}
+
+{% endif %}{% if cta_url %}{{ cta }}:
+{{ cta_url }}
+
+{% endif %}{% if notice %}{{ common.details }}
+{% for label, value in details %}- {{ label }}: {{ value }}
+{% endfor %}
+{{ not_you }}
+
+{% endif %}{% if footnote %}{{ footnote }}
+
+{% endif %}— {{ common.team }}
+{{ site_url }}
+
+{{ common.footer }}{% endautoescape %}
