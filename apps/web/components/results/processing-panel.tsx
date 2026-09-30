@@ -104,7 +104,8 @@ function TaskRow({ jobId, task, live }: { jobId: string; task: TaskView;
             {r.no_face && <span className="text-warn">{t("noFace")}</span>}
             {r.summary && <span>{r.summary}</span>}
             {task.status === "failed" && (
-              <span className="inline-flex items-center gap-1 text-fake"><TriangleAlert className="size-3" />{task.error_message || task.error_code}</span>
+              <span className="inline-flex items-center gap-1 text-fake"><TriangleAlert className="size-3" />
+                {t.has(`taskError.${task.error_code}`) ? t(`taskError.${task.error_code}`) : task.error_message || task.error_code}</span>
             )}
           </div>
         </div>

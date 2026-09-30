@@ -18,6 +18,7 @@ from sml.catalog.registry import registry
 from sml.core.models import PlatformSettings
 from sml.credits import services as credits
 
+from .errors import user_message
 from .models import Artifact, Job, JobTask
 from .timeline import emit, push_job_state
 
@@ -148,8 +149,9 @@ def _on_finished(job: Job, task: JobTask, payload: dict[str, Any]) -> None:
         return
 
     code = str(payload.get("error_code") or "RUNTIME_ERROR")[:64]
-    message = str(payload.get("error_message") or "The model failed.")[:500]
+    message = user_message(code)
     task.error_code, task.error_message = code, message
+    task.error_detail = str(payload.get("error_message") or "")[:4000]
     if code in RETRYABLE_CODES and task.attempt < task.max_attempts and not job.cancel_requested:
         task.status = JobTask.Status.PENDING
         task.stage_message = "Retrying"

@@ -15,6 +15,7 @@ from sml.credits import pricing
 from sml.credits import services as credits
 from sml.queues import REASONING, WORKER_TASK
 
+from .errors import user_message
 from .models import Explanation, Job
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,8 @@ def record_explanation_event(payload: dict[str, Any]) -> None:
                     exp.credits_charged = credits.capture(exp.hold, memo="Explain why").amount
             else:
                 exp.status = Explanation.Status.FAILED
-                exp.error_message = str(payload.get("error_message") or "Reasoning failed")[:500]
+                exp.error_message = user_message("AGENT_ERROR")
+                exp.error_detail = str(payload.get("error_message") or "")[:4000]
                 if exp.hold_id:
                     credits.release(exp.hold, memo="Explanation failed — not charged")
         exp.save()

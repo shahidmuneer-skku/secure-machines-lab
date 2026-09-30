@@ -151,6 +151,7 @@ class JobTask(TimeStampedModel):
     result = models.JSONField(default=dict, blank=True)
     error_code = models.CharField(max_length=64, blank=True, default="")
     error_message = models.CharField(max_length=500, blank=True, default="")
+    error_detail = models.TextField(blank=True, default="", help_text="Technical detail for staff only.")
     fallback_for = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL,
                                      related_name="fallbacks")
 
@@ -232,6 +233,7 @@ class Explanation(TimeStampedModel):
                              related_name="+")
     credits_charged = models.PositiveIntegerField(default=0)
     error_message = models.CharField(max_length=500, blank=True, default="")
+    error_detail = models.TextField(blank=True, default="", help_text="Technical detail for staff only.")
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
 

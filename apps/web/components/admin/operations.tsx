@@ -161,7 +161,7 @@ function AdminJobSheet({ id, onClose }: { id: string | null; onClose: () => void
     onSuccess: () => { toast.success(t("retried")); qc.invalidateQueries({ queryKey: ["admin"] }) },
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")) })
   const tasks = (job?.tasks_internal ?? []) as { id: string; target: string; status: string; worker: string; gpu: string; attempt: number;
-    error_code: string; error_message: string; duration_ms: number | null }[]
+    error_code: string; error_message: string; error_detail: string; duration_ms: number | null }[]
   return (
     <Sheet open={!!id} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
@@ -178,7 +178,9 @@ function AdminJobSheet({ id, onClose }: { id: string | null; onClose: () => void
               <TableBody>
                 {tasks.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell className="font-mono text-xs">{task.target}<span className="block text-fake">{task.error_message}</span></TableCell>
+                    <TableCell className="font-mono text-xs">{task.target}<span className="block text-fake">{task.error_message}</span>
+                      {task.error_detail && <pre className="mt-1 max-w-xl whitespace-pre-wrap break-all text-[11px] text-muted-foreground">
+                        {task.error_detail}</pre>}</TableCell>
                     <TableCell><StatusChip status={task.status} /></TableCell>
                     <TableCell className="text-xs">{task.worker || "—"}{task.gpu ? ` · GPU ${task.gpu}` : ""} · #{task.attempt}</TableCell>
                     <TableCell className="text-xs">{task.duration_ms ? formatDuration(task.duration_ms / 1000) : "—"}</TableCell>

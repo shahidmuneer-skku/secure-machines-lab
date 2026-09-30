@@ -572,6 +572,19 @@
       "refunded": "Zurück auf Ihr Guthaben",
       "reserved": "Reserviert",
       "trial": "Kostenlose Testphase – keine Credits verbraucht."
+    },
+    "taskError": {
+      "GPU_OOM": "Beim Ausführen dieses Modells war der GPU-Speicher erschöpft.",
+      "GPU_UNSUPPORTED": "Dieses Modell ist auf der zugewiesenen Hardware vorübergehend nicht verfügbar.",
+      "TIMEOUT": "Das Modell hat zu lange gebraucht und wurde abgebrochen.",
+      "WORKER_LOST": "Der Worker für dieses Modell reagiert nicht mehr.",
+      "QUEUE_TIMEOUT": "Kein Worker hat diese Aufgabe rechtzeitig übernommen.",
+      "RUNTIME_ERROR": "Das Modell wurde mit einem Fehler beendet.",
+      "PARSE_ERROR": "Das Modell wurde ohne Ergebnis beendet.",
+      "CONFIG_ERROR": "Dieses Modell ist nicht korrekt konfiguriert.",
+      "INFRA_ERROR": "Ein vorübergehender Systemfehler ist aufgetreten.",
+      "AGENT_ERROR": "Der KI-Agent konnte die Aufgabe nicht abschließen.",
+      "INVALID_MEDIA": "Die Datei konnte von diesem Modell nicht gelesen werden."
     }
   },
   "admin": {

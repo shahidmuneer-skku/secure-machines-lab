@@ -266,3 +266,29 @@ def test_recently_dispatched_tasks_are_left_alone(user, job_for):
     dispatch_pending()
     assert requeue_stale() == 0
     assert set(job.tasks.values_list("status", flat=True)) == {JobTask.Status.DISPATCHED}
+
+
+def test_worker_error_details_reach_staff_but_never_users(user, job_for, worker, client_for, make_user):
+    import json
+
+    fund(user, 5)
+    job = job_for(user)
+    secret = 'File "/home/ops/anaconda3/envs/mixture3/lib/python3.7/site-packages/dlib/__init__.py" ImportError'
+    dispatch_pending()
+    for task in job.tasks.all():
+        worker.start(task)
+        worker.fail(task, code="RUNTIME_ERROR", message=secret)
+    dispatch_pending()  # second attempts
+    for task in job.tasks.filter(status=JobTask.Status.DISPATCHED):
+        worker.start(task)
+        worker.fail(task, code="RUNTIME_ERROR", message=secret)
+    job.refresh_from_db()
+    assert job.status == Job.Status.FAILED
+
+    user_view = json.dumps(client_for(user).get(f"/api/v1/jobs/{job.pk}").json())
+    assert "/home/ops" not in user_view and "error_detail" not in user_view
+    assert "The model stopped with an error." in user_view
+
+    admin = client_for(make_user(roles=("admin",)), mfa=True)
+    staff_view = admin.get(f"/api/v1/admin/jobs/{job.pk}").json()
+    assert any("/home/ops" in t["error_detail"] for t in staff_view["tasks_internal"])

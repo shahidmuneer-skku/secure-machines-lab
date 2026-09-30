@@ -572,6 +572,19 @@
       "refunded": "Returned to your balance",
       "reserved": "Reserved",
       "trial": "Free trial — no credits used."
+    },
+    "taskError": {
+      "GPU_OOM": "The GPU ran out of memory while running this model.",
+      "GPU_UNSUPPORTED": "This model is temporarily unavailable on the assigned hardware.",
+      "TIMEOUT": "The model took too long and was stopped.",
+      "WORKER_LOST": "The worker running this model stopped responding.",
+      "QUEUE_TIMEOUT": "No worker picked this task up in time.",
+      "RUNTIME_ERROR": "The model stopped with an error.",
+      "PARSE_ERROR": "The model finished without producing a score.",
+      "CONFIG_ERROR": "This model is not configured correctly.",
+      "INFRA_ERROR": "A temporary system error occurred.",
+      "AGENT_ERROR": "The AI agent could not complete the task.",
+      "INVALID_MEDIA": "The file could not be read by this model."
     }
   },
   "admin": {

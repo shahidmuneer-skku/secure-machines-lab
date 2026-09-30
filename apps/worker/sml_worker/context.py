@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -28,6 +29,13 @@ USER_CHANNEL = "sml:events:user:{}"
 JOB_CHANNEL = "sml:events:job:{}"
 TTL_SECONDS = 24 * 3600
 PUBLISH_INTERVAL = 0.75
+# Absolute filesystem paths (not URLs or fractions): the live log is shown to users.
+_PATH = re.compile(r"(?<![\w:/.])(?:/[^\s/'\"`:,;()\[\]{}<>]+){2,}")
+
+
+def redact_paths(text: str) -> str:
+    """Replace absolute paths with their last component, e.g. /home/x/w/model.pt -> …/model.pt."""
+    return _PATH.sub(lambda m: "…/" + m.group(0).rsplit("/", 1)[-1], text)
 
 
 class Canceled(Exception):
@@ -107,10 +115,10 @@ class TaskContext:
 
     def log(self, message: str) -> None:
         """A human-readable line for the live 'what is happening' console."""
-        message = message.strip()[:300]
+        logger.info("[%s] %s", self.task_id[:8], message.strip()[:1000])
+        message = redact_paths(message.strip())[:300]
         if not message:
             return
-        logger.info("[%s] %s", self.task_id[:8], message)
         if self._redis is not None:
             try:
                 key = LOG_KEY.format(self.task_id)

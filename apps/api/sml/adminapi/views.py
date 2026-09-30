@@ -325,7 +325,8 @@ class AdminJobDetailView(APIView):
             data["media"] = None
             data["artifacts"] = []
         data["tasks_internal"] = list(job.tasks.values("id", "target", "status", "worker", "gpu", "attempt",
-                                                       "error_code", "error_message", "duration_ms"))
+                                                       "error_code", "error_message", "error_detail",
+                                                       "duration_ms"))
         return Response(data)
 
     @extend_schema(tags=TAG, request=None, responses=JobListSerializer)

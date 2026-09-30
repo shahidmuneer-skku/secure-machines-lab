@@ -107,7 +107,9 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
         _send(app, RESULT_TASK, {**base, "event": "finished", "status": "canceled",
                                  "duration_ms": int((time.monotonic() - started) * 1000)})
     except AdapterError as exc:
-        ctx.log(f"Failed: {exc.message}")
+        # The technical message goes to the API for staff; users see only the classified code.
+        logger.warning("Task %s failed (%s): %s", task_id, exc.code, exc.message)
+        ctx.log(f"Failed ({exc.code})")
         _send(app, RESULT_TASK, {**base, "event": "finished", "status": "failed", "error_code": exc.code,
                                  "error_message": exc.message, "artifacts": [a.as_dict() for a in ctx.artifacts],
                                  "duration_ms": int((time.monotonic() - started) * 1000)})
