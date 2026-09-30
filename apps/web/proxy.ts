@@ -5,8 +5,10 @@ import { safeNext } from "@/lib/safe-next"
 /**
  * Next.js Proxy (formerly "middleware"), runs before every page request:
  *  1. Request ID      — forwarded to Django via the /api rewrite for log correlation
- *  2. Auth redirects  — optimistic: /app and /admin need a session cookie; signed-in users skip /login
- *                       (Django is the real authority: every API call re-checks the session)
+ *  2. Auth redirect   — optimistic: /app and /admin need a session cookie (Django re-checks every
+ *                       API call). We deliberately do NOT bounce "signed-in" users away from /login:
+ *                       a cookie also exists mid-login (e.g. during the 2FA step), so only the API
+ *                       can tell whether a session is authenticated — the login page asks it.
  *  3. Safe `next=`    — only same-origin relative paths are accepted (no open redirects)
  *  4. Locale cookie   — first visit gets NEXT_LOCALE from Accept-Language (shared with Django)
  *  5. CSP             — per-request nonce; inline scripts without it are blocked
@@ -14,7 +16,6 @@ import { safeNext } from "@/lib/safe-next"
 
 const SESSION_COOKIES = ["sml_session", "__Host-sml_session"]
 const PROTECTED = ["/app", "/admin"]
-const AUTH_PAGES = ["/login", "/signup"]
 const LOCALE_COOKIE = "NEXT_LOCALE"
 const LOCALES = ["en", "ko", "de"]
 
@@ -60,15 +61,6 @@ export function proxy(request: NextRequest) {
     login.search = `?next=${encodeURIComponent(safeNext(pathname + search))}`
     return NextResponse.redirect(login)
   }
-  if (matches(pathname, AUTH_PAGES) && hasSession && !request.nextUrl.searchParams.has("reauth")) {
-    const target = request.nextUrl.clone()
-    const next = safeNext(request.nextUrl.searchParams.get("next"))
-    const [path, query = ""] = next.split("?")
-    target.pathname = path
-    target.search = query ? `?${query}` : ""
-    return NextResponse.redirect(target)
-  }
-
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID().replaceAll("-", "")
   const policy = csp(nonce)

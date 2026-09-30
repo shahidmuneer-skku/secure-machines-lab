@@ -351,6 +351,8 @@ class QueueView(APIView):
                 auth=(settings.RABBITMQ_MANAGEMENT_USER, settings.RABBITMQ_MANAGEMENT_PASSWORD), timeout=5)
             resp.raise_for_status()
             for q in resp.json():
+                if not q["name"].startswith("sml."):
+                    continue  # skip Celery's internal pidbox / event queues
                 stats = q.get("message_stats") or {}
                 rabbit.append({
                     "name": q["name"], "messages": q.get("messages", 0), "ready": q.get("messages_ready", 0),

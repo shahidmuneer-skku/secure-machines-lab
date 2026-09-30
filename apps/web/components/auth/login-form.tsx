@@ -5,7 +5,7 @@ import { Fingerprint, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -53,6 +53,14 @@ export function LoginForm({ next }: { next: string }) {
       setError(t("loginFailed"))
     }
   }
+
+  // Already signed in (or mid-2FA)? Continue where the session actually is.
+  useEffect(() => {
+    allauth.session().then((res) => {
+      if (res.meta?.is_authenticated) router.replace(next)
+      else if (pendingFlow(res)?.id === "mfa_authenticate") router.replace(`/login/mfa?next=${encodeURIComponent(next)}`)
+    }).catch(() => undefined)
+  }, [next, router])
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null)
