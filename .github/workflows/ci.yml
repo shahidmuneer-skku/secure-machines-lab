@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API (Django)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sml
+          POSTGRES_PASSWORD: sml
+          POSTGRES_DB: sml
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sml" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://sml:sml@127.0.0.1:5432/sml
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Migrations are up to date
+        run: uv run python manage.py makemigrations --check --dry-run --settings=sml.settings.test
+      - name: Tests
+        run: uv run pytest -q
+
+  worker:
+    name: Model worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --frozen
+      - name: Lint
+        run: uv run ruff check sml_worker tests
+      - name: Tests
+        run: uv run pytest -q tests
+
+  web:
+    name: Web (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Route types
+        run: npx next typegen
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests (incl. KO/DE message parity)
+        run: npx vitest run
+      - name: Build
+        run: npx next build
+
+  contract:
+    name: OpenAPI contract is current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: uv sync --frozen
+        working-directory: apps/api
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run gen:api
+        working-directory: apps/web
+      - name: Fail if the committed contract differs
+        run: git diff --exit-code packages/contracts
