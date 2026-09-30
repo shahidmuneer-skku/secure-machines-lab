@@ -1,0 +1,32 @@
+[Unit]
+Description=SML agent worker (news verification, explain-why; one shared Ollama model)
+After=network-online.target docker.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/worker
+# Parallel agent runs on the shared model; more wait in the queue (sml_worker/agents/ollama.py).
+Environment=SML_AGENT_PARALLEL=2
+EnvironmentFile=@ROOT@/.env
+# Agents use Ollama (its own GPU) and the OpenClaude CLI; this process needs no GPU of its own.
+Environment=CUDA_VISIBLE_DEVICES=
+ExecStart=/bin/sh -c 'exec @ROOT@/apps/worker/.venv/bin/python -m sml_worker --agents --concurrency "$SML_AGENT_PARALLEL" --name "sml-agents@%H"'
+TimeoutStopSec=600
+KillMode=mixed
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+
+[Install]
+WantedBy=sml.target

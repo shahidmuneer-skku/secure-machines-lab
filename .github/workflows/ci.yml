@@ -47,6 +47,12 @@ jobs:
   worker:
     name: Model worker
     runs-on: ubuntu-latest
+    services:
+      redis:  # GPU admission and agent slots are Lua scripts on Redis
+        image: redis:7
+        ports: ["6379:6379"]
+    env:
+      REDIS_URL: redis://127.0.0.1:6379/0
     defaults:
       run:
         working-directory: apps/worker

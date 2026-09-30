@@ -299,9 +299,8 @@
     "title": "Deepfakes & KI-generierte Medien erkennen",
     "subtitle": "Legen Sie Bilder und Videos zusammen ab. Wir erkennen jeden Dateityp automatisch und kombinieren die von Ihnen gewählten Modelle zu einem einzigen Ergebnis.",
     "step1": "Dateien",
-    "step2": "Modelle",
-    "step3": "Prüfkette",
-    "step4": "Prüfen",
+    "step2": "Detektoren",
+    "step3": "Prüfen",
     "filesTitle": "Bilder oder Videos hinzufügen",
     "filesHint": "Ziehen und Ablegen, klicken zum Durchsuchen oder Einfügen aus der Zwischenablage. Bis zu 50 Dateien pro Batch.",
     "dropLabel": "Bilder oder Videos hochladen",
@@ -359,7 +358,10 @@
     "queuedToastHint": "Verfolgen Sie den Fortschritt live in den Ergebnissen.",
     "track": "Verfolgen",
     "insufficient": "Nicht genügend Credits",
-    "submitFailed": "Die Analyse konnte nicht gestartet werden"
+    "submitFailed": "Die Analyse konnte nicht gestartet werden",
+    "collapseAll": "Alle einklappen",
+    "expandAll": "Alle ausklappen",
+    "selectGroup": "Alle in {group} auswählen"
   },
   "results": {
     "eyebrow": "Arbeitsbereich · Ergebnisse",

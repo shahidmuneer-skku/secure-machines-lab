@@ -35,7 +35,8 @@ start api "$ROOT/apps/api" uv run uvicorn sml.asgi:application --host 127.0.0.1 
 start celery-api "$ROOT/apps/api" uv run celery -A sml worker -B -n api@%h --concurrency 4 --loglevel INFO \
   -Q sml.default,sml.results,sml.reports,sml.maintenance
 if [[ -z "${NO_MODELS:-}" ]]; then
-  start worker "$ROOT/apps/worker" uv run python -m sml_worker --all --gpu "${GPU:-0}" --concurrency 2
+  start worker "$ROOT/apps/worker" uv run python -m sml_worker --detectors --gpu "${GPU:-0}" --concurrency 4
+  start agents "$ROOT/apps/worker" uv run python -m sml_worker --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
 fi
 if [[ -z "${NO_STREAM:-}" ]]; then
   # Long-form stream service: the legacy conda env (torch + engine), on its own GPU.

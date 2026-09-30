@@ -70,6 +70,18 @@ up within `STALE_DISPATCH_HOURS` (24 h), so every job settles and every credit h
 guest trial; web jobs get +1 over API batches). Each principal (user, or guest device) has an
 in-flight cap from its plan or access policy, so one large batch cannot occupy every GPU.
 
+**GPU admission.** A detector task starts only when its memory fits on its worker's GPU
+(`apps/worker/sml_worker/gpu.py`); until then it stays queued with "Waiting for GPU memory" while
+tasks that do fit keep running. Reservations live in Redis (shared by every worker process on the
+card, expiring if a worker dies) and memory used by other programs is counted. A model's need is
+its observed peak plus 25 % once it has run on that media type, otherwise `gpu_mem_mb` from
+`models.yaml`, capped below the card's size. A task waiting over two minutes is served first if it
+can fit, so large models are not starved.
+
+**Agents.** News verification and explain-why run in a separate agent worker. All runs share one
+loaded Ollama model: at most `SML_AGENT_PARALLEL` at once, the rest wait; other idle models are
+unloaded and the model is pinned with the same context size, so it is never loaded twice.
+
 **Retries and fallbacks.** Worker failures are classified (`GPU_OOM`, `TIMEOUT`,
 `GPU_UNSUPPORTED`, `RUNTIME_ERROR`, ...). Retryable failures get a second attempt; events from an
 older attempt are ignored. A model may declare fallbacks in `config/models.yaml` (e.g. no face

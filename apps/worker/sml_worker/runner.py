@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import gpu as gpu_admission
 from .adapters.audit import AuditAdapter, SimulatedAuditAdapter
 from .adapters.base import AdapterError, ModelResult
 from .adapters.long_video import LongVideoAdapter, SimulatedLongVideoAdapter
@@ -20,7 +21,7 @@ from .adapters.subprocess_cli import SubprocessAdapter
 from .clients import download
 from .config import config
 from .context import Canceled, TaskContext
-from .registry import audit_spec, long_video_spec, model_spec
+from .registry import audit_spec, long_video_spec, model_spec, raw_registry
 
 logger = logging.getLogger(__name__)
 RESULT_TASK = "sml.jobs.record_task_event"
@@ -85,19 +86,23 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
     current_task.update({"task_id": task_id, "job_id": envelope.get("job_id"), "target": envelope.get("target"),
                          "started": _now()})
     started = time.monotonic()
-    _send(app, RESULT_TASK, {**base, "event": "started", "worker": f"{config().hostname}:{os.getpid()}",
-                             "gpu": gpu, "at": _now()})
     try:
         if ctx.canceled():
             raise Canceled()
-        if envelope["kind"] == "news":
-            result = _run_news(envelope, ctx)
-        else:
-            media = envelope.get("media") or {}
-            local = download(media["storage_key"], workdir / f"source.{media.get('extension', 'bin')}")
-            ctx.progress(2, "File downloaded", force=True)
-            adapter = _adapter(envelope)
-            result = adapter.run(local, envelope.get("media_type", ""), ctx)
+        # Detectors start only when their GPU memory fits; until then the task stays queued.
+        with gpu_admission.admitted(task_id, _gpu_need(envelope), on_wait=lambda need, free: _waiting(ctx, need, free),
+                                    should_stop=ctx.check_canceled):
+            started = time.monotonic()
+            _send(app, RESULT_TASK, {**base, "event": "started", "worker": f"{config().hostname}:{os.getpid()}",
+                                     "gpu": gpu, "at": _now()})
+            if envelope["kind"] == "news":
+                result = _run_news(envelope, ctx)
+            else:
+                media = envelope.get("media") or {}
+                local = download(media["storage_key"], workdir / f"source.{media.get('extension', 'bin')}")
+                ctx.progress(2, "File downloaded", force=True)
+                adapter = _adapter(envelope)
+                result = adapter.run(local, envelope.get("media_type", ""), ctx)
         ctx.progress(100, "Done", force=True)
         _send(app, RESULT_TASK, {**base, "event": "finished", "status": "succeeded",
                                  "result": result.as_dict(), "artifacts": [a.as_dict() for a in ctx.artifacts],
@@ -106,6 +111,11 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
         ctx.log("Canceled by user")
         _send(app, RESULT_TASK, {**base, "event": "finished", "status": "canceled",
                                  "duration_ms": int((time.monotonic() - started) * 1000)})
+    except gpu_admission.GpuTooSmall as exc:
+        logger.warning("Task %s cannot run on GPU %s: %s", task_id, gpu, exc)
+        ctx.log("Failed (GPU_UNSUPPORTED)")
+        _send(app, RESULT_TASK, {**base, "event": "finished", "status": "failed", "error_code": "GPU_UNSUPPORTED",
+                                 "error_message": f"Not enough GPU memory on this worker: {exc}"})
     except AdapterError as exc:
         # The technical message goes to the API for staff; users see only the classified code.
         logger.warning("Task %s failed (%s): %s", task_id, exc.code, exc.message)
@@ -121,6 +131,29 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
     finally:
         current_task.clear()
         shutil.rmtree(workdir, ignore_errors=True)
+
+
+def _gpu_need(envelope: dict[str, Any]) -> int:
+    """GPU memory (MB) a task must reserve before it starts; 0 for work that needs no GPU slot."""
+    kind, target = envelope.get("kind"), envelope.get("target", "")
+    if kind == "model":
+        spec = model_spec(target) or {}
+    elif kind == "audit" and target != "metadata":
+        spec = audit_spec(target) or {}
+    elif kind == "long_video":
+        spec = long_video_spec(target) or {}
+    else:
+        return 0  # metadata runs on CPU; agents are admitted by agents/ollama.py
+    declared = spec.get("gpu_mem_mb") or raw_registry().get("defaults", {}).get("gpu_mem_mb", 6000)
+    try:
+        total, _ = gpu_admission.memory(gpu_admission.gpu_index())
+    except Exception:  # noqa: BLE001 - no nvidia-smi: admission is skipped anyway
+        return 0
+    return gpu_admission.need_mb(f"{kind}:{target}:{envelope.get('media_type', '')}", int(declared), total)
+
+
+def _waiting(ctx: TaskContext, need: int, free: int) -> None:
+    ctx.progress(0, f"Waiting for GPU memory: needs {need / 1024:.1f} GB, {free / 1024:.1f} GB free")
 
 
 def _run_news(envelope: dict[str, Any], ctx: TaskContext) -> ModelResult:

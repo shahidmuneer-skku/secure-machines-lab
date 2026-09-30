@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useCatalog } from "@/hooks/use-catalog"
 import { quoteRequest, useSubmitJobs } from "@/hooks/use-submit-jobs"
 import { useUploads } from "@/hooks/use-uploads"
@@ -90,21 +92,26 @@ export function DetectFlow() {
               <CardTitle className="text-base">{t("modelsTitle")}</CardTitle>
               <CardDescription>{t("modelsHint")}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {catalog.isLoading ? <Skeleton className="h-48" /> : (
                 <ModelPicker models={available} selected={selected} onChange={setModels} mediaTypes={mediaTypes} />
               )}
-            </CardContent>
-          </HudCard>
-
-          <HudCard>
-            <CardHeader>
-              <Eyebrow index={3}>{t("step3")}</Eyebrow>
-              <CardTitle className="text-base">{t("auditTitle")}</CardTitle>
-              <CardDescription>{t("auditHint")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {catalog.data && <AuditPicker steps={catalog.data.audit_steps} selected={audit} onChange={setAudit} />}
+              {catalog.data && (
+                <Accordion type="single" collapsible className="rounded-lg border">
+                  <AccordionItem value="audit">
+                    <AccordionTrigger className="px-3 py-3 hover:no-underline">
+                      <span className="flex items-center gap-2 text-left">
+                        <span className="font-medium">{t("auditTitle")}</span>
+                        <Badge variant="secondary" className="font-mono tabular-nums">{audit.length + 1}</Badge>
+                        <span className="hidden text-xs font-normal text-muted-foreground sm:inline">{t("auditHint")}</span>
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3 pb-3">
+                      <AuditPicker steps={catalog.data.audit_steps} selected={audit} onChange={setAudit} />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              )}
             </CardContent>
           </HudCard>
         </div>
@@ -112,7 +119,7 @@ export function DetectFlow() {
         <aside className="lg:sticky lg:top-20 lg:self-start">
           <HudCard>
             <CardHeader>
-              <Eyebrow index={4}>{t("step4")}</Eyebrow>
+              <Eyebrow index={3}>{t("step3")}</Eyebrow>
               <CardTitle className="text-base">{t("summaryTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">

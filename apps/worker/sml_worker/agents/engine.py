@@ -107,6 +107,17 @@ class CliAgentEngine:
 
     def run(self, prompt: str, *, cwd: Path, write_dir: str | None, on_step: Callable[[str], None],
             check_cancel: Callable[[], None], timeout: int = 3600, max_turns: int = 60) -> str:
+        if self.kind != "openclaude":
+            return self._run(prompt, cwd=cwd, write_dir=write_dir, on_step=on_step, check_cancel=check_cancel,
+                             timeout=timeout, max_turns=max_turns)
+        from .ollama import slot
+
+        with slot(self.model, NUM_CTX.get(self.model, 32768), on_step, check_cancel):
+            return self._run(prompt, cwd=cwd, write_dir=write_dir, on_step=on_step, check_cancel=check_cancel,
+                             timeout=timeout, max_turns=max_turns)
+
+    def _run(self, prompt: str, *, cwd: Path, write_dir: str | None, on_step: Callable[[str], None],
+             check_cancel: Callable[[], None], timeout: int, max_turns: int) -> str:
         argv = [
             *self._command(), "-p", prompt, "--output-format", "stream-json", "--verbose",
             "--no-session-persistence", "--max-turns", str(max_turns),
@@ -160,6 +171,12 @@ class OllamaVisionEngine:
         self.model = model
 
     def run(self, prompt: str, *, images: list[Path], on_step: Callable[[str], None], timeout: int = 900) -> str:
+        from .ollama import slot
+
+        with slot(self.model, NUM_CTX.get(self.model, 32768), on_step):
+            return self._run(prompt, images=images, on_step=on_step, timeout=timeout)
+
+    def _run(self, prompt: str, *, images: list[Path], on_step: Callable[[str], None], timeout: int) -> str:
         on_step(f"Asking {self.model}")
         payload = {
             "model": self.model, "stream": False, "options": {"num_ctx": NUM_CTX.get(self.model, 32768)},

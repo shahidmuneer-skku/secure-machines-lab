@@ -1,5 +1,5 @@
 [Unit]
-Description=SML model worker on GPU %i
+Description=SML detector worker on GPU %i (tasks start when their GPU memory fits)
 After=network-online.target docker.service
 PartOf=sml.target
 
@@ -8,9 +8,10 @@ Type=simple
 User=@USER@
 Group=@GROUP@
 WorkingDirectory=@ROOT@/apps/worker
-Environment=SML_WORKER_CONCURRENCY=1
+# Upper bound: GPU admission (sml_worker/gpu.py) starts only what fits in the card's memory.
+Environment=SML_WORKER_CONCURRENCY=4
 EnvironmentFile=@ROOT@/.env
-ExecStart=@ROOT@/apps/worker/.venv/bin/python -m sml_worker --all --gpu %i \
+ExecStart=@ROOT@/apps/worker/.venv/bin/python -m sml_worker --detectors --gpu %i \
     --concurrency ${SML_WORKER_CONCURRENCY} --name gpu%i
 # Let running detections finish (Celery warm shutdown), then stop the model subprocesses too.
 TimeoutStopSec=600

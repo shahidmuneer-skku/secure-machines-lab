@@ -10,7 +10,8 @@ and one model worker per GPU run as systemd services behind nginx.
 | Background worker (dispatch, results, reports, maintenance) | `sml-celery` | — |
 | Scheduler (Celery beat, exactly one) | `sml-beat` | — |
 | Next.js | `sml-web` | 127.0.0.1:3000 |
-| Model worker on GPU *n* | `sml-worker@n` | — |
+| Detector worker on GPU *n* (GPU admission) | `sml-worker@n` | — |
+| Agent worker (news, explain-why; shared Ollama model) | `sml-agents` | — |
 | Long-form stream service (GPU 2, `safe` env) | `sml-stream` | 127.0.0.1:8100 (`/stream/ws` via nginx) |
 | Infrastructure | `docker compose` (restart: unless-stopped) | 127.0.0.1:55432 / 56379 / 55672 / 55673 / 58333 |
 
@@ -124,9 +125,15 @@ worker stopped sending heartbeats fail after the model's timeout plus five minut
 retried once; tasks no worker picked up within `STALE_DISPATCH_HOURS` (24 h) fail. Users are
 never charged for failures.
 
-**A model fails with `GPU_OOM`.** Lower `SML_WORKER_CONCURRENCY` for that host, or dedicate a
-worker to the heavy model: `python -m sml_worker --models <id> --gpu <n>` (a separate unit
-with a different `--name`). `GPU_UNSUPPORTED` means the worker landed on the Blackwell GPU.
+**Tasks wait with "Waiting for GPU memory".** Expected while the card is full; they start as
+others finish. Reservations: `redis-cli HGETALL sml:gpu-reservations:<host>:<gpu>`; learned peaks:
+`redis-cli HGETALL sml:gpu-model-peak`. `SML_GPU_MARGIN_MB` (default 1024) keeps a safety margin;
+`SML_WORKER_CONCURRENCY` is only an upper bound. If a model still hits `GPU_OOM`, raise its
+`gpu_mem_mb` or delete its learned peak so it is re-measured. `GPU_UNSUPPORTED` means the worker
+landed on the Blackwell GPU (or the model cannot fit on the card).
+
+**News / explain-why runs wait.** At most `SML_AGENT_PARALLEL` (default 2) share the loaded model;
+`curl localhost:11434/api/ps` shows what Ollama has loaded.
 
 **Messages in `sml.dead`.** A message the worker rejected (e.g. it could not be decoded).
 Inspect it in the RabbitMQ UI. The task itself fails with `QUEUE_TIMEOUT` after

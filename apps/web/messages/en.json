@@ -299,9 +299,8 @@
     "title": "Detect deepfakes & AI-generated media",
     "subtitle": "Drop images and videos together. We recognise each file type automatically and combine the models you choose into one verdict.",
     "step1": "Files",
-    "step2": "Models",
-    "step3": "Audit chain",
-    "step4": "Review",
+    "step2": "Detectors",
+    "step3": "Review",
     "filesTitle": "Add images or videos",
     "filesHint": "Drag and drop, click to browse, or paste from the clipboard. Up to 50 files per batch.",
     "dropLabel": "Upload images or videos",
@@ -359,7 +358,10 @@
     "queuedToastHint": "Track progress live in Results.",
     "track": "Track",
     "insufficient": "Not enough credits",
-    "submitFailed": "Could not start the analysis"
+    "submitFailed": "Could not start the analysis",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "selectGroup": "Select all in {group}"
   },
   "results": {
     "eyebrow": "Workspace · Results",

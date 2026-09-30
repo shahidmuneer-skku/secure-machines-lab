@@ -27,9 +27,17 @@ def audit_spec(step_id: str) -> dict[str, Any] | None:
     return next((s for s in raw_registry().get("audit_steps", []) if s["id"] == step_id), None)
 
 
-def queue_names() -> list[str]:
+AGENT_QUEUES = ["sml.news", "sml.reasoning"]
+
+
+def detector_queues() -> list[str]:
+    """Queues whose tasks run a model on this worker's GPU (admitted by GPU memory)."""
     raw = raw_registry()
     names = [f"sml.model.{m['id']}" for m in raw.get("models", [])]
     names += [f"sml.audit.{s['id']}" for s in raw.get("audit_steps", [])]
     names += [f"sml.longvideo.{m['id']}" for m in raw.get("long_video_models", [])]
-    return [*names, "sml.news", "sml.reasoning"]
+    return names
+
+
+def queue_names() -> list[str]:
+    return [*detector_queues(), *AGENT_QUEUES]

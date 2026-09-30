@@ -23,6 +23,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
+from .. import gpu as gpu_admission
 from ..config import config, gpu_env
 from ..context import Canceled, TaskContext
 from ..procenv import model_env
@@ -146,9 +147,13 @@ class SubprocessAdapter:
             t.start()
 
         started = time.monotonic()
+        peak_mb, last_sample = 0, 0.0
         try:
             while proc.poll() is None:
                 elapsed = time.monotonic() - started
+                if elapsed - last_sample >= 2:
+                    last_sample = elapsed
+                    peak_mb = max(peak_mb, gpu_admission.process_tree_memory(proc.pid))
                 if elapsed > self.timeout:
                     self._kill(proc)
                     raise AdapterError("TIMEOUT", f"Model exceeded its {self.timeout}s time limit.")
@@ -165,6 +170,9 @@ class SubprocessAdapter:
             raise
         for t in threads:
             t.join(timeout=5)
+        if peak_mb:
+            gpu_admission.record_peak(f"model:{self.id}:{media_type}", peak_mb)
+            logger.info("Model %s peak GPU memory: %.1f GB", self.id, peak_mb / 1024)
         stdout, stderr = "".join(stdout_lines), "".join(stderr_lines)
         ctx.progress(95, "Parsing results", force=True)
         try:
