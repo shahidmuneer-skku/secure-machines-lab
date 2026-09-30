@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Label } from "@/components/ui/label"
 import { allauth, AuthError, pendingFlow } from "@/lib/auth/allauth"
-import { passkeySecondFactor, passkeysSupported } from "@/lib/auth/passkey"
+import { usePasskeysSupported } from "@/hooks/use-passkeys-supported"
+import { passkeySecondFactor } from "@/lib/auth/passkey"
 
 import { AuthCard } from "./auth-card"
 import { FormError } from "./form-error"
@@ -18,6 +19,7 @@ import { FormError } from "./form-error"
 export function MfaForm({ next }: { next: string }) {
   const t = useTranslations("auth")
   const router = useRouter()
+  const passkeys = usePasskeysSupported()
   const [types, setTypes] = useState<string[]>([])
   const [code, setCode] = useState("")
   const [recovery, setRecovery] = useState(false)
@@ -93,7 +95,7 @@ export function MfaForm({ next }: { next: string }) {
         </form>
       )}
       <div className="flex flex-col gap-2">
-        {types.includes("webauthn") && passkeysSupported() && (
+        {types.includes("webauthn") && passkeys && (
           <Button variant="outline" onClick={passkey} disabled={busy}>
             <Fingerprint className="size-4" /> {t("usePasskey")}
           </Button>

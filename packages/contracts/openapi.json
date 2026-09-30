@@ -4085,6 +4085,13 @@
                 "summary": "Ask the reasoning agent why this file was judged fake or real (costs credits)",
                 "parameters": [
                     {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "in": "path",
                         "name": "id",
                         "schema": {
@@ -4196,6 +4203,13 @@
                 "operationId": "jobs_rerun_create",
                 "summary": "Re-run a finished job with the same settings (charged again)",
                 "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     {
                         "in": "path",
                         "name": "id",
@@ -5467,6 +5481,13 @@
                     }
                 },
                 "required": [
+                    "allowed_audit_steps",
+                    "allowed_models",
+                    "allowed_modules",
+                    "max_inflight_tasks",
+                    "notes",
+                    "retention_days_override",
+                    "unlimited_credits",
                     "updated_at"
                 ]
             },
@@ -5600,16 +5621,12 @@
                     },
                     "thumbnail_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     },
                     "models": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/components/schemas/ModelRef"
                         },
                         "readOnly": true
                     },
@@ -5647,8 +5664,11 @@
                         "minimum": 0
                     },
                     "queue": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
                         "nullable": true,
                         "readOnly": true
                     },
@@ -5705,8 +5725,7 @@
                     "tasks": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/JobTask"
                         },
                         "readOnly": true
                     },
@@ -5734,8 +5753,7 @@
                     "reports": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/Report"
                         },
                         "readOnly": true
                     },
@@ -5746,6 +5764,11 @@
                     },
                     "cancel_requested": {
                         "type": "boolean"
+                    },
+                    "purged_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "user_email": {
                         "type": "string",
@@ -5762,20 +5785,47 @@
                 },
                 "required": [
                     "artifacts",
+                    "audit_steps",
                     "batch_id",
+                    "cancel_requested",
                     "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error_code",
+                    "error_message",
                     "events",
+                    "expires_at",
                     "explanations",
+                    "fake_probability",
+                    "finished_at",
                     "id",
+                    "kind",
+                    "locale",
                     "media",
+                    "media_type",
                     "models",
+                    "options",
+                    "parent",
+                    "partial",
+                    "progress",
+                    "purged_at",
                     "queue",
+                    "quote_lines",
                     "reports",
+                    "run_number",
+                    "source",
+                    "stage",
+                    "started_at",
+                    "status",
+                    "summary",
                     "tasks",
                     "tasks_internal",
                     "thumbnail_url",
+                    "title",
                     "user_email",
-                    "verdict_label"
+                    "verdict",
+                    "verdict_label",
+                    "verdict_reasons"
                 ]
             },
             "AdminModel": {
@@ -6009,12 +6059,17 @@
                 "required": [
                     "balance",
                     "date_joined",
+                    "disabled_reason",
+                    "display_name",
                     "email",
                     "email_verified",
                     "has_mfa",
                     "id",
+                    "is_active",
                     "jobs_count",
                     "last_login",
+                    "locale",
+                    "marketing_opt_in",
                     "roles"
                 ]
             },
@@ -6135,12 +6190,16 @@
                     }
                 },
                 "required": [
+                    "allowed_ips",
+                    "allowed_models",
                     "created_at",
                     "display_key",
+                    "expires_at",
                     "id",
                     "last_used_at",
                     "last_used_ip",
                     "name",
+                    "rate_limit_per_minute",
                     "revoked_at",
                     "scopes",
                     "status"
@@ -6227,13 +6286,17 @@
                     }
                 },
                 "required": [
+                    "allowed_ips",
+                    "allowed_models",
                     "created_at",
                     "display_key",
+                    "expires_at",
                     "id",
                     "key",
                     "last_used_at",
                     "last_used_ip",
                     "name",
+                    "rate_limit_per_minute",
                     "revoked_at",
                     "scopes",
                     "status"
@@ -6316,7 +6379,11 @@
                     }
                 },
                 "required": [
-                    "date"
+                    "credits_spent",
+                    "date",
+                    "errors",
+                    "jobs_created",
+                    "requests"
                 ]
             },
             "ApiKeyUsageResponse": {
@@ -6405,8 +6472,10 @@
                 "required": [
                     "created_at",
                     "duration_ms",
+                    "ip",
                     "method",
                     "path",
+                    "request_id",
                     "status"
                 ]
             },
@@ -6512,9 +6581,14 @@
                     }
                 },
                 "required": [
+                    "content_type",
                     "created_at",
                     "id",
                     "kind",
+                    "label",
+                    "meta",
+                    "size_bytes",
+                    "task",
                     "url"
                 ]
             },
@@ -6589,8 +6663,18 @@
                 },
                 "required": [
                     "action",
+                    "actor",
+                    "actor_label",
+                    "after",
+                    "before",
                     "created_at",
-                    "id"
+                    "id",
+                    "ip",
+                    "request_id",
+                    "target_id",
+                    "target_label",
+                    "target_type",
+                    "user_agent"
                 ]
             },
             "AuditStepInfo": {
@@ -6809,6 +6893,7 @@
                     }
                 },
                 "required": [
+                    "granted",
                     "granted_at",
                     "policy_version",
                     "withdrawn_at"
@@ -6831,7 +6916,8 @@
                     "revoked": {
                         "type": "integer"
                     }
-                }
+                },
+                "required": []
             },
             "CreditAdjustRequest": {
                 "type": "object",
@@ -6901,8 +6987,11 @@
                         "description": "Non-refundable bonus on top of paid credits."
                     },
                     "prices": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Prices"
+                            }
+                        ],
                         "readOnly": true
                     },
                     "credit_expiry_days": {
@@ -6917,8 +7006,11 @@
                     }
                 },
                 "required": [
+                    "bonus_credits",
+                    "credit_expiry_days",
                     "credits",
                     "display_name",
+                    "highlight",
                     "id",
                     "prices",
                     "slug"
@@ -6986,13 +7078,18 @@
                     }
                 },
                 "required": [
+                    "active",
+                    "bonus_credits",
                     "created_at",
+                    "credit_expiry_days",
                     "credits",
+                    "highlight",
                     "id",
                     "name",
                     "price_krw",
                     "price_usd_cents",
-                    "slug"
+                    "slug",
+                    "sort_order"
                 ]
             },
             "CreditPackAdminRequest": {
@@ -7250,10 +7347,18 @@
                     }
                 },
                 "required": [
+                    "content",
                     "created_at",
+                    "credits_charged",
                     "engine",
+                    "error_message",
+                    "finished_at",
                     "id",
-                    "model_name"
+                    "locale",
+                    "model_name",
+                    "progress_log",
+                    "started_at",
+                    "status"
                 ]
             },
             "ExplanationStatusEnum": {
@@ -7464,16 +7569,12 @@
                     },
                     "thumbnail_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     },
                     "models": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/components/schemas/ModelRef"
                         },
                         "readOnly": true
                     },
@@ -7511,8 +7612,11 @@
                         "minimum": 0
                     },
                     "queue": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
                         "nullable": true,
                         "readOnly": true
                     },
@@ -7569,8 +7673,7 @@
                     "tasks": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/JobTask"
                         },
                         "readOnly": true
                     },
@@ -7598,8 +7701,7 @@
                     "reports": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/Report"
                         },
                         "readOnly": true
                     },
@@ -7610,22 +7712,54 @@
                     },
                     "cancel_requested": {
                         "type": "boolean"
+                    },
+                    "purged_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     }
                 },
                 "required": [
                     "artifacts",
+                    "audit_steps",
                     "batch_id",
+                    "cancel_requested",
                     "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error_code",
+                    "error_message",
                     "events",
+                    "expires_at",
                     "explanations",
+                    "fake_probability",
+                    "finished_at",
                     "id",
+                    "kind",
+                    "locale",
                     "media",
+                    "media_type",
                     "models",
+                    "options",
+                    "parent",
+                    "partial",
+                    "progress",
+                    "purged_at",
                     "queue",
+                    "quote_lines",
                     "reports",
+                    "run_number",
+                    "source",
+                    "stage",
+                    "started_at",
+                    "status",
+                    "summary",
                     "tasks",
                     "thumbnail_url",
-                    "verdict_label"
+                    "title",
+                    "verdict",
+                    "verdict_label",
+                    "verdict_reasons"
                 ]
             },
             "JobEvent": {
@@ -7661,8 +7795,11 @@
                 "required": [
                     "code",
                     "created_at",
+                    "data",
                     "id",
-                    "message"
+                    "level",
+                    "message",
+                    "task"
                 ]
             },
             "JobKindEnum": {
@@ -7715,16 +7852,12 @@
                     },
                     "thumbnail_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     },
                     "models": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/components/schemas/ModelRef"
                         },
                         "readOnly": true
                     },
@@ -7762,8 +7895,11 @@
                         "minimum": 0
                     },
                     "queue": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
                         "nullable": true,
                         "readOnly": true
                     },
@@ -7803,12 +7939,31 @@
                     }
                 },
                 "required": [
+                    "audit_steps",
                     "batch_id",
                     "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error_code",
+                    "error_message",
+                    "expires_at",
+                    "fake_probability",
+                    "finished_at",
                     "id",
+                    "kind",
+                    "media_type",
                     "models",
+                    "partial",
+                    "progress",
                     "queue",
+                    "run_number",
+                    "source",
+                    "stage",
+                    "started_at",
+                    "status",
                     "thumbnail_url",
+                    "title",
+                    "verdict",
                     "verdict_label"
                 ]
             },
@@ -7832,6 +7987,130 @@
                 ],
                 "type": "string",
                 "description": "* `queued` - Queued\n* `running` - Running\n* `succeeded` - Succeeded\n* `failed` - Failed\n* `canceled` - Canceled\n* `expired` - Expired"
+            },
+            "JobTask": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/TaskKindEnum"
+                    },
+                    "target": {
+                        "type": "string",
+                        "description": "Model id or audit step id.",
+                        "maxLength": 64
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatusEnum"
+                    },
+                    "status_label": {
+                        "type": "string"
+                    },
+                    "attempt": {
+                        "type": "integer",
+                        "maximum": 32767,
+                        "minimum": 0
+                    },
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "stage_message": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "dispatched_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "duration_ms": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "gpu": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "error_message": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "fallback_for": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "live": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LiveProgress"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "queue_info": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "result": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "attempt",
+                    "dispatched_at",
+                    "duration_ms",
+                    "error_code",
+                    "error_message",
+                    "fallback_for",
+                    "finished_at",
+                    "gpu",
+                    "id",
+                    "kind",
+                    "live",
+                    "name",
+                    "progress",
+                    "queue_info",
+                    "result",
+                    "stage_message",
+                    "started_at",
+                    "status",
+                    "status_label",
+                    "target"
+                ]
             },
             "JobsByDay": {
                 "type": "object",
@@ -7905,7 +8184,10 @@
                     "delta",
                     "id",
                     "kind",
-                    "kind_label"
+                    "kind_label",
+                    "memo",
+                    "reference_id",
+                    "reference_type"
                 ]
             },
             "LedgerKindEnum": {
@@ -7935,6 +8217,27 @@
                 ],
                 "type": "string",
                 "description": "* `info` - Info\n* `success` - Success\n* `warning` - Warning\n* `error` - Error"
+            },
+            "LiveProgress": {
+                "type": "object",
+                "properties": {
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "message",
+                    "progress",
+                    "updated_at"
+                ]
             },
             "Locale0d2Enum": {
                 "enum": [
@@ -8037,12 +8340,16 @@
                 "required": [
                     "capabilities",
                     "date_joined",
+                    "display_name",
                     "email",
                     "has_mfa",
                     "id",
                     "is_staff_user",
+                    "locale",
+                    "marketing_opt_in",
                     "requires_mfa",
-                    "roles"
+                    "roles",
+                    "time_zone"
                 ]
             },
             "MeResponse": {
@@ -8109,12 +8416,16 @@
                     "access",
                     "capabilities",
                     "date_joined",
+                    "display_name",
                     "email",
                     "has_mfa",
                     "id",
                     "is_staff_user",
+                    "locale",
+                    "marketing_opt_in",
                     "requires_mfa",
-                    "roles"
+                    "roles",
+                    "time_zone"
                 ]
             },
             "Media": {
@@ -8198,12 +8509,22 @@
                     }
                 },
                 "required": [
+                    "codec",
                     "content_type",
                     "created_at",
+                    "duration_seconds",
+                    "expires_at",
+                    "fps",
+                    "frame_count",
+                    "height",
                     "id",
                     "media_type",
                     "original_name",
-                    "thumbnail_url"
+                    "sha256",
+                    "size_bytes",
+                    "status",
+                    "thumbnail_url",
+                    "width"
                 ]
             },
             "MediaEnum": {
@@ -8295,22 +8616,30 @@
                     },
                     "content_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     },
                     "thumbnail_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     }
                 },
                 "required": [
+                    "codec",
                     "content_type",
                     "content_url",
+                    "duration_seconds",
+                    "expires_at",
+                    "fps",
+                    "frame_count",
+                    "height",
                     "id",
                     "media_type",
                     "original_name",
-                    "thumbnail_url"
+                    "sha256",
+                    "size_bytes",
+                    "status",
+                    "thumbnail_url",
+                    "width"
                 ]
             },
             "MediaTypeEnum": {
@@ -8401,6 +8730,21 @@
                     "name",
                     "variant_of",
                     "xai"
+                ]
+            },
+            "ModelRef": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
                 ]
             },
             "ModelStats": {
@@ -8554,16 +8898,12 @@
                     },
                     "thumbnail_url": {
                         "type": "string",
-                        "nullable": true,
                         "readOnly": true
                     },
                     "models": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/components/schemas/ModelRef"
                         },
                         "readOnly": true
                     },
@@ -8601,8 +8941,11 @@
                         "minimum": 0
                     },
                     "queue": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
                         "nullable": true,
                         "readOnly": true
                     },
@@ -8659,8 +9002,7 @@
                     "tasks": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/JobTask"
                         },
                         "readOnly": true
                     },
@@ -8688,8 +9030,7 @@
                     "reports": {
                         "type": "array",
                         "items": {
-                            "type": "object",
-                            "additionalProperties": {}
+                            "$ref": "#/components/schemas/Report"
                         },
                         "readOnly": true
                     },
@@ -8700,6 +9041,11 @@
                     },
                     "cancel_requested": {
                         "type": "boolean"
+                    },
+                    "purged_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "case": {
                         "type": "object",
@@ -8715,20 +9061,47 @@
                 },
                 "required": [
                     "artifacts",
+                    "audit_steps",
                     "batch_id",
+                    "cancel_requested",
                     "case",
                     "case_media",
                     "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error_code",
+                    "error_message",
                     "events",
+                    "expires_at",
                     "explanations",
+                    "fake_probability",
+                    "finished_at",
                     "id",
+                    "kind",
+                    "locale",
                     "media",
+                    "media_type",
                     "models",
+                    "options",
+                    "parent",
+                    "partial",
+                    "progress",
+                    "purged_at",
                     "queue",
+                    "quote_lines",
                     "reports",
+                    "run_number",
+                    "source",
+                    "stage",
+                    "started_at",
+                    "status",
+                    "summary",
                     "tasks",
                     "thumbnail_url",
-                    "verdict_label"
+                    "title",
+                    "verdict",
+                    "verdict_label",
+                    "verdict_reasons"
                 ]
             },
             "NewsCaseRequest": {
@@ -8806,6 +9179,8 @@
             "PaginatedAdminUserList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8832,6 +9207,8 @@
             "PaginatedAuditLogList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8858,6 +9235,8 @@
             "PaginatedJobListList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8884,6 +9263,8 @@
             "PaginatedLedgerEntryList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8910,6 +9291,8 @@
             "PaginatedPaymentAdminList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8936,6 +9319,8 @@
             "PaginatedPaymentList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8962,6 +9347,8 @@
             "PaginatedReportList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -8988,6 +9375,8 @@
             "PaginatedWebhookEventList": {
                 "type": "object",
                 "required": [
+                    "next",
+                    "previous",
                     "results"
                 ],
                 "properties": {
@@ -9416,15 +9805,25 @@
                 },
                 "required": [
                     "amount",
+                    "bonus_credits",
                     "created_at",
+                    "credits",
                     "currency",
                     "display_amount",
+                    "failure_reason",
                     "id",
                     "kind",
                     "kind_label",
+                    "method",
                     "order_id",
                     "order_name",
+                    "paid_at",
+                    "period_end",
+                    "period_start",
                     "provider",
+                    "receipt_url",
+                    "refunded_amount",
+                    "status",
                     "status_label"
                 ]
             },
@@ -9524,13 +9923,22 @@
                 },
                 "required": [
                     "amount",
+                    "bonus_credits",
                     "created_at",
+                    "credits",
                     "currency",
+                    "failure_reason",
                     "id",
                     "kind",
+                    "method",
                     "order_id",
                     "order_name",
+                    "paid_at",
                     "provider",
+                    "provider_payment_id",
+                    "receipt_url",
+                    "refunded_amount",
+                    "status",
                     "user",
                     "user_email"
                 ]
@@ -9590,8 +9998,11 @@
                         "minimum": 0
                     },
                     "prices": {
-                        "type": "object",
-                        "additionalProperties": {},
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Prices"
+                            }
+                        ],
                         "readOnly": true
                     },
                     "priority": {
@@ -9621,12 +10032,17 @@
                     }
                 },
                 "required": [
+                    "api_access",
                     "display_description",
                     "display_features",
                     "display_name",
+                    "highlight",
                     "id",
+                    "max_inflight_tasks",
                     "monthly_credits",
                     "prices",
+                    "priority",
+                    "retention_days",
                     "slug"
                 ]
             },
@@ -9703,13 +10119,22 @@
                     }
                 },
                 "required": [
+                    "active",
+                    "api_access",
                     "created_at",
+                    "description",
+                    "features",
+                    "highlight",
                     "id",
+                    "max_inflight_tasks",
                     "monthly_credits",
                     "name",
                     "price_krw",
                     "price_usd_cents",
-                    "slug"
+                    "priority",
+                    "retention_days",
+                    "slug",
+                    "sort_order"
                 ]
             },
             "PlanAdminRequest": {
@@ -9866,7 +10291,41 @@
                     }
                 },
                 "required": [
+                    "announcement",
+                    "api_access_requires_plan",
+                    "daily_free_credits",
+                    "fake_threshold",
+                    "free_max_inflight_tasks",
+                    "free_retention_days",
+                    "guest_trial_enabled",
+                    "guest_trial_images_per_day",
+                    "guest_trial_models",
+                    "maintenance_mode",
+                    "news_engine",
+                    "news_model",
+                    "purchased_credit_expiry_days",
+                    "reasoning_engine",
+                    "reasoning_model",
+                    "signup_bonus_credits",
+                    "signup_bonus_expiry_days",
+                    "signups_enabled",
                     "updated_at"
+                ]
+            },
+            "Price": {
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "integer",
+                        "description": "Minor units (KRW: won, USD: cents)"
+                    },
+                    "display": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "display"
                 ]
             },
             "PriceItem": {
@@ -9919,6 +10378,21 @@
                 },
                 "required": [
                     "prices"
+                ]
+            },
+            "Prices": {
+                "type": "object",
+                "properties": {
+                    "KRW": {
+                        "$ref": "#/components/schemas/Price"
+                    },
+                    "USD": {
+                        "$ref": "#/components/schemas/Price"
+                    }
+                },
+                "required": [
+                    "KRW",
+                    "USD"
                 ]
             },
             "PriorityEnum": {
@@ -10019,6 +10493,29 @@
                     "languages",
                     "maintenance_mode",
                     "signups_enabled"
+                ]
+            },
+            "QueueInfo": {
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": "integer"
+                    },
+                    "consumers": {
+                        "type": "integer"
+                    },
+                    "eta_seconds": {
+                        "type": "integer"
+                    },
+                    "workers_online": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "consumers",
+                    "eta_seconds",
+                    "position",
+                    "workers_online"
                 ]
             },
             "QueueWait": {
@@ -10266,11 +10763,17 @@
                 "required": [
                     "created_at",
                     "download_url",
+                    "error_message",
                     "filename",
                     "format",
                     "id",
                     "job",
-                    "job_title"
+                    "job_title",
+                    "locale",
+                    "run_number",
+                    "size_bytes",
+                    "status",
+                    "version"
                 ]
             },
             "ReportFormatEnum": {
@@ -10424,11 +10927,16 @@
                     }
                 },
                 "required": [
+                    "cancel_at_period_end",
+                    "canceled_at",
                     "created_at",
                     "currency",
+                    "current_period_end",
+                    "current_period_start",
                     "id",
                     "plan",
-                    "provider"
+                    "provider",
+                    "status"
                 ]
             },
             "SubscriptionStatusEnum": {
@@ -10441,6 +10949,16 @@
                 ],
                 "type": "string",
                 "description": "* `incomplete` - Incomplete\n* `active` - Active\n* `past_due` - Past due\n* `canceled` - Canceled\n* `expired` - Expired"
+            },
+            "TaskKindEnum": {
+                "enum": [
+                    "model",
+                    "audit",
+                    "long_video",
+                    "news"
+                ],
+                "type": "string",
+                "description": "* `model` - Model\n* `audit` - Audit step\n* `long_video` - Long-form video scan\n* `news` - News verification"
             },
             "TaskLog": {
                 "type": "object",
@@ -10479,6 +10997,19 @@
                     "at",
                     "message"
                 ]
+            },
+            "TaskStatusEnum": {
+                "enum": [
+                    "pending",
+                    "dispatched",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "canceled",
+                    "skipped"
+                ],
+                "type": "string",
+                "description": "* `pending` - Waiting for a slot\n* `dispatched` - In queue\n* `running` - Running\n* `succeeded` - Done\n* `failed` - Failed\n* `canceled` - Canceled\n* `skipped` - Skipped"
             },
             "TossBillingConfirmRequest": {
                 "type": "object",
@@ -10645,9 +11176,11 @@
                     }
                 },
                 "required": [
+                    "error",
                     "event_id",
                     "event_type",
                     "id",
+                    "processed_at",
                     "provider",
                     "received_at"
                 ]

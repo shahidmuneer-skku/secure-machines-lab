@@ -14,7 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ControlledField } from "@/components/forms/controlled-field"
 import { Input } from "@/components/ui/input"
 import { allauth, AuthError, pendingFlow, type AuthResponse } from "@/lib/auth/allauth"
-import { passkeysSupported, signInWithPasskey } from "@/lib/auth/passkey"
+import { usePasskeysSupported } from "@/hooks/use-passkeys-supported"
+import { signInWithPasskey } from "@/lib/auth/passkey"
 
 import { AuthCard } from "./auth-card"
 import { FormError } from "./form-error"
@@ -23,6 +24,7 @@ import { PasswordInput } from "./password-input"
 export function LoginForm({ next }: { next: string }) {
   const t = useTranslations("auth")
   const router = useRouter()
+  const passkeys = usePasskeysSupported()
   const [error, setError] = useState<string | null>(null)
   const [unverified, setUnverified] = useState(false)
   const [passkeyBusy, setPasskeyBusy] = useState(false)
@@ -113,7 +115,7 @@ export function LoginForm({ next }: { next: string }) {
           {t("signIn")}
         </Button>
       </form>
-      {passkeysSupported() && (
+      {passkeys && (
         <>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />{t("or")}<span className="h-px flex-1 bg-border" />

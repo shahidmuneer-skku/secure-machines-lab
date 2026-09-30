@@ -1399,14 +1399,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AccessPolicy: {
-            allowed_modules?: components["schemas"]["AllowedModulesEnum"][] | null;
-            allowed_models?: string[] | null;
-            allowed_audit_steps?: components["schemas"]["AllowedAuditStepsEnum"][] | null;
-            max_inflight_tasks?: number | null;
-            retention_days_override?: number | null;
+            allowed_modules: components["schemas"]["AllowedModulesEnum"][] | null;
+            allowed_models: string[] | null;
+            allowed_audit_steps: components["schemas"]["AllowedAuditStepsEnum"][] | null;
+            max_inflight_tasks: number | null;
+            retention_days_override: number | null;
             /** @description Enterprise / invoice-later accounts: detections are not charged. */
-            unlimited_credits?: boolean;
-            notes?: string;
+            unlimited_credits: boolean;
+            notes: string;
             /** Format: date-time */
             readonly updated_at: string;
         };
@@ -1436,60 +1436,54 @@ export interface components {
             readonly id: string;
             /** Format: date-time */
             readonly created_at: string;
-            kind?: components["schemas"]["JobKindEnum"];
-            source?: components["schemas"]["JobSourceEnum"];
-            status?: components["schemas"]["JobStatusEnum"];
-            stage?: string;
+            kind: components["schemas"]["JobKindEnum"];
+            source: components["schemas"]["JobSourceEnum"];
+            status: components["schemas"]["JobStatusEnum"];
+            stage: string;
             /** Format: double */
-            progress?: number;
+            progress: number;
             /** @description File name or case title. */
-            title?: string;
-            media_type?: string;
-            readonly thumbnail_url: string | null;
-            readonly models: {
-                [key: string]: string;
-            }[];
-            audit_steps?: unknown;
-            verdict?: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
+            title: string;
+            media_type: string;
+            readonly thumbnail_url: string;
+            readonly models: components["schemas"]["ModelRef"][];
+            audit_steps: unknown;
+            verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
             verdict_label: string;
             /** Format: double */
-            fake_probability?: number | null;
+            fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
-            partial?: boolean;
-            credits_quoted?: number;
-            credits_charged?: number;
-            readonly queue: {
-                [key: string]: unknown;
-            } | null;
+            partial: boolean;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly queue: components["schemas"]["QueueInfo"] | null;
             /** Format: date-time */
-            started_at?: string | null;
+            started_at: string | null;
             /** Format: date-time */
-            finished_at?: string | null;
+            finished_at: string | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: uuid */
             readonly batch_id: string | null;
-            run_number?: number;
-            error_code?: string;
-            error_message?: string;
+            run_number: number;
+            error_code: string;
+            error_message: string;
             readonly media: components["schemas"]["MediaSummary"];
-            options?: unknown;
-            locale?: string;
-            summary?: unknown;
-            verdict_reasons?: unknown;
-            quote_lines?: unknown;
-            readonly tasks: {
-                [key: string]: unknown;
-            }[];
+            options: unknown;
+            locale: string;
+            summary: unknown;
+            verdict_reasons: unknown;
+            quote_lines: unknown;
+            readonly tasks: components["schemas"]["JobTask"][];
             readonly events: components["schemas"]["JobEvent"][];
             readonly artifacts: components["schemas"]["Artifact"][];
             readonly explanations: components["schemas"]["Explanation"][];
-            readonly reports: {
-                [key: string]: unknown;
-            }[];
+            readonly reports: components["schemas"]["Report"][];
             /** Format: uuid */
-            parent?: string | null;
-            cancel_requested?: boolean;
+            parent: string | null;
+            cancel_requested: boolean;
+            /** Format: date-time */
+            purged_at: string | null;
             /** Format: email */
             user_email: string | null;
             tasks_internal: {
@@ -1547,10 +1541,10 @@ export interface components {
             readonly id: string;
             /** Format: email */
             readonly email: string;
-            display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
-            is_active?: boolean;
-            disabled_reason?: string;
+            display_name: string;
+            locale: components["schemas"]["Locale0d2Enum"];
+            is_active: boolean;
+            disabled_reason: string;
             /** Format: date-time */
             readonly date_joined: string;
             /** Format: date-time */
@@ -1561,7 +1555,7 @@ export interface components {
             readonly has_mfa: boolean;
             readonly email_verified: boolean;
             readonly jobs_count: number;
-            marketing_opt_in?: boolean;
+            marketing_opt_in: boolean;
         };
         AdminUserRequest: {
             display_name?: string;
@@ -1592,11 +1586,11 @@ export interface components {
             readonly display_key: string;
             readonly status: string;
             scopes: components["schemas"]["ScopesEnum"][];
-            allowed_ips?: string[];
-            allowed_models?: string[] | null;
-            rate_limit_per_minute?: number | null;
+            allowed_ips: string[];
+            allowed_models: string[] | null;
+            rate_limit_per_minute: number | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -1612,11 +1606,11 @@ export interface components {
             readonly display_key: string;
             readonly status: string;
             scopes: components["schemas"]["ScopesEnum"][];
-            allowed_ips?: string[];
-            allowed_models?: string[] | null;
-            rate_limit_per_minute?: number | null;
+            allowed_ips: string[];
+            allowed_models: string[] | null;
+            rate_limit_per_minute: number | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -1639,10 +1633,10 @@ export interface components {
         ApiKeyUsageDaily: {
             /** Format: date */
             date: string;
-            requests?: number;
-            errors?: number;
-            jobs_created?: number;
-            credits_spent?: number;
+            requests: number;
+            errors: number;
+            jobs_created: number;
+            credits_spent: number;
         };
         ApiKeyUsageResponse: {
             totals: components["schemas"]["ApiKeyUsageTotals"];
@@ -1662,8 +1656,8 @@ export interface components {
             path: string;
             status: number;
             duration_ms: number;
-            ip?: string | null;
-            request_id?: string;
+            ip: string | null;
+            request_id: string;
         };
         ApiUsageRow: {
             /** Format: uuid */
@@ -1686,13 +1680,13 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             kind: components["schemas"]["ArtifactKindEnum"];
-            label?: string;
-            content_type?: string;
+            label: string;
+            content_type: string;
             /** Format: int64 */
-            size_bytes?: number;
-            meta?: unknown;
+            size_bytes: number;
+            meta: unknown;
             /** Format: uuid */
-            task?: string | null;
+            task: string | null;
             readonly url: string;
             /** Format: date-time */
             readonly created_at: string;
@@ -1713,17 +1707,17 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             /** Format: uuid */
-            actor?: string | null;
-            actor_label?: string;
+            actor: string | null;
+            actor_label: string;
             action: string;
-            target_type?: string;
-            target_id?: string;
-            target_label?: string;
-            before?: unknown;
-            after?: unknown;
-            ip?: string | null;
-            user_agent?: string;
-            request_id?: string;
+            target_type: string;
+            target_id: string;
+            target_label: string;
+            before: unknown;
+            after: unknown;
+            ip: string | null;
+            user_agent: string;
+            request_id: string;
         };
         AuditStepInfo: {
             id: string;
@@ -1784,7 +1778,7 @@ export interface components {
             };
         };
         Consent: {
-            granted?: boolean;
+            granted: boolean;
             /** Format: date-time */
             readonly granted_at: string | null;
             /** Format: date-time */
@@ -1816,13 +1810,11 @@ export interface components {
             readonly display_name: string;
             credits: number;
             /** @description Non-refundable bonus on top of paid credits. */
-            bonus_credits?: number;
-            readonly prices: {
-                [key: string]: unknown;
-            };
+            bonus_credits: number;
+            readonly prices: components["schemas"]["Prices"];
             /** @description Empty = platform default for purchased credits. */
-            credit_expiry_days?: number | null;
-            highlight?: boolean;
+            credit_expiry_days: number | null;
+            highlight: boolean;
         };
         CreditPackAdmin: {
             /** Format: uuid */
@@ -1832,14 +1824,14 @@ export interface components {
             name: unknown;
             credits: number;
             /** @description Non-refundable bonus on top of paid credits. */
-            bonus_credits?: number;
+            bonus_credits: number;
             price_krw: number;
             price_usd_cents: number;
             /** @description Empty = platform default for purchased credits. */
-            credit_expiry_days?: number | null;
-            highlight?: boolean;
-            active?: boolean;
-            sort_order?: number;
+            credit_expiry_days: number | null;
+            highlight: boolean;
+            active: boolean;
+            sort_order: number;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -1899,20 +1891,20 @@ export interface components {
         Explanation: {
             /** Format: uuid */
             readonly id: string;
-            status?: components["schemas"]["ExplanationStatusEnum"];
+            status: components["schemas"]["ExplanationStatusEnum"];
             engine: string;
             model_name: string;
-            locale?: string;
-            content?: string;
-            progress_log?: unknown;
-            credits_charged?: number;
-            error_message?: string;
+            locale: string;
+            content: string;
+            progress_log: unknown;
+            credits_charged: number;
+            error_message: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
-            started_at?: string | null;
+            started_at: string | null;
             /** Format: date-time */
-            finished_at?: string | null;
+            finished_at: string | null;
         };
         /**
          * @description * `queued` - Queued
@@ -1983,71 +1975,65 @@ export interface components {
             readonly id: string;
             /** Format: date-time */
             readonly created_at: string;
-            kind?: components["schemas"]["JobKindEnum"];
-            source?: components["schemas"]["JobSourceEnum"];
-            status?: components["schemas"]["JobStatusEnum"];
-            stage?: string;
+            kind: components["schemas"]["JobKindEnum"];
+            source: components["schemas"]["JobSourceEnum"];
+            status: components["schemas"]["JobStatusEnum"];
+            stage: string;
             /** Format: double */
-            progress?: number;
+            progress: number;
             /** @description File name or case title. */
-            title?: string;
-            media_type?: string;
-            readonly thumbnail_url: string | null;
-            readonly models: {
-                [key: string]: string;
-            }[];
-            audit_steps?: unknown;
-            verdict?: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
+            title: string;
+            media_type: string;
+            readonly thumbnail_url: string;
+            readonly models: components["schemas"]["ModelRef"][];
+            audit_steps: unknown;
+            verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
             verdict_label: string;
             /** Format: double */
-            fake_probability?: number | null;
+            fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
-            partial?: boolean;
-            credits_quoted?: number;
-            credits_charged?: number;
-            readonly queue: {
-                [key: string]: unknown;
-            } | null;
+            partial: boolean;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly queue: components["schemas"]["QueueInfo"] | null;
             /** Format: date-time */
-            started_at?: string | null;
+            started_at: string | null;
             /** Format: date-time */
-            finished_at?: string | null;
+            finished_at: string | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: uuid */
             readonly batch_id: string | null;
-            run_number?: number;
-            error_code?: string;
-            error_message?: string;
+            run_number: number;
+            error_code: string;
+            error_message: string;
             readonly media: components["schemas"]["MediaSummary"];
-            options?: unknown;
-            locale?: string;
-            summary?: unknown;
-            verdict_reasons?: unknown;
-            quote_lines?: unknown;
-            readonly tasks: {
-                [key: string]: unknown;
-            }[];
+            options: unknown;
+            locale: string;
+            summary: unknown;
+            verdict_reasons: unknown;
+            quote_lines: unknown;
+            readonly tasks: components["schemas"]["JobTask"][];
             readonly events: components["schemas"]["JobEvent"][];
             readonly artifacts: components["schemas"]["Artifact"][];
             readonly explanations: components["schemas"]["Explanation"][];
-            readonly reports: {
-                [key: string]: unknown;
-            }[];
+            readonly reports: components["schemas"]["Report"][];
             /** Format: uuid */
-            parent?: string | null;
-            cancel_requested?: boolean;
+            parent: string | null;
+            cancel_requested: boolean;
+            /** Format: date-time */
+            purged_at: string | null;
         };
         JobEvent: {
             readonly id: number;
             /** Format: date-time */
             readonly created_at: string;
-            level?: components["schemas"]["LevelEnum"];
+            level: components["schemas"]["LevelEnum"];
             code: string;
             message: string;
             /** Format: uuid */
-            task?: string | null;
-            data?: unknown;
+            task: string | null;
+            data: unknown;
         };
         /**
          * @description * `detect` - Detection
@@ -2061,42 +2047,38 @@ export interface components {
             readonly id: string;
             /** Format: date-time */
             readonly created_at: string;
-            kind?: components["schemas"]["JobKindEnum"];
-            source?: components["schemas"]["JobSourceEnum"];
-            status?: components["schemas"]["JobStatusEnum"];
-            stage?: string;
+            kind: components["schemas"]["JobKindEnum"];
+            source: components["schemas"]["JobSourceEnum"];
+            status: components["schemas"]["JobStatusEnum"];
+            stage: string;
             /** Format: double */
-            progress?: number;
+            progress: number;
             /** @description File name or case title. */
-            title?: string;
-            media_type?: string;
-            readonly thumbnail_url: string | null;
-            readonly models: {
-                [key: string]: string;
-            }[];
-            audit_steps?: unknown;
-            verdict?: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
+            title: string;
+            media_type: string;
+            readonly thumbnail_url: string;
+            readonly models: components["schemas"]["ModelRef"][];
+            audit_steps: unknown;
+            verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
             verdict_label: string;
             /** Format: double */
-            fake_probability?: number | null;
+            fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
-            partial?: boolean;
-            credits_quoted?: number;
-            credits_charged?: number;
-            readonly queue: {
-                [key: string]: unknown;
-            } | null;
+            partial: boolean;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly queue: components["schemas"]["QueueInfo"] | null;
             /** Format: date-time */
-            started_at?: string | null;
+            started_at: string | null;
             /** Format: date-time */
-            finished_at?: string | null;
+            finished_at: string | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: uuid */
             readonly batch_id: string | null;
-            run_number?: number;
-            error_code?: string;
-            error_message?: string;
+            run_number: number;
+            error_code: string;
+            error_message: string;
         };
         /**
          * @description * `web` - Web app
@@ -2115,6 +2097,37 @@ export interface components {
          * @enum {string}
          */
         JobStatusEnum: "queued" | "running" | "succeeded" | "failed" | "canceled" | "expired";
+        JobTask: {
+            /** Format: uuid */
+            readonly id: string;
+            kind: components["schemas"]["TaskKindEnum"];
+            /** @description Model id or audit step id. */
+            target: string;
+            readonly name: string;
+            status: components["schemas"]["TaskStatusEnum"];
+            status_label: string;
+            attempt: number;
+            /** Format: double */
+            progress: number;
+            stage_message: string;
+            /** Format: date-time */
+            dispatched_at: string | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            duration_ms: number | null;
+            gpu: string;
+            error_code: string;
+            error_message: string;
+            /** Format: uuid */
+            fallback_for: string | null;
+            readonly live: components["schemas"]["LiveProgress"] | null;
+            readonly queue_info: components["schemas"]["QueueInfo"] | null;
+            readonly result: {
+                [key: string]: unknown;
+            };
+        };
         JobsByDay: {
             /** Format: date */
             date: string;
@@ -2131,9 +2144,9 @@ export interface components {
             kind_label: string;
             delta: number;
             balance_after: number;
-            reference_type?: string;
-            reference_id?: string;
-            memo?: string;
+            reference_type: string;
+            reference_id: string;
+            memo: string;
         };
         /**
          * @description * `signup_bonus` - Signup bonus
@@ -2159,6 +2172,12 @@ export interface components {
          * @enum {string}
          */
         LevelEnum: "info" | "success" | "warning" | "error";
+        LiveProgress: {
+            /** Format: double */
+            progress: number;
+            message: string;
+            updated_at: string | null;
+        };
         /**
          * @description * `en` - English
          *     * `ko` - 한국어
@@ -2184,10 +2203,10 @@ export interface components {
             readonly id: string;
             /** Format: email */
             readonly email: string;
-            display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
-            time_zone?: string;
-            marketing_opt_in?: boolean;
+            display_name: string;
+            locale: components["schemas"]["Locale0d2Enum"];
+            time_zone: string;
+            marketing_opt_in: boolean;
             /** Format: date-time */
             readonly date_joined: string;
             readonly roles: unknown[];
@@ -2201,10 +2220,10 @@ export interface components {
             readonly id: string;
             /** Format: email */
             readonly email: string;
-            display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
-            time_zone?: string;
-            marketing_opt_in?: boolean;
+            display_name: string;
+            locale: components["schemas"]["Locale0d2Enum"];
+            time_zone: string;
+            marketing_opt_in: boolean;
             /** Format: date-time */
             readonly date_joined: string;
             readonly roles: unknown[];
@@ -2217,23 +2236,23 @@ export interface components {
         Media: {
             /** Format: uuid */
             readonly id: string;
-            status?: components["schemas"]["MediaStatusEnum"];
+            status: components["schemas"]["MediaStatusEnum"];
             media_type: components["schemas"]["MediaTypeEnum"];
             original_name: string;
             content_type: string;
             /** Format: int64 */
-            size_bytes?: number;
-            sha256?: string;
-            width?: number | null;
-            height?: number | null;
+            size_bytes: number;
+            sha256: string;
+            width: number | null;
+            height: number | null;
             /** Format: double */
-            duration_seconds?: number | null;
+            duration_seconds: number | null;
             /** Format: double */
-            fps?: number | null;
-            frame_count?: number | null;
-            codec?: string;
+            fps: number | null;
+            frame_count: number | null;
+            codec: string;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             readonly thumbnail_url: string | null;
             /** Format: date-time */
             readonly created_at: string;
@@ -2259,21 +2278,21 @@ export interface components {
             original_name: string;
             content_type: string;
             /** Format: int64 */
-            size_bytes?: number;
-            sha256?: string;
-            width?: number | null;
-            height?: number | null;
+            size_bytes: number;
+            sha256: string;
+            width: number | null;
+            height: number | null;
             /** Format: double */
-            duration_seconds?: number | null;
+            duration_seconds: number | null;
             /** Format: double */
-            fps?: number | null;
-            frame_count?: number | null;
-            codec?: string;
-            status?: components["schemas"]["MediaStatusEnum"];
+            fps: number | null;
+            frame_count: number | null;
+            codec: string;
+            status: components["schemas"]["MediaStatusEnum"];
             /** Format: date-time */
-            expires_at?: string | null;
-            readonly content_url: string | null;
-            readonly thumbnail_url: string | null;
+            expires_at: string | null;
+            readonly content_url: string;
+            readonly thumbnail_url: string;
         };
         /**
          * @description * `image` - Image
@@ -2298,6 +2317,10 @@ export interface components {
             variant_of: string | null;
             enabled: boolean;
             allowed?: boolean;
+        };
+        ModelRef: {
+            id: string;
+            name: string;
         };
         ModelStats: {
             runs: number;
@@ -2337,60 +2360,54 @@ export interface components {
             readonly id: string;
             /** Format: date-time */
             readonly created_at: string;
-            kind?: components["schemas"]["JobKindEnum"];
-            source?: components["schemas"]["JobSourceEnum"];
-            status?: components["schemas"]["JobStatusEnum"];
-            stage?: string;
+            kind: components["schemas"]["JobKindEnum"];
+            source: components["schemas"]["JobSourceEnum"];
+            status: components["schemas"]["JobStatusEnum"];
+            stage: string;
             /** Format: double */
-            progress?: number;
+            progress: number;
             /** @description File name or case title. */
-            title?: string;
-            media_type?: string;
-            readonly thumbnail_url: string | null;
-            readonly models: {
-                [key: string]: string;
-            }[];
-            audit_steps?: unknown;
-            verdict?: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
+            title: string;
+            media_type: string;
+            readonly thumbnail_url: string;
+            readonly models: components["schemas"]["ModelRef"][];
+            audit_steps: unknown;
+            verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
             verdict_label: string;
             /** Format: double */
-            fake_probability?: number | null;
+            fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
-            partial?: boolean;
-            credits_quoted?: number;
-            credits_charged?: number;
-            readonly queue: {
-                [key: string]: unknown;
-            } | null;
+            partial: boolean;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly queue: components["schemas"]["QueueInfo"] | null;
             /** Format: date-time */
-            started_at?: string | null;
+            started_at: string | null;
             /** Format: date-time */
-            finished_at?: string | null;
+            finished_at: string | null;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: uuid */
             readonly batch_id: string | null;
-            run_number?: number;
-            error_code?: string;
-            error_message?: string;
+            run_number: number;
+            error_code: string;
+            error_message: string;
             readonly media: components["schemas"]["MediaSummary"];
-            options?: unknown;
-            locale?: string;
-            summary?: unknown;
-            verdict_reasons?: unknown;
-            quote_lines?: unknown;
-            readonly tasks: {
-                [key: string]: unknown;
-            }[];
+            options: unknown;
+            locale: string;
+            summary: unknown;
+            verdict_reasons: unknown;
+            quote_lines: unknown;
+            readonly tasks: components["schemas"]["JobTask"][];
             readonly events: components["schemas"]["JobEvent"][];
             readonly artifacts: components["schemas"]["Artifact"][];
             readonly explanations: components["schemas"]["Explanation"][];
-            readonly reports: {
-                [key: string]: unknown;
-            }[];
+            readonly reports: components["schemas"]["Report"][];
             /** Format: uuid */
-            parent?: string | null;
-            cancel_requested?: boolean;
+            parent: string | null;
+            cancel_requested: boolean;
+            /** Format: date-time */
+            purged_at: string | null;
             case: {
                 [key: string]: unknown;
             } | null;
@@ -2420,12 +2437,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["AdminUser"][];
         };
         PaginatedAuditLogList: {
@@ -2433,12 +2450,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["AuditLog"][];
         };
         PaginatedJobListList: {
@@ -2446,12 +2463,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["JobList"][];
         };
         PaginatedLedgerEntryList: {
@@ -2459,12 +2476,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["LedgerEntry"][];
         };
         PaginatedPaymentAdminList: {
@@ -2472,12 +2489,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["PaymentAdmin"][];
         };
         PaginatedPaymentList: {
@@ -2485,12 +2502,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Payment"][];
         };
         PaginatedReportList: {
@@ -2498,12 +2515,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Report"][];
         };
         PaginatedWebhookEventList: {
@@ -2511,12 +2528,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["WebhookEvent"][];
         };
         PartRequest: {
@@ -2609,26 +2626,26 @@ export interface components {
             provider: components["schemas"]["ProviderEnum"];
             kind: components["schemas"]["PaymentKindEnum"];
             kind_label: string;
-            status?: components["schemas"]["PaymentStatusEnum"];
+            status: components["schemas"]["PaymentStatusEnum"];
             status_label: string;
             currency: components["schemas"]["CurrencyEnum"];
             /** @description Minor units (KRW: won, USD: cents). */
             amount: number;
             readonly display_amount: string;
-            credits?: number;
-            bonus_credits?: number;
-            method?: string;
-            receipt_url?: string;
+            credits: number;
+            bonus_credits: number;
+            method: string;
+            receipt_url: string;
             /** Format: date-time */
-            paid_at?: string | null;
+            paid_at: string | null;
             /** Format: date-time */
-            period_start?: string | null;
+            period_start: string | null;
             /** Format: date-time */
-            period_end?: string | null;
-            refunded_amount?: number;
+            period_end: string | null;
+            refunded_amount: number;
             /** Format: date-time */
             readonly created_at: string;
-            failure_reason?: string;
+            failure_reason: string;
         };
         PaymentAdmin: {
             /** Format: uuid */
@@ -2641,19 +2658,19 @@ export interface components {
             readonly user_email: string;
             provider: components["schemas"]["ProviderEnum"];
             kind: components["schemas"]["PaymentKindEnum"];
-            status?: components["schemas"]["PaymentStatusEnum"];
+            status: components["schemas"]["PaymentStatusEnum"];
             currency: components["schemas"]["CurrencyEnum"];
             /** @description Minor units (KRW: won, USD: cents). */
             amount: number;
-            credits?: number;
-            bonus_credits?: number;
-            provider_payment_id?: string;
-            method?: string;
-            receipt_url?: string;
+            credits: number;
+            bonus_credits: number;
+            provider_payment_id: string;
+            method: string;
+            receipt_url: string;
             /** Format: date-time */
-            paid_at?: string | null;
-            refunded_amount?: number;
-            failure_reason?: string;
+            paid_at: string | null;
+            refunded_amount: number;
+            failure_reason: string;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2682,33 +2699,31 @@ export interface components {
             readonly display_description: string;
             readonly display_features: string[];
             monthly_credits: number;
-            readonly prices: {
-                [key: string]: unknown;
-            };
-            priority?: components["schemas"]["PriorityEnum"];
-            retention_days?: number;
-            api_access?: boolean;
-            max_inflight_tasks?: number;
-            highlight?: boolean;
+            readonly prices: components["schemas"]["Prices"];
+            priority: components["schemas"]["PriorityEnum"];
+            retention_days: number;
+            api_access: boolean;
+            max_inflight_tasks: number;
+            highlight: boolean;
         };
         PlanAdmin: {
             /** Format: uuid */
             readonly id: string;
             slug: string;
             name: unknown;
-            description?: unknown;
+            description: unknown;
             /** @description {"en": ["...", ...], "ko": [...]} */
-            features?: unknown;
+            features: unknown;
             monthly_credits: number;
             price_krw: number;
             price_usd_cents: number;
-            priority?: components["schemas"]["PriorityEnum"];
-            retention_days?: number;
-            api_access?: boolean;
-            max_inflight_tasks?: number;
-            highlight?: boolean;
-            active?: boolean;
-            sort_order?: number;
+            priority: components["schemas"]["PriorityEnum"];
+            retention_days: number;
+            api_access: boolean;
+            max_inflight_tasks: number;
+            highlight: boolean;
+            active: boolean;
+            sort_order: number;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2730,30 +2745,35 @@ export interface components {
             sort_order?: number;
         };
         PlatformSettings: {
-            guest_trial_enabled?: boolean;
-            guest_trial_images_per_day?: number;
+            guest_trial_enabled: boolean;
+            guest_trial_images_per_day: number;
             /** @description Model variant ids used for guest trials. Empty = the default image set. */
-            guest_trial_models?: unknown;
-            signup_bonus_credits?: number;
-            signup_bonus_expiry_days?: number;
-            daily_free_credits?: number;
+            guest_trial_models: unknown;
+            signup_bonus_credits: number;
+            signup_bonus_expiry_days: number;
+            daily_free_credits: number;
             /** @description 0 = purchased credits never expire. */
-            purchased_credit_expiry_days?: number;
-            free_retention_days?: number;
-            free_max_inflight_tasks?: number;
+            purchased_credit_expiry_days: number;
+            free_retention_days: number;
+            free_max_inflight_tasks: number;
             /** @description If on, only subscribers whose plan grants API access can use API keys. */
-            api_access_requires_plan?: boolean;
-            reasoning_engine?: components["schemas"]["ReasoningEngineEnum"];
-            reasoning_model?: string;
-            news_engine?: components["schemas"]["NewsEngineEnum"];
-            news_model?: string;
+            api_access_requires_plan: boolean;
+            reasoning_engine: components["schemas"]["ReasoningEngineEnum"];
+            reasoning_model: string;
+            news_engine: components["schemas"]["NewsEngineEnum"];
+            news_model: string;
             /** Format: double */
-            fake_threshold?: number;
-            maintenance_mode?: boolean;
-            announcement?: string;
-            signups_enabled?: boolean;
+            fake_threshold: number;
+            maintenance_mode: boolean;
+            announcement: string;
+            signups_enabled: boolean;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        Price: {
+            /** @description Minor units (KRW: won, USD: cents) */
+            amount: number;
+            display: string;
         };
         PriceItem: {
             key: string;
@@ -2768,6 +2788,10 @@ export interface components {
             prices: {
                 [key: string]: number;
             };
+        };
+        Prices: {
+            KRW: components["schemas"]["Price"];
+            USD: components["schemas"]["Price"];
         };
         /**
          * @description * `0` - Normal
@@ -2815,6 +2839,12 @@ export interface components {
             billing_enabled: boolean;
             languages: string[];
             guest_trial_enabled: boolean;
+        };
+        QueueInfo: {
+            position: number;
+            consumers: number;
+            eta_seconds: number;
+            workers_online: boolean;
         };
         QueueWait: {
             /** Format: date */
@@ -2881,13 +2911,13 @@ export interface components {
             job: string;
             readonly job_title: string;
             format: components["schemas"]["ReportFormatEnum"];
-            locale?: string;
-            status?: components["schemas"]["ReportStatusEnum"];
-            run_number?: number;
-            version?: number;
+            locale: string;
+            status: components["schemas"]["ReportStatusEnum"];
+            run_number: number;
+            version: number;
             /** Format: int64 */
-            size_bytes?: number;
-            error_message?: string;
+            size_bytes: number;
+            error_message: string;
             /** Format: date-time */
             readonly created_at: string;
             readonly filename: string;
@@ -2944,14 +2974,14 @@ export interface components {
             readonly plan: components["schemas"]["Plan"];
             provider: components["schemas"]["ProviderEnum"];
             currency: components["schemas"]["CurrencyEnum"];
-            status?: components["schemas"]["SubscriptionStatusEnum"];
+            status: components["schemas"]["SubscriptionStatusEnum"];
             /** Format: date-time */
-            current_period_start?: string | null;
+            current_period_start: string | null;
             /** Format: date-time */
-            current_period_end?: string | null;
-            cancel_at_period_end?: boolean;
+            current_period_end: string | null;
+            cancel_at_period_end: boolean;
             /** Format: date-time */
-            canceled_at?: string | null;
+            canceled_at: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -2964,6 +2994,14 @@ export interface components {
          * @enum {string}
          */
         SubscriptionStatusEnum: "incomplete" | "active" | "past_due" | "canceled" | "expired";
+        /**
+         * @description * `model` - Model
+         *     * `audit` - Audit step
+         *     * `long_video` - Long-form video scan
+         *     * `news` - News verification
+         * @enum {string}
+         */
+        TaskKindEnum: "model" | "audit" | "long_video" | "news";
         TaskLog: {
             /** Format: uuid */
             task_id: string;
@@ -2974,6 +3012,17 @@ export interface components {
             at: string;
             message: string;
         };
+        /**
+         * @description * `pending` - Waiting for a slot
+         *     * `dispatched` - In queue
+         *     * `running` - Running
+         *     * `succeeded` - Done
+         *     * `failed` - Failed
+         *     * `canceled` - Canceled
+         *     * `skipped` - Skipped
+         * @enum {string}
+         */
+        TaskStatusEnum: "pending" | "dispatched" | "running" | "succeeded" | "failed" | "canceled" | "skipped";
         TossBillingConfirmRequest: {
             auth_key: string;
             customer_key: string;
@@ -3020,8 +3069,8 @@ export interface components {
             /** Format: date-time */
             readonly received_at: string;
             /** Format: date-time */
-            processed_at?: string | null;
-            error?: string;
+            processed_at: string | null;
+            error: string;
         };
         WorkerInfo: {
             id: string;
@@ -4910,7 +4959,9 @@ export interface operations {
     jobs_explain_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -4958,7 +5009,9 @@ export interface operations {
     jobs_rerun_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };

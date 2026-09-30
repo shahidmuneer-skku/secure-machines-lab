@@ -135,6 +135,11 @@ class DeleteAccountView(APIView):
             revoke(key)
         for job in user.jobs.filter(purged_at__isnull=True):
             purge_job_files(job)
+        from allauth.account.models import EmailAddress
+        from allauth.mfa.models import Authenticator
+
+        EmailAddress.objects.filter(user=user).delete()
+        Authenticator.objects.filter(user=user).delete()
         user.is_active = False
         user.deletion_requested_at = timezone.now()
         user.disabled_reason = "Deleted by user"

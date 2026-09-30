@@ -3,14 +3,35 @@ from __future__ import annotations
 from typing import Any
 
 from django.urls import reverse
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from sml.catalog.registry import registry
 from sml.media.models import MediaObject
+from sml.reports.serializers import ReportSerializer
 
 from .eta import queue_info
 from .live import task_progress
 from .models import Artifact, Explanation, Job, JobEvent, JobTask
+
+
+class ModelRefSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+
+
+class QueueInfoSerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    consumers = serializers.IntegerField()
+    eta_seconds = serializers.IntegerField()
+    workers_online = serializers.BooleanField()
+
+
+class LiveProgressSerializer(serializers.Serializer):
+    progress = serializers.FloatField()
+    message = serializers.CharField(allow_blank=True)
+    updated_at = serializers.CharField(allow_null=True)
 
 
 def _model_names(ids: list[str], lang: str) -> list[dict[str, str]]:
@@ -41,9 +62,11 @@ class MediaSummarySerializer(serializers.ModelSerializer):
     def _prefix(self) -> str:
         return self.context.get("media_url_prefix", "/api/v1/media")
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_content_url(self, obj: MediaObject) -> str | None:
         return f"{self._prefix()}/{obj.pk}/content" if obj.status == MediaObject.Status.READY else None
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj: MediaObject) -> str | None:
         return f"{self._prefix()}/{obj.pk}/thumbnail" if obj.thumbnail_key else None
 
@@ -61,15 +84,18 @@ class JobListSerializer(serializers.ModelSerializer):
                   "partial", "credits_quoted", "credits_charged", "queue", "started_at", "finished_at",
                   "expires_at", "batch_id", "run_number", "error_code", "error_message"]
 
+    @extend_schema_field(ModelRefSerializer(many=True))
     def get_models(self, obj: Job) -> list[dict[str, str]]:
         return _model_names(obj.models_selected, _lang(self.context))
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj: Job) -> str | None:
         media = obj.media
         if media is None or not media.thumbnail_key or media.status != MediaObject.Status.READY:
             return None
         return f"{self.context.get('media_url_prefix', '/api/v1/media')}/{media.pk}/thumbnail"
 
+    @extend_schema_field(QueueInfoSerializer(allow_null=True))
     def get_queue(self, obj: Job) -> dict[str, Any] | None:
         if obj.status != Job.Status.QUEUED:
             return None
@@ -91,12 +117,14 @@ class JobTaskSerializer(serializers.ModelSerializer):
                   "stage_message", "dispatched_at", "started_at", "finished_at", "duration_ms", "gpu",
                   "error_code", "error_message", "fallback_for", "live", "queue_info", "result"]
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_name(self, obj: JobTask) -> str:
         reg = registry()
         lang = _lang(self.context)
         spec = reg.get(obj.target) or reg.long_video_models.get(obj.target) or reg.audit_steps.get(obj.target)
         return spec.name(lang) if spec else obj.target
 
+    @extend_schema_field(LiveProgressSerializer(allow_null=True))
     def get_live(self, obj: JobTask) -> dict[str, Any] | None:
         live = self.context.get("live", {}).get(str(obj.pk))
         if not live or obj.status != JobTask.Status.RUNNING:
@@ -107,9 +135,11 @@ class JobTaskSerializer(serializers.ModelSerializer):
             progress = 0.0
         return {"progress": progress, "message": live.get("message", ""), "updated_at": live.get("updated_at")}
 
+    @extend_schema_field(QueueInfoSerializer(allow_null=True))
     def get_queue_info(self, obj: JobTask) -> dict[str, Any] | None:
         return queue_info(obj)
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_result(self, obj: JobTask) -> dict[str, Any]:
         r = dict(obj.result or {})
         r.pop("raw_output", None)  # never expose raw model stdout
@@ -129,6 +159,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
         model = Artifact
         fields = ["id", "kind", "label", "content_type", "size_bytes", "meta", "task", "url", "created_at"]
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_url(self, obj: Artifact) -> str:
         prefix = self.context.get("job_url_prefix", "/api/v1/jobs")
         return f"{prefix}/{obj.job_id}/artifacts/{obj.pk}/content"
@@ -152,17 +183,17 @@ class JobDetailSerializer(JobListSerializer):
     class Meta(JobListSerializer.Meta):
         fields = [*JobListSerializer.Meta.fields, "media", "options", "locale", "summary", "verdict_reasons",
                   "quote_lines", "tasks", "events", "artifacts", "explanations", "reports", "parent",
-                  "cancel_requested"]
+                  "cancel_requested", "purged_at"]
 
+    @extend_schema_field(JobTaskSerializer(many=True))
     def get_tasks(self, obj: Job) -> list[dict[str, Any]]:
         tasks = list(obj.tasks.all())
         running = [str(t.pk) for t in tasks if t.status == JobTask.Status.RUNNING]
         ctx = {**self.context, "live": task_progress(running)}
         return JobTaskSerializer(tasks, many=True, context=ctx).data
 
+    @extend_schema_field(ReportSerializer(many=True))
     def get_reports(self, obj: Job) -> list[dict[str, Any]]:
-        from sml.reports.serializers import ReportSerializer
-
         return ReportSerializer(obj.reports.all(), many=True, context=self.context).data
 
 

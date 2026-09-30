@@ -75,7 +75,7 @@ export function useSubmitJobs() {
       for (const group of groupRequests(req)) {
         const res = data(await api.POST("/api/v1/jobs", {
           body: body(req, group) as never,
-          headers: { "Idempotency-Key": newIdempotencyKey() },
+          params: { header: { "Idempotency-Key": newIdempotencyKey() } },
         }))
         jobs.push(...res.jobs)
       }

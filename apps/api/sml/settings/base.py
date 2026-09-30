@@ -311,6 +311,10 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "sml.api_schema_hooks.require_response_fields",
+    ],
     "ENUM_NAME_OVERRIDES": {
         "JobStatusEnum": "sml.jobs.models.Job.Status",
         "JobKindEnum": "sml.jobs.models.Job.Kind",

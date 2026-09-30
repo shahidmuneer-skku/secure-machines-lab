@@ -49,10 +49,9 @@ def add_month(dt: datetime) -> datetime:
     return dt.replace(year=year, month=month, day=day)
 
 
-def _urls(kind: str, provider: str) -> tuple[str, str]:
-    base = settings.PUBLIC_WEB_URL
-    return (f"{base}/app/billing/return?status=success&provider={provider}&kind={kind}",
-            f"{base}/app/billing/return?status=cancel&provider={provider}&kind={kind}")
+def _urls(kind: str, provider: str, order_id: str) -> tuple[str, str]:
+    base = f"{settings.PUBLIC_WEB_URL}/app/billing/return?provider={provider}&kind={kind}&order={order_id}"
+    return f"{base}&status=success", f"{base}&status=cancel"
 
 
 # --- checkout ---------------------------------------------------------------------
@@ -68,7 +67,7 @@ def start_pack_checkout(user: Any, pack: CreditPack, provider_name: str) -> tupl
         order_name=f"{name} ({pack.credits:,} credits)"[:128], currency=currency, amount=pack.price_for(currency),
         pack=pack, credits=pack.credits, bonus_credits=pack.bonus_credits,
     )
-    success, cancel = _urls("pack", provider_name)
+    success, cancel = _urls("pack", provider_name, payment.order_id)
     return payment, provider.create_pack_checkout(payment, success_url=success, cancel_url=cancel)
 
 
@@ -86,7 +85,7 @@ def start_subscription_checkout(user: Any, plan: Plan, provider_name: str) -> tu
         order_name=f"{localized(plan.name, user.locale)} — monthly"[:128], currency=currency,
         amount=plan.price_for(currency), plan=plan, subscription=sub, credits=plan.monthly_credits,
     )
-    success, cancel = _urls("subscription", provider_name)
+    success, cancel = _urls("subscription", provider_name, payment.order_id)
     return payment, provider.create_subscription_checkout(payment, sub, success_url=success, cancel_url=cancel)
 
 

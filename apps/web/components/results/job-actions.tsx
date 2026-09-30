@@ -37,7 +37,7 @@ export function useJobMutations(jobId: string) {
   })
   const rerun = useMutation({
     mutationFn: async () => data(await api.POST("/api/v1/jobs/{id}/rerun", {
-      params: { path: { id: jobId } }, headers: { "Idempotency-Key": newIdempotencyKey() } })),
+      params: { path: { id: jobId }, header: { "Idempotency-Key": newIdempotencyKey() } } })),
     onSuccess: (job) => { toast.success(t("rerunQueued")); refresh(); router.push(`/app/results/${job.id}`) }, onError,
   })
   const remove = useMutation({

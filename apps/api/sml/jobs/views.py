@@ -229,6 +229,7 @@ class JobRerunView(APIView):
     permission_classes = [IsAuthenticated, require_scope("detect:write"), require("run_detection")]
 
     @extend_schema(tags=["jobs"], request=None, responses={202: JobListSerializer},
+                   parameters=[OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=False)],
                    summary="Re-run a finished job with the same settings (charged again)")
     @idempotent(required=False)
     def post(self, request: Request, pk: str) -> Response:
@@ -270,6 +271,7 @@ class ExplainView(APIView):
         return Response(ExplanationSerializer(job.explanations.all(), many=True).data)
 
     @extend_schema(tags=["jobs"], request=None, responses={202: ExplanationSerializer},
+                   parameters=[OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=False)],
                    summary="Ask the reasoning agent why this file was judged fake or real (costs credits)")
     @idempotent(required=False)
     def post(self, request: Request, pk: str) -> Response:

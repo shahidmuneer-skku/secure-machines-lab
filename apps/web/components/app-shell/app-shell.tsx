@@ -102,7 +102,9 @@ function UserMenu() {
     mutationFn: () => allauth.logout(),
     onSettled: () => window.location.assign("/login"),
   })
-  const initials = (me?.display_name || me?.email || "?").slice(0, 2).toUpperCase()
+  const source = me?.display_name?.trim() || me?.email?.split("@")[0] || "?"
+  const words = source.split(/[\s._-]+/).filter(Boolean)
+  const initials = (words.length > 1 ? words[0][0] + words[1][0] : source.slice(0, 2)).toUpperCase()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
