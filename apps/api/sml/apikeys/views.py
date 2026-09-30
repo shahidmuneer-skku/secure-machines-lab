@@ -110,7 +110,8 @@ class ApiKeyRotateView(APIView):
 class ApiKeyUsageView(APIView):
     permission_classes = PERMS
 
-    @extend_schema(tags=["api-keys"], responses=schemas.ApiKeyUsageResponseSerializer, summary="Daily usage and recent requests for a key")
+    @extend_schema(tags=["api-keys"], responses=schemas.ApiKeyUsageResponseSerializer,
+                   summary="Daily usage and recent requests for a key")
     def get(self, request: Request, pk: str) -> Response:
         key = get_object_or_404(ApiKey, pk=pk, user=request.user)
         days = int(request.query_params.get("days", 30))
@@ -129,6 +130,7 @@ class ApiKeyUsageView(APIView):
 class ScopeListView(APIView):
     permission_classes = PERMS
 
-    @extend_schema(tags=["api-keys"], responses=schemas.IdLabelSerializer(many=True), summary="Available API key scopes")
+    @extend_schema(tags=["api-keys"], responses=schemas.IdLabelSerializer(many=True),
+                   summary="Available API key scopes")
     def get(self, request: Request) -> Response:
         return Response([{"id": s.value, "label": s.label} for s in Scope])

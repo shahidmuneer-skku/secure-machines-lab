@@ -9,6 +9,7 @@ Stable Diffusion/ComfyUI/NovelAI, or an explicit generator software tag) sets
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
 import subprocess
@@ -22,18 +23,22 @@ from ..config import config
 from ..context import TaskContext
 from .base import ModelResult
 
+logger = logging.getLogger(__name__)
+
 GENERATOR_PATTERNS = [
-    (re.compile(r"midjourney", re.I), "Midjourney"),
-    (re.compile(r"dall[\s·\-]?e|openai", re.I), "OpenAI DALL·E / GPT image"),
-    (re.compile(r"stable[\s\-]?diffusion|sdxl|automatic1111|a1111|stability\.ai", re.I), "Stable Diffusion"),
-    (re.compile(r"comfyui", re.I), "ComfyUI"),
-    (re.compile(r"novelai", re.I), "NovelAI"),
-    (re.compile(r"adobe firefly|firefly", re.I), "Adobe Firefly"),
-    (re.compile(r"imagen|gemini|made with google ai|nano[\s\-]?banana", re.I), "Google Imagen / Gemini"),
-    (re.compile(r"bing image creator|microsoft designer", re.I), "Microsoft Designer / Bing"),
-    (re.compile(r"leonardo\.ai|ideogram|flux\.1|black forest labs|recraft|playground ai", re.I), "Other generator"),
-    (re.compile(r"\bsora\b|runway(ml)?|pika labs|\bkling\b|luma dream machine|veo\b", re.I), "AI video generator"),
-    (re.compile(r"\bai[\s\-]generated\b|generated (by|with) ai", re.I), "Self-declared AI generated"),
+    (re.compile(r"midjourney", re.IGNORECASE), "Midjourney"),
+    (re.compile(r"dall[\s·\-]?e|openai", re.IGNORECASE), "OpenAI DALL·E / GPT image"),
+    (re.compile(r"stable[\s\-]?diffusion|sdxl|automatic1111|a1111|stability\.ai", re.IGNORECASE), "Stable Diffusion"),
+    (re.compile(r"comfyui", re.IGNORECASE), "ComfyUI"),
+    (re.compile(r"novelai", re.IGNORECASE), "NovelAI"),
+    (re.compile(r"adobe firefly|firefly", re.IGNORECASE), "Adobe Firefly"),
+    (re.compile(r"imagen|gemini|made with google ai|nano[\s\-]?banana", re.IGNORECASE), "Google Imagen / Gemini"),
+    (re.compile(r"bing image creator|microsoft designer", re.IGNORECASE), "Microsoft Designer / Bing"),
+    (re.compile(r"leonardo\.ai|ideogram|flux\.1|black forest labs|recraft|playground ai", re.IGNORECASE),
+     "Other generator"),
+    (re.compile(r"\bsora\b|runway(ml)?|pika labs|\bkling\b|luma dream machine|veo\b", re.IGNORECASE),
+     "AI video generator"),
+    (re.compile(r"\bai[\s\-]generated\b|generated (by|with) ai", re.IGNORECASE), "Self-declared AI generated"),
 ]
 DIGITAL_SOURCE_AI = ("trainedalgorithmicmedia", "compositewithtrainedalgorithmicmedia", "algorithmicmedia")
 SD_CHUNK_KEYS = ("parameters", "prompt", "workflow", "sd-metadata", "invokeai_metadata", "dream")
@@ -52,7 +57,7 @@ def _read_c2pa(path: Path) -> dict[str, Any]:
     if not tool:
         return {"status": "tool_unavailable"}
     try:
-        proc = subprocess.run([tool, str(path)], capture_output=True, text=True, timeout=60,  # noqa: S603
+        proc = subprocess.run([tool, str(path)], capture_output=True, text=True, timeout=60,
                               check=False)
     except (OSError, subprocess.TimeoutExpired):
         return {"status": "error"}
@@ -95,8 +100,8 @@ def _image_fields(path: Path) -> dict[str, Any]:
             for tag_id in (0x9003, 0x9286, 0xA434):  # DateTimeOriginal, UserComment, LensModel
                 if tag_id in ifd:
                     fields[ExifTags.TAGS.get(tag_id, str(tag_id))] = str(ifd[tag_id])[:500]
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:
+            logger.debug("Could not read the EXIF sub-IFD", exc_info=True)
         for key, value in (img.info or {}).items():
             if isinstance(value, (str, bytes)) and key.lower() not in ("icc_profile", "exif"):
                 text = value.decode("utf-8", "ignore") if isinstance(value, bytes) else value
@@ -106,7 +111,7 @@ def _image_fields(path: Path) -> dict[str, Any]:
             fields["xmp"] = (xmp.decode("utf-8", "ignore") if isinstance(xmp, bytes) else str(xmp))[:8000]
     if "xmp" not in fields:
         raw = path.read_bytes()[:2_000_000]
-        m = re.search(rb"<x:xmpmeta.*?</x:xmpmeta>", raw, re.S)
+        m = re.search(rb"<x:xmpmeta.*?</x:xmpmeta>", raw, re.DOTALL)
         if m:
             fields["xmp"] = m.group(0).decode("utf-8", "ignore")[:8000]
     return fields

@@ -32,4 +32,4 @@ def queue_names() -> list[str]:
     names = [f"sml.model.{m['id']}" for m in raw.get("models", [])]
     names += [f"sml.audit.{s['id']}" for s in raw.get("audit_steps", [])]
     names += [f"sml.longvideo.{m['id']}" for m in raw.get("long_video_models", [])]
-    return names + ["sml.news", "sml.reasoning"]
+    return [*names, "sml.news", "sml.reasoning"]

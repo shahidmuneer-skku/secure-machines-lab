@@ -57,7 +57,7 @@ async def _stream(channel: str) -> AsyncIterator[str]:
             await pubsub.unsubscribe(channel)
             await pubsub.aclose()
             await client.aclose()
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.debug("SSE cleanup failed", exc_info=True)
 
 

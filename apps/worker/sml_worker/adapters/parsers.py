@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import json
 import re
@@ -9,14 +10,14 @@ from pathlib import Path
 from typing import Any
 
 NUM = r"([0-9]*\.?[0-9]+(?:e[+-]?\d+)?)"
-FAKE_PROB = re.compile(r"Fake Prob[:\s]*" + NUM, re.I)
-AGG_FAKE_PROB = re.compile(r"Aggregated FAKE Prob[:\s]*" + NUM, re.I)
-REAL = re.compile(r"real\s*:?\s*" + NUM, re.I)
-FAKE = re.compile(r"fake\s*:?\s*" + NUM, re.I)
-B2_REAL = re.compile(r"Average Real Probability:\s*(?:tensor\s*\(\s*)?([0-9.eE+-]+)", re.I)
-B2_FAKE = re.compile(r"Average Fake Probability:\s*(?:tensor\s*\(\s*)?([0-9.eE+-]+)", re.I)
-PREDICTION = re.compile(r"prediction[:\s]*([0-9.eE+-]+)", re.I)
-FACES_JSON = re.compile(r"FACES_JSON:(\{.*\})", re.M)
+FAKE_PROB = re.compile(r"Fake Prob[:\s]*" + NUM, re.IGNORECASE)
+AGG_FAKE_PROB = re.compile(r"Aggregated FAKE Prob[:\s]*" + NUM, re.IGNORECASE)
+REAL = re.compile(r"real\s*:?\s*" + NUM, re.IGNORECASE)
+FAKE = re.compile(r"fake\s*:?\s*" + NUM, re.IGNORECASE)
+B2_REAL = re.compile(r"Average Real Probability:\s*(?:tensor\s*\(\s*)?([0-9.eE+-]+)", re.IGNORECASE)
+B2_FAKE = re.compile(r"Average Fake Probability:\s*(?:tensor\s*\(\s*)?([0-9.eE+-]+)", re.IGNORECASE)
+PREDICTION = re.compile(r"prediction[:\s]*([0-9.eE+-]+)", re.IGNORECASE)
+FACES_JSON = re.compile(r"FACES_JSON:(\{.*\})", re.MULTILINE)
 NO_FACE_MARKERS = ("SKKU_P_NO_FACE_DETECTED", "No faces detected", "얼굴을 찾지 못했습니다", "NO_FACE_DETECTED",
                    "no face detected")
 
@@ -130,10 +131,8 @@ def read_frame_csv(path: Path) -> tuple[list[dict[str, Any]], float | None, floa
                 label = row[0].strip()
                 real, fake = to_percent(row[1]), to_percent(row[2])
                 if len(row) >= 5:
-                    try:
+                    with contextlib.suppress(ValueError):
                         progress = float(row[4])
-                    except ValueError:
-                        pass
                 if label.lower().startswith("total"):
                     total = _normalize(real, fake)
                     continue

@@ -7,7 +7,6 @@ import logging
 import os
 import subprocess
 import threading
-import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -53,7 +52,7 @@ class Heartbeat(threading.Thread):
                        "updated_at": datetime.now(timezone.utc).isoformat()}
             try:
                 redis_client().set(KEY.format(self.worker_id), json.dumps(payload), ex=int(self.interval * 3))
-            except Exception:  # noqa: BLE001
+            except Exception:
                 logger.debug("heartbeat failed", exc_info=True)
             self._stop_event.wait(self.interval)
 
@@ -61,5 +60,5 @@ class Heartbeat(threading.Thread):
         self._stop_event.set()
         try:
             redis_client().delete(KEY.format(self.worker_id))
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:
+            logger.debug("Could not remove heartbeat key", exc_info=True)

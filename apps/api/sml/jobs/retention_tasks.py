@@ -19,7 +19,7 @@ def purge_job_files(job: Job) -> None:
     for art in job.artifacts.all():
         try:
             storage.delete(art.storage_key)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("Could not delete artifact %s", art.storage_key, exc_info=True)
     job.artifacts.all().delete()
     media = job.media

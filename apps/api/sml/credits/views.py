@@ -16,7 +16,7 @@ from sml.core.models import PlatformSettings
 
 from .models import LedgerEntry, PriceRule
 from .pricing import price_table
-from .serializers import BalanceSerializer, LedgerEntrySerializer, PriceRuleSerializer
+from .serializers import BalanceSerializer, LedgerEntrySerializer
 from .services import get_balance
 
 LOW_BALANCE_THRESHOLD = 10

@@ -97,7 +97,8 @@ class Registry:
                 default_selected=(ov["default_selected"] if ov.get("default_selected") is not None
                                   else bool(m.get("default_selected", False))),
                 trial=ov["trial"] if ov.get("trial") is not None else bool(m.get("trial", False)),
-                weight=float(ov["weight"] if ov.get("weight") is not None else m.get("weight", defaults.get("weight", 1.0))),
+                weight=float(ov["weight"] if ov.get("weight") is not None
+                             else m.get("weight", defaults.get("weight", 1.0))),
                 gpu_mem_mb=int(m.get("gpu_mem_mb", defaults.get("gpu_mem_mb", 6000))),
                 media=m.get("media", {}),
                 legacy_ids=list(m.get("legacy_ids", [])),

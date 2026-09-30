@@ -92,6 +92,9 @@ class BillingCustomer(models.Model):
     # Toss customerKey: an opaque random id (never the user's email or PK).
     toss_customer_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
+    def __str__(self) -> str:
+        return f"Billing customer {self.user}"
+
 
 class Subscription(TimeStampedModel):
     class Status(models.TextChoices):
@@ -200,3 +203,6 @@ class WebhookEvent(models.Model):
     class Meta:
         ordering = ["-received_at"]
         constraints = [models.UniqueConstraint(fields=["provider", "event_id"], name="uniq_webhook_event")]
+
+    def __str__(self) -> str:
+        return f"{self.provider}:{self.event_type} {self.event_id}"

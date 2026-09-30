@@ -207,6 +207,9 @@ class JobEvent(models.Model):
     class Meta:
         ordering = ["created_at", "id"]
 
+    def __str__(self) -> str:
+        return f"{self.code}: {self.message[:60]}"
+
 
 class Explanation(TimeStampedModel):
     """On-demand "Explain why" reasoning produced by the OpenClaude/Qwen agent."""

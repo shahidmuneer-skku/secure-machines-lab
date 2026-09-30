@@ -88,6 +88,9 @@ class ApiKeyUsageDaily(models.Model):
         constraints = [models.UniqueConstraint(fields=["api_key", "date"], name="uniq_key_usage_day")]
         ordering = ["-date"]
 
+    def __str__(self) -> str:
+        return f"{self.api_key} {self.date}: {self.requests} requests"
+
 
 class ApiRequestLog(models.Model):
     """Recent request log per key (kept for 30 days) for the key's usage page."""
@@ -104,3 +107,6 @@ class ApiRequestLog(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["api_key", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.method} {self.path} {self.status}"

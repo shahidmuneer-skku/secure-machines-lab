@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,8 @@ from typing import Any
 from ..clients import download
 from ..context import TaskContext
 from .engine import CliAgentEngine, OllamaVisionEngine
+
+logger = logging.getLogger(__name__)
 
 LANG_NAMES = {"en": "English", "ko": "Korean (한국어)", "de": "German (Deutsch)"}
 
@@ -72,8 +75,8 @@ def run_explanation(envelope: dict[str, Any], ctx: TaskContext) -> str:
         try:
             download(art["storage_key"], workdir / name)
             xai_names.append(name)
-        except Exception:  # noqa: BLE001
-            continue
+        except Exception:
+            logger.warning("Could not download artifact %s for explanation", art.get("storage_key"), exc_info=True)
     locale = envelope.get("locale", "en")
     prompt = build_prompt(context, media_name, xai_names, locale)
     engine_kind = envelope.get("engine", "openclaude")

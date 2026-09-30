@@ -38,7 +38,7 @@ def _read(key: str) -> bytes | None:
     try:
         with storage.open_file(key) as fh:
             return fh.read()
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - missing media only drops the image from the report
         return None
 
 
@@ -89,7 +89,7 @@ def generate(report: Report) -> Report:
         report.storage_key = key
         report.size_bytes = len(blob)
         report.status = Report.Status.READY
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Report %s failed", report.pk)
         report.status = Report.Status.FAILED
         report.error_message = str(exc)[:255]

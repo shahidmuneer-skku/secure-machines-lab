@@ -72,7 +72,7 @@ def record_explanation_event(payload: dict[str, Any]) -> None:
             exp.status = Explanation.Status.RUNNING
             exp.started_at = timezone.now()
         elif event == "progress":
-            exp.progress_log = (exp.progress_log + [payload.get("message", "")])[-50:]
+            exp.progress_log = [*exp.progress_log, payload.get("message", "")][-50:]
         elif event == "finished":
             exp.finished_at = timezone.now()
             if payload.get("status") == "succeeded" and payload.get("content"):

@@ -87,6 +87,9 @@ class PlatformSettings(models.Model):
         verbose_name = "platform settings"
         verbose_name_plural = "platform settings"
 
+    def __str__(self) -> str:
+        return "Platform settings"
+
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.pk = 1
         super().save(*args, **kwargs)
@@ -137,3 +140,6 @@ class IdempotencyRecord(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["principal", "key"], name="uniq_idempotency_key")]
+
+    def __str__(self) -> str:
+        return f"{self.principal} {self.key}"

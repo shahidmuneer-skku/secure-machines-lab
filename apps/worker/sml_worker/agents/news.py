@@ -83,12 +83,12 @@ def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], foren
         f"Write the report in {LANG_NAMES.get(locale, 'English')} (keep the section headings in English).",
         "", "Silently run the full verification workflow from your skill. Do NOT narrate your process.",
         'CRITICAL OUTPUT RULE: begin with exactly "# Case Summary" and nothing before it.',
-        "Fill EVERY section; where evidence is insufficient write the finding plus Indeterminate / "
-        "Inconclusive / Not Feasible.", "", REPORT_SKELETON, "",
-        "After the report output ONE final ```json``` block with keys: status, confidence (0-100), coordinates "
-        "{lat, lng, label}, tags, when, who, authenticity {verdict: real|fake|uncertain, confidence 0-100, "
-        "reasoning}, sources [{title, url, date}], annotations [{claim, verdict: supported|refuted|unverified, "
-        "source, date}]. Output nothing after this block.",
+        ("Fill EVERY section; where evidence is insufficient write the finding plus Indeterminate / "
+         "Inconclusive / Not Feasible."), "", REPORT_SKELETON, "",
+        ("After the report output ONE final ```json``` block with keys: status, confidence (0-100), coordinates "
+         "{lat, lng, label}, tags, when, who, authenticity {verdict: real|fake|uncertain, confidence 0-100, "
+         "reasoning}, sources [{title, url, date}], annotations [{claim, verdict: supported|refuted|unverified, "
+         "source, date}]. Output nothing after this block."),
     ])
 
 
@@ -96,7 +96,7 @@ def parse_output(text: str) -> tuple[str, dict[str, Any]]:
     start = text.find("# Case Summary")
     body = text[start:] if start >= 0 else text
     meta: dict[str, Any] = {}
-    blocks = re.findall(r"```json\s*(\{.*?\})\s*```", body, re.S)
+    blocks = re.findall(r"```json\s*(\{.*?\})\s*```", body, re.DOTALL)
     if blocks:
         try:
             meta = json.loads(blocks[-1])

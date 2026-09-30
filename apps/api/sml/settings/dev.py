@@ -13,7 +13,7 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 
-REST_FRAMEWORK = {  # noqa: F405
+REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # noqa: F405
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",

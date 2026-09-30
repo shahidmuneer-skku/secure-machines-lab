@@ -66,7 +66,7 @@ class AuditAdapter:
         ctx.progress(10, "Running", force=True)
         start = time.monotonic()
         try:
-            proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True,  # noqa: S603
+            proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True,
                                   timeout=int(self.step.get("timeout_seconds", 600)), check=False)
         except subprocess.TimeoutExpired as exc:
             raise AdapterError("TIMEOUT", "Audit step timed out.") from exc

@@ -51,7 +51,7 @@ class LongVideoAdapter:
         env.update(gpu_env())
         ctx.log(f"Scanning long video in {interval:g}s intervals"
                 + (f" (~{expected} intervals)" if expected else ""))
-        proc = subprocess.Popen(argv, cwd=cwd, env=env, stdout=subprocess.PIPE,  # noqa: S603
+        proc = subprocess.Popen(argv, cwd=cwd, env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True, start_new_session=True)
         intervals: list[dict[str, Any]] = []
         done: dict[str, Any] | None = None

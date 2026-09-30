@@ -15,3 +15,6 @@ class TrialUsage(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["kind", "identifier", "date"], name="uniq_trial_usage")]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.date}: {self.count}"

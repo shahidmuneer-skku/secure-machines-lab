@@ -147,5 +147,5 @@ class TaskContext:
         try:
             key, content_type, size = upload(path, key)
             self.artifacts.append(ArtifactOut(kind, label, key, content_type, size, meta or {}))
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("Artifact upload failed for %s", path, exc_info=True)

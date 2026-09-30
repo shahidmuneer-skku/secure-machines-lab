@@ -389,7 +389,8 @@ class ModelAdminView(APIView):
         cap = "manage_models" if self.request.method == "PATCH" else "view_queues"
         return [p() for p in admin_permissions(cap)]
 
-    @extend_schema(tags=TAG, responses=schemas.AdminModelSerializer(many=True), summary="Models with overrides and 24h stats")
+    @extend_schema(tags=TAG, responses=schemas.AdminModelSerializer(many=True),
+                   summary="Models with overrides and 24h stats")
     def get(self, request: Request) -> Response:
         since = timezone.now() - timedelta(days=1)
         stats = {r["target"]: r for r in JobTask.objects.filter(kind="model", created_at__gte=since)
@@ -444,7 +445,8 @@ class ModelAdminView(APIView):
 class FailedTaskRetryView(APIView):
     permission_classes = admin_permissions("manage_queues")
 
-    @extend_schema(tags=TAG, request=None, responses=schemas.OkSerializer, summary="Retry a failed task (the job is re-opened)")
+    @extend_schema(tags=TAG, request=None, responses=schemas.OkSerializer,
+                   summary="Retry a failed task (the job is re-opened)")
     def post(self, request: Request, pk: str) -> Response:
         task = get_object_or_404(JobTask.objects.select_related("job"), pk=pk, status=JobTask.Status.FAILED)
         job = task.job

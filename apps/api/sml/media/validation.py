@@ -92,7 +92,7 @@ def _probe_image(path: Path, result: ProbeResult) -> None:
             result.width, result.height = img.size
     except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
         raise InvalidMedia("Image resolution is too large.") from exc
-    except Exception as exc:  # noqa: BLE001 - any decoder error means the file is not a valid image
+    except Exception as exc:  # any decoder error means the file is not a valid image
         raise InvalidMedia("The image could not be decoded.") from exc
 
 
@@ -116,7 +116,7 @@ def _probe_video(path: Path, result: ProbeResult) -> None:
             result.codec = (stream.codec_context.name or "")[:32]
     except InvalidMedia:
         raise
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise InvalidMedia("The video could not be decoded.") from exc
     if result.duration_seconds and result.duration_seconds > settings.UPLOAD_MAX_VIDEO_SECONDS:
         raise InvalidMedia(f"Video is too long (max {settings.UPLOAD_MAX_VIDEO_SECONDS // 60} minutes).")

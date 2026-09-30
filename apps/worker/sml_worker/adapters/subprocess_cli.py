@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import logging
 import os
 import shutil
@@ -134,7 +135,7 @@ class SubprocessAdapter:
 
         stdout_lines: deque[str] = deque(maxlen=4000)
         stderr_lines: deque[str] = deque(maxlen=800)
-        proc = subprocess.Popen(  # noqa: S603 - argv list from trusted config, no shell
+        proc = subprocess.Popen(
             argv, cwd=str(cwd), env=self._env(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, errors="replace", start_new_session=True,
         )
@@ -187,10 +188,8 @@ class SubprocessAdapter:
             os.killpg(proc.pid, signal.SIGTERM)
             proc.wait(timeout=10)
         except (ProcessLookupError, subprocess.TimeoutExpired):
-            try:
+            with contextlib.suppress(ProcessLookupError):
                 os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
 
     def _result(self, code: int, stdout: str, stderr: str, stem: str, media_type: str, ctx: TaskContext,
                 progress_csv: Path) -> ModelResult:
@@ -250,10 +249,8 @@ class SubprocessAdapter:
                     ctx.add_artifact(path, kind="video", label="Annotated video")
                 elif suffix in (".csv", ".json"):
                     ctx.add_artifact(path, kind="frames", label="Per-frame scores" if suffix == ".csv" else "Faces")
-                try:
+                with contextlib.suppress(OSError):
                     path.unlink()
-                except OSError:
-                    pass
 
 
 def _label_for(name: str, stem: str) -> str:

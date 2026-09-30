@@ -41,7 +41,8 @@ class PublicConfigView(APIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["account"], responses=schemas.MeResponseSerializer, summary="Current user, roles and capabilities")
+    @extend_schema(tags=["account"], responses=schemas.MeResponseSerializer,
+                   summary="Current user, roles and capabilities")
     def get(self, request: Request) -> Response:
         data = MeSerializer(request.user).data
         policy = getattr(request.user, "access_policy", None)
@@ -87,7 +88,8 @@ class ConsentView(APIView):
 class DataExportView(APIView):
     permission_classes = [IsAuthenticated, SessionOnly]
 
-    @extend_schema(tags=["account"], responses={200: dict}, summary="Download a JSON export of your personal data (PIPA/GDPR)")
+    @extend_schema(tags=["account"], responses={200: dict},
+                   summary="Download a JSON export of your personal data (PIPA/GDPR)")
     def get(self, request: Request) -> Response:
         user = request.user
         from sml.billing.models import Payment
@@ -121,7 +123,8 @@ class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated, SessionOnly]
 
     @extend_schema(tags=["account"], request=DeleteAccountSerializer, responses={204: None},
-                   summary="Delete my account: media is purged, API keys revoked, billing records kept as required by law")
+                   summary="Delete my account: media is purged, API keys revoked, "
+                           "billing records kept as required by law")
     def post(self, request: Request) -> Response:
         ser = DeleteAccountSerializer(data=request.data)
         ser.is_valid(raise_exception=True)

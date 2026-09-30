@@ -113,7 +113,7 @@ class CliAgentEngine:
             "--permission-mode", "default", "--setting-sources", "", "--strict-mcp-config",
             "--allowedTools", *_allowed_tools(write_dir), "--disallowedTools", *_disallowed_tools(write_dir),
         ]
-        proc = subprocess.Popen(argv, cwd=str(cwd), env=self._env(), stdout=subprocess.PIPE,  # noqa: S603
+        proc = subprocess.Popen(argv, cwd=str(cwd), env=self._env(), stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True, start_new_session=True)
         started = time.monotonic()
         final = ""

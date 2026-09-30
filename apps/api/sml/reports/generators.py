@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
 import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -34,6 +35,8 @@ from reportlab.platypus import (
 )
 
 from .i18n import labels
+
+logger = logging.getLogger(__name__)
 
 INK = colors.HexColor("#0b0d12")
 BG_BAND = colors.HexColor("#07080b")
@@ -121,7 +124,6 @@ def render_pdf(d: ReportData) -> bytes:
     mono = _mono(d.locale)
     eyebrow = ParagraphStyle("eyebrow", fontName=mono, fontSize=7.5, leading=10, textColor=ACCENT,
                              spaceBefore=10, spaceAfter=4)
-    h2 = ParagraphStyle("h2", fontName=bold, fontSize=13, leading=17, textColor=INK, spaceAfter=6)
 
     def section(idx: int, name: str) -> list[Any]:
         return [Paragraph(f"{idx:03d} / {_esc(name).upper()}" if d.locale != "ko" else f"{idx:03d} / {_esc(name)}",
@@ -147,14 +149,14 @@ def render_pdf(d: ReportData) -> bytes:
             iw, ih = img.getSize()
             scale = min(55 * mm / iw, 45 * mm / ih)
             thumb_cell = Image(io.BytesIO(d.thumbnail), width=iw * scale, height=ih * scale)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - a broken thumbnail must not block the report
             thumb_cell = ""
     top = Table([[left, thumb_cell]], colWidths=[115 * mm, 59 * mm])
     top.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOX", (0, 0), (-1, -1), 0.6, LINE),
                              ("LINEBEFORE", (0, 0), (0, -1), 3, verdict_color),
                              ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
                              ("LEFTPADDING", (0, 0), (0, -1), 10)]))
-    story += section(1, t["verdict"]) + [top]
+    story += [*section(1, t["verdict"]), top]
 
     m = d.media
     res = f"{m.get('width')}×{m.get('height')}" if m.get("width") else "—"
@@ -167,7 +169,7 @@ def render_pdf(d: ReportData) -> bytes:
     info += [[t["sha256"], m.get("sha256") or "—"], [t["job_id"], f"{d.job_id} · {t['run']} {d.run_number}"],
              [t["submitted"], d.created_at.strftime("%Y-%m-%d %H:%M UTC")],
              [t["completed"], d.finished_at.strftime("%Y-%m-%d %H:%M UTC") if d.finished_at else "—"]]
-    story += section(2, t["file"]) + [_kv_table(info, font, mono)]
+    story += [*section(2, t["file"]), _kv_table(info, font, mono)]
 
     rows = [[t["model"], t["score"], t["weight"], t["status"]]]
     for row in d.models:
@@ -176,7 +178,7 @@ def render_pdf(d: ReportData) -> bytes:
             status += f" (fallback: {row['fallback'].get('model')})"
         rows.append([row.get("name", row.get("model")), _pct(row.get("fake_prob")), f"{row.get('weight', 1):g}",
                      status])
-    story += section(3, t["models"]) + [_grid(rows, font, mono, [70 * mm, 30 * mm, 25 * mm, 49 * mm])]
+    story += [*section(3, t["models"]), _grid(rows, font, mono, [70 * mm, 30 * mm, 25 * mm, 49 * mm])]
 
     ind = d.ai_indicators or {}
     story += section(4, t["provenance"])
@@ -199,7 +201,7 @@ def render_pdf(d: ReportData) -> bytes:
             detail = result.get("summary") or ", ".join(f"{k}={v}" for k, v in list(result.items())[:3]
                                                        if not isinstance(v, (dict, list)))
             rows.append([step, info_.get("status", ""), str(detail)[:80]])
-        story += section(5, t["audit"]) + [_grid(rows, font, mono, [40 * mm, 30 * mm, 104 * mm])]
+        story += [*section(5, t["audit"]), _grid(rows, font, mono, [40 * mm, 30 * mm, 104 * mm])]
 
     if d.xai_images:
         story += section(6, t["xai"])
@@ -211,8 +213,8 @@ def render_pdf(d: ReportData) -> bytes:
                 scale = min(52 * mm / iw, 52 * mm / ih)
                 cells.append([Image(io.BytesIO(data), width=iw * scale, height=ih * scale),
                               Paragraph(_esc(label), small)])
-            except Exception:  # noqa: BLE001
-                continue
+            except Exception:  # skip unreadable heatmaps, keep the rest of the report
+                logger.debug("Skipping unreadable artifact image %s", label, exc_info=True)
         grid = [cells[i:i + 3] for i in range(0, len(cells), 3)]
         for row in grid:
             flat = [Table([[c[0]], [c[1]]]) for c in row]

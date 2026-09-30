@@ -42,12 +42,12 @@ class ReadyzView(APIView):
             with connection.cursor() as cur:
                 cur.execute("SELECT 1")
             checks["database"] = "ok"
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - a readiness probe reports failures, never raises
             checks["database"] = "error"
         try:
             redis.Redis.from_url(settings.REDIS_URL, socket_timeout=2).ping()
             checks["redis"] = "ok"
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - a readiness probe reports failures, never raises
             checks["redis"] = "error"
         try:
             from sml.celery import app
@@ -55,7 +55,7 @@ class ReadyzView(APIView):
             with app.connection_for_write() as conn:
                 conn.ensure_connection(max_retries=1, timeout=2)
             checks["broker"] = "ok"
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - a readiness probe reports failures, never raises
             checks["broker"] = "error"
         healthy = all(v == "ok" for v in checks.values())
         return Response({"status": "ok" if healthy else "degraded", "checks": checks}, status=200 if healthy else 503)

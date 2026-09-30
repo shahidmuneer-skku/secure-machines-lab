@@ -30,7 +30,8 @@ LABELS = {
         "xai": "설명 가능성(XAI)", "explanation": "추론 분석(AI 분석가)",
         "disclaimer": ("점수는 머신러닝 모델의 확률적 추정치이며 틀릴 수 있습니다. 본 보고서는 전문가 검토를 "
                        "보조하며 단독 법적 증거로 사용될 수 없습니다."),
-        "generated": "생성 일시", "page": "페이지", "run": "실행", "partial": "일부 모델이 실패했으며, 완료된 모델로 판정했습니다.",
+        "generated": "생성 일시", "page": "페이지", "run": "실행",
+        "partial": "일부 모델이 실패했으며, 완료된 모델로 판정했습니다.",
         "reasons": "근거", "metadata_ai_indicator": "메타데이터에 AI 생성 흔적이 있음",
         "model_consensus": "탐지 모델의 가중 합의", "timeline": "처리 과정",
     },

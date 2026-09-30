@@ -32,6 +32,6 @@ class ApiKeyUsageMiddleware:
                     ip=client_ip(request), request_id=current_request_id(),
                 )
                 bump_usage(key, requests=1, errors=1 if response.status_code >= 400 else 0)
-            except Exception:  # noqa: BLE001 - usage logging must never break a request
+            except Exception:  # usage logging must never break a request
                 logger.warning("Failed to record API key usage", exc_info=True)
         return response

@@ -98,7 +98,7 @@ def _publish(tasks: list[JobTask]) -> None:
         try:
             app.send_task(WORKER_TASK, args=[envelope(task)], queue=task.queue, routing_key=task.queue,
                           priority=task.priority)
-        except Exception:  # noqa: BLE001 - broker errors: put the task back
+        except Exception:  # broker errors: put the task back
             logger.exception("Failed to publish task %s", task.pk)
             failed.append(str(task.pk))
     if failed:

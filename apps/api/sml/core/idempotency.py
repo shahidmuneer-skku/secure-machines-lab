@@ -46,7 +46,7 @@ def _fingerprint(request: Request) -> str:
         if hasattr(body, "dict"):
             body = {k: v for k, v in body.items() if not hasattr(v, "read")}
         raw = json.dumps(body, sort_keys=True, default=str)
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - unserializable bodies still get a path-based fingerprint
         raw = ""
     return hashlib.sha256(f"{request.method}:{request.path}:{raw}".encode()).hexdigest()
 

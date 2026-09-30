@@ -17,7 +17,7 @@ from sml.core.models import PlatformSettings
 from sml.credits import pricing
 from sml.credits import services as credits
 from sml.media.models import MediaObject
-from sml.queues import AUDIT_PREFIX, LONG_VIDEO_PREFIX, MODEL_PREFIX, NEWS
+from sml.queues import AUDIT_PREFIX, LONG_VIDEO_PREFIX, MODEL_PREFIX
 
 from .models import Job, JobBatch, JobTask
 from .retention import priority_for, retention_days_for

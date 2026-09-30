@@ -27,5 +27,14 @@ include = ["sml_worker*"]
 sml_worker = ["agents/assets/**/*"]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "BLE", "UP", "S", "SIM", "RUF"]
+# RUF001-3: typographic dashes/quotes in user-facing EN/KO/DE text are intentional.
+# S603/S607: model scripts are run from trusted config as argv lists (never through a shell).
+ignore = ["S101", "S603", "S607", "RUF012", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]

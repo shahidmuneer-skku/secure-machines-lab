@@ -86,5 +86,5 @@ def config() -> WorkerConfig:
         openclaude_bin=env("OPENCLAUDE_BIN", str(Path.home() / "openclaude" / "bin" / "openclaude")),
         searxng_url=env("OPENCLAUDE_SEARXNG_URL", ""),
         anthropic_api_key=env("ANTHROPIC_API_KEY", ""),
-        scratch_root=Path(env("SML_WORKER_SCRATCH", "/tmp/sml-worker")),
+        scratch_root=Path(env("SML_WORKER_SCRATCH", str(REPO_ROOT / "var" / "worker-scratch"))),
     )

@@ -53,6 +53,9 @@ class Capability(models.Model):
         default_permissions = ()
         permissions = CAPABILITIES
 
+    def __str__(self) -> str:
+        return "Capability placeholder"
+
 
 class UserManager(BaseUserManager["User"]):
     use_in_migrations = True
@@ -159,6 +162,9 @@ class AccessPolicy(models.Model):
     notes = models.TextField(blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self) -> str:
+        return f"Access policy for {self.user}"
+
     def allows_module(self, module: str) -> bool:
         return self.allowed_modules is None or module in self.allowed_modules
 
@@ -177,6 +183,9 @@ class TrainingConsent(models.Model):
     granted_at = models.DateTimeField(null=True, blank=True)
     withdrawn_at = models.DateTimeField(null=True, blank=True)
     policy_version = models.CharField(max_length=32, default="2026-10-01")
+
+    def __str__(self) -> str:
+        return f"Training consent for {self.user}: {'granted' if self.granted else 'not granted'}"
 
     def set(self, granted: bool) -> None:
         now = timezone.now()

@@ -13,7 +13,6 @@ from sml.apikeys.serializers import ApiKeyUsageDailySerializer, ApiRequestLogSer
 from sml.billing.serializers import CreditPackSerializer, PlanSerializer
 from sml.jobs.serializers import JobDetailSerializer, JobListSerializer
 
-
 # --- accounts ------------------------------------------------------------------------
 
 class PublicConfigSerializer(serializers.Serializer):

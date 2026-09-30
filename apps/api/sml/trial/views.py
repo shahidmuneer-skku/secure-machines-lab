@@ -56,7 +56,8 @@ class TrialBase(APIView):
 
 
 class TrialStatusView(TrialBase):
-    @extend_schema(tags=["trial"], responses=schemas.TrialStatusSerializer, summary="Remaining free trial detections today")
+    @extend_schema(tags=["trial"], responses=schemas.TrialStatusSerializer,
+                   summary="Remaining free trial detections today")
     def get(self, request: Request) -> Response:
         token, new = _ensure_token(request)
         cfg = PlatformSettings.load()
