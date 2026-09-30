@@ -307,6 +307,47 @@ def release(hold: CreditHold, *, memo: str = "") -> CreditHold:
     return hold
 
 
+def settle(hold: CreditHold, amount: int, *, memo: str = "") -> CreditHold:
+    """Charge part of a hold and return the rest (e.g. a stream stopped early is charged per minute analysed).
+
+    The refund goes back to the buckets the hold took from, latest-expiring first, so the user keeps
+    the credits that last longest. `amount` 0 releases everything; the full amount equals `capture`.
+    """
+    now = timezone.now()
+    with transaction.atomic():
+        wallet = CreditWallet.objects.select_for_update().get(pk=hold.wallet_id)
+        hold = CreditHold.objects.select_for_update().get(pk=hold.pk)
+        if hold.status != CreditHold.Status.HELD:
+            return hold
+        amount = max(0, min(int(amount), hold.amount))
+        refund = hold.amount - amount
+        if refund:
+            remaining = refund
+            allocations = [dict(a) for a in hold.allocations]
+            for alloc in reversed(allocations):
+                if remaining == 0:
+                    break
+                give = min(int(alloc["amount"]), remaining)
+                CreditBucket.objects.filter(pk=alloc["bucket"]).update(
+                    amount_remaining=F("amount_remaining") + give)
+                alloc["amount"] = int(alloc["amount"]) - give
+                remaining -= give
+            hold.allocations = [a for a in allocations if a["amount"] > 0]
+            _write(wallet, LedgerKind.RELEASE, refund, now, hold=hold, reference_type=hold.reference_type,
+                   reference_id=hold.reference_id, memo=memo or f"{refund} unused credits returned")
+        hold.amount = amount
+        hold.status = CreditHold.Status.CAPTURED if amount else CreditHold.Status.RELEASED
+        hold.settled_at = now
+        hold.save(update_fields=["amount", "allocations", "status", "settled_at", "updated_at"])
+        if amount:
+            _write(wallet, LedgerKind.CAPTURE, 0, now, hold=hold, reference_type=hold.reference_type,
+                   reference_id=hold.reference_id, memo=memo or f"Charged {amount} credits")
+        _expire_due(wallet, now)
+        balance = _refresh_cache(wallet, now)
+    _notify(wallet, balance)
+    return hold
+
+
 # --- admin / billing adjustments --------------------------------------------------
 
 def admin_adjust(user: Any, delta: int, *, actor: Any, reason: str,

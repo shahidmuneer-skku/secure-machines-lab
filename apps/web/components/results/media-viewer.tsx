@@ -24,6 +24,8 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
   const videoRef = useRef<HTMLVideoElement>(null)
   const current = xai.find((a: Artifact) => a.id === overlay)
   const mediaUrl = job.media?.content_url
+  // Streamed long-form scans keep no video, only a preview frame.
+  const streamPreview = job.artifacts.find((a: Artifact) => (a.meta as { preview?: boolean } | null)?.preview)
   const taskName = (id: string | null | undefined) => tasks.find((x) => x.id === id)?.name ?? ""
 
   return (
@@ -35,7 +37,14 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!mediaUrl ? (
+        {!mediaUrl && streamPreview ? (
+          <figure className="space-y-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={streamPreview.url} alt={t("media.streamPreview")}
+              className="mx-auto max-h-[360px] w-auto rounded-lg border object-contain" />
+            <figcaption className="text-center text-xs text-muted-foreground">{t("media.streamNotStored")}</figcaption>
+          </figure>
+        ) : !mediaUrl ? (
           <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
             {job.status === "expired" ? t("media.expired") : t("media.unavailable")}
           </div>

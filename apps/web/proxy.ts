@@ -33,6 +33,18 @@ function storageOrigin(): string {
   }
 }
 
+/** Long-form stream service when it is not same-origin (development). */
+function streamOrigin(): string {
+  const raw = process.env.STREAM_ORIGIN
+  if (!raw) return ""
+  try {
+    const url = new URL(raw)
+    return ` ${url.protocol}//${url.host}`
+  } catch {
+    return ""
+  }
+}
+
 function csp(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development"
   // Presigned media URLs and multipart upload parts go straight to object storage.
@@ -45,7 +57,7 @@ function csp(nonce: string): string {
     `img-src 'self' blob: data:${storage}`,
     `media-src 'self' blob:${storage}`,
     "font-src 'self' data:",
-    `connect-src 'self'${storage} https://api.tosspayments.com https://*.tosspayments.com https://challenges.cloudflare.com`,
+    `connect-src 'self'${storage}${streamOrigin()} https://api.tosspayments.com https://*.tosspayments.com https://challenges.cloudflare.com`,
     "frame-src https://*.tosspayments.com https://checkout.stripe.com https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "object-src 'none'",

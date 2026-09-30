@@ -374,6 +374,17 @@ CELERY_TASK_DEFAULT_QUEUE = "sml.default"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Beat keeps runtime state; it lives with the other runtime files in var/ (git-ignored).
 CELERY_BEAT_SCHEDULE_FILENAME = str(REPO_ROOT / "var" / "celerybeat-schedule")
+# --- Long-form streaming (apps/stream) --------------------------------------------------
+# Shared with the stream service: signs scan tokens and authenticates its reports.
+STREAM_SHARED_SECRET = env("STREAM_SHARED_SECRET", default="")
+STREAM_INTERNAL_URL = env("STREAM_INTERNAL_URL", default="http://127.0.0.1:8100").rstrip("/")
+# What browsers connect to (wss://<app>/stream/ws in production, through nginx).
+STREAM_PUBLIC_URL = env("STREAM_PUBLIC_URL", default="ws://localhost:8100/stream/ws")
+STREAM_TOKEN_TTL_SECONDS = env.int("STREAM_TOKEN_TTL_SECONDS", default=600)
+# Paid scans whose upload never started, and running scans that stopped reporting, are refunded.
+STREAM_UPLOAD_TIMEOUT_MINUTES = env.int("STREAM_UPLOAD_TIMEOUT_MINUTES", default=60)
+STREAM_IDLE_TIMEOUT_MINUTES = env.int("STREAM_IDLE_TIMEOUT_MINUTES", default=20)
+
 # Tasks never picked up by a worker within this time fail (and are refunded).
 STALE_DISPATCH_HOURS = env.int("STALE_DISPATCH_HOURS", default=24)
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)

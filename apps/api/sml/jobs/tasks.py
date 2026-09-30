@@ -9,6 +9,8 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
+from sml.queues import STREAM
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +48,9 @@ def requeue_stale() -> int:
     now = timezone.now()
     reg = registry()
     count = 0
-    running = JobTask.objects.filter(status=JobTask.Status.RUNNING, started_at__lt=now - timedelta(minutes=5))
+    # Streamed long-form scans report through their own channel (sml/jobs/streams.py).
+    running = (JobTask.objects.filter(status=JobTask.Status.RUNNING, started_at__lt=now - timedelta(minutes=5))
+               .exclude(queue=STREAM))
     live = task_progress([str(t.pk) for t in running])
     for task in running:
         spec = reg.get(task.target)
@@ -65,7 +69,8 @@ def requeue_stale() -> int:
     # Safety net: a task whose message was lost or dead-lettered would otherwise keep its job
     # (and the user's credit hold) open forever. Late deliveries are ignored once it is failed.
     cutoff = now - timedelta(hours=settings.STALE_DISPATCH_HOURS)
-    for task in JobTask.objects.filter(status=JobTask.Status.DISPATCHED, dispatched_at__lt=cutoff):
+    never_picked = JobTask.objects.filter(status=JobTask.Status.DISPATCHED, dispatched_at__lt=cutoff)
+    for task in never_picked.exclude(queue=STREAM):
         logger.warning("Task %s was never picked up; failing it", task.pk)
         _record({"event": "finished", "task_id": str(task.pk), "attempt": task.attempt, "status": "failed",
                  "error_code": "QUEUE_TIMEOUT", "error_message": "No worker picked this task up in time."})
@@ -85,6 +90,13 @@ def release_stale_holds() -> int:
     from sml.credits.services import release_stale_holds as _release
 
     return _release()
+
+
+@shared_task(name="sml.maintenance.expire_streams", ignore_result=True)
+def expire_streams() -> int:
+    from .streams import expire_stale_sessions
+
+    return expire_stale_sessions()
 
 
 @shared_task(name="sml.maintenance.audit_ledgers", ignore_result=True)

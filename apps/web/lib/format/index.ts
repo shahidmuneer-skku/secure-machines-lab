@@ -51,3 +51,13 @@ export function formatMoney(amount: number, currency: string, locale: string): s
   return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: currency === "KRW" ? 0 : 2 })
     .format(value)
 }
+
+/** Position in a video: 75 → "1:15", 3725.4 → "1:02:05". */
+export function formatTimestamp(seconds: number | null | undefined): string {
+  if (seconds == null || !Number.isFinite(seconds)) return "—"
+  const s = Math.max(0, Math.floor(seconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = String(s % 60).padStart(2, "0")
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`
+}

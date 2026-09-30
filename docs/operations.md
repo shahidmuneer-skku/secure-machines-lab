@@ -11,9 +11,11 @@ and one model worker per GPU run as systemd services behind nginx.
 | Scheduler (Celery beat, exactly one) | `sml-beat` | — |
 | Next.js | `sml-web` | 127.0.0.1:3000 |
 | Model worker on GPU *n* | `sml-worker@n` | — |
+| Long-form stream service (GPU 2, `safe` env) | `sml-stream` | 127.0.0.1:8100 (`/stream/ws` via nginx) |
 | Infrastructure | `docker compose` (restart: unless-stopped) | 127.0.0.1:55432 / 56379 / 55672 / 55673 / 58333 |
 
-GPU note for this server: GPUs 0, 2 and 3 are RTX A5000s and run the model workers; GPU 1
+GPU note for this server: GPUs 0 and 3 (RTX A5000) run the model workers, GPU 2 (A5000) is
+dedicated to long-form streaming (`SML_STREAM_GPU`), and GPU 1
 (Blackwell, sm_120) is reserved for Ollama because the legacy model environments ship
 PyTorch builds without kernels for it (they fail with `GPU_UNSUPPORTED`).
 
@@ -51,8 +53,8 @@ the model repositories under `MODELS_ROOT`, and the conda environments under `CO
 4. **Services**
 
    ```bash
-   sudo GPUS="0 2 3" deploy/systemd/install.sh
-   sudo systemctl start sml.target sml-worker@0 sml-worker@2 sml-worker@3
+   sudo GPUS="0 3" deploy/systemd/install.sh
+   sudo systemctl start sml.target sml-worker@0 sml-worker@3
    ```
 
 5. **nginx and TLS**: edit the two `server_name` values and certificate paths in
@@ -142,6 +144,12 @@ fault" overrides the policy with a full refund. The payment's remaining credits 
 longer match its ledger, which only happens through direct database edits or a bug. Compare
 the user's ledger (Admin → Users → Ledger) with the buckets before correcting via a credit
 adjustment.
+
+**Long-form scans fail or stay "waiting".** `curl http://127.0.0.1:8100/stream/health` shows
+whether the service is up, busy, and whether SKKU-AIGC is loaded; `journalctl -u sml-stream`.
+Scans whose video never arrived are refunded after 60 minutes, scans that stopped reporting
+after 20 minutes. The external detectors need `ffmpeg` for range trimming (set
+`STREAM_FFMPEG_BIN`, or install ffmpeg system-wide).
 
 **Maintenance.** Admin → Settings → Maintenance mode rejects new writes with 503 and a
 Retry-After header; reads, downloads and running jobs continue.

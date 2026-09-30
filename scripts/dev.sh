@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Runs the whole stack for development; Ctrl+C stops everything.
+# If you reach localhost:3000 through an SSH tunnel, also forward 8100 (long-form streaming)
+# and 58333 (media storage).
 # Infrastructure (Postgres, Redis, RabbitMQ, S3) must be up:
 #   docker compose -f deploy/compose/docker-compose.yml --env-file .env up -d
 #
 #   scripts/dev.sh              # API, background worker + beat, model worker (GPU 0), web
 #   GPU=2 scripts/dev.sh        # model worker on another GPU
 #   NO_MODELS=1 scripts/dev.sh  # skip the model worker
+#   NO_STREAM=1 scripts/dev.sh  # skip the long-form stream service
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -33,6 +36,13 @@ start celery-api "$ROOT/apps/api" uv run celery -A sml worker -B -n api@%h --con
   -Q sml.default,sml.results,sml.reports,sml.maintenance
 if [[ -z "${NO_MODELS:-}" ]]; then
   start worker "$ROOT/apps/worker" uv run python -m sml_worker --all --gpu "${GPU:-0}" --concurrency 2
+fi
+if [[ -z "${NO_STREAM:-}" ]]; then
+  # Long-form stream service: the legacy conda env (torch + engine), on its own GPU.
+  set -a; . "$ROOT/.env"; set +a
+  STREAM_PY="${CONDA_ROOT:-$HOME/anaconda3}/envs/${STREAM_CONDA_ENV:-safe}/bin/python"
+  CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES="${SML_STREAM_GPU:-2}" PYTHONPATH="$ROOT/apps/stream" \
+    start stream "$ROOT/apps/stream" "$STREAM_PY" -m uvicorn sml_stream.app:app --host 127.0.0.1 --port 8100
 fi
 start web "$ROOT/apps/web" npx next dev -p 3000
 

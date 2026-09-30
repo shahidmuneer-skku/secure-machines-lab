@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Renders the unit templates for this checkout and installs them.
 #
-#   sudo GPUS="0 2 3" deploy/systemd/install.sh     # install + enable (one model worker per GPU)
+#   sudo GPUS="0 3" deploy/systemd/install.sh       # install + enable (one model worker per GPU;
+#                                                   # GPU 2 is the long-form stream service's, see SML_STREAM_GPU)
 #   DESTDIR=/tmp/units deploy/systemd/install.sh    # only render, for review
 #
 # SERVICE_USER defaults to the user who invoked sudo; NODE_BIN to that user's `node`.
@@ -27,7 +28,8 @@ chown "$SERVICE_USER:$SERVICE_GROUP" "$ROOT/var" "$ROOT/apps/web/.next/cache" 2>
 for template in "$HERE"/*.service.in; do
   unit=$(basename "${template%.in}")
   sed -e "s|@ROOT@|$ROOT|g" -e "s|@USER@|$SERVICE_USER|g" -e "s|@GROUP@|$SERVICE_GROUP|g" \
-      -e "s|@NODE@|$NODE_BIN|g" "$template" > "$DEST/$unit"
+      -e "s|@NODE@|$NODE_BIN|g" -e "s|@HOME@|$(getent passwd "$SERVICE_USER" | cut -d: -f6)|g" \
+      "$template" > "$DEST/$unit"
   echo "rendered $DEST/$unit"
 done
 install -m 0644 "$HERE/sml.target" "$DEST/sml.target"
@@ -40,5 +42,6 @@ fi
 systemctl daemon-reload
 workers=()
 for gpu in $GPUS; do workers+=("sml-worker@$gpu.service"); done
-systemctl enable sml.target sml-api.service sml-celery.service sml-beat.service sml-web.service "${workers[@]}"
+systemctl enable sml.target sml-api.service sml-celery.service sml-beat.service sml-web.service sml-stream.service \
+  "${workers[@]}"
 echo "Installed. Start everything with: sudo systemctl start sml.target ${workers[*]}"

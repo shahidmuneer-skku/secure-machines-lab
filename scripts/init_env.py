@@ -61,6 +61,7 @@ def main() -> int:
         "CELERY_BROKER_URL": f"amqp://sml:{pw['RABBITMQ']}@127.0.0.1:55672/sml",
         "S3_ACCESS_KEY": "sml" + secrets.token_hex(6),
         "S3_SECRET_KEY": secrets.token_urlsafe(32),
+        "STREAM_SHARED_SECRET": secrets.token_urlsafe(32),
     }
     storage_origin = "http://127.0.0.1:58333"
     if args.production:
@@ -69,7 +70,7 @@ def main() -> int:
         values |= {
             "DJANGO_ENV": "production", "DJANGO_SETTINGS_MODULE": "sml.settings.prod", "DJANGO_DEBUG": "false",
             "DJANGO_ALLOWED_HOSTS": args.app_domain, "PUBLIC_WEB_URL": app, "CSRF_TRUSTED_ORIGINS": app,
-            "S3_PUBLIC_ENDPOINT_URL": media, "API_KEY_ENV_LABEL": "live",
+            "S3_PUBLIC_ENDPOINT_URL": media, "API_KEY_ENV_LABEL": "live", "STREAM_PUBLIC_URL": "/stream/ws",
             "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
         }
 
@@ -82,7 +83,9 @@ def main() -> int:
 
     web_env = ROOT / "apps" / "web" / (".env.production.local" if args.production else ".env.local")
     if args.output == ROOT / ".env" and not web_env.exists():
-        web_env.write_text(f"API_ORIGIN=http://127.0.0.1:8000\nSTORAGE_ORIGIN={storage_origin}\n")
+        stream_origin = "" if args.production else "ws://localhost:8100"
+        web_env.write_text(f"API_ORIGIN=http://127.0.0.1:8000\nSTORAGE_ORIGIN={storage_origin}\n"
+                           f"STREAM_ORIGIN={stream_origin}\n")
         os.chmod(web_env, 0o600)
         print(f"wrote {web_env}")
 

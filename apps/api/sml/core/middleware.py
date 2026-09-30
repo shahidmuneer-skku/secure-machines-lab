@@ -97,6 +97,7 @@ _MAINTENANCE_EXEMPT = (
     "/api/_allauth/",          # users must still be able to sign in/out
     "/api/v1/admin/",          # staff switch maintenance off here
     "/api/v1/billing/webhooks/",  # never drop provider events
+    "/api/internal/",          # running scans must be able to finish and settle
     "/api/django-admin/",
 )
 

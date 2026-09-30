@@ -1069,6 +1069,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/long-video/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detectors available for long-form streaming, with the price per minute */
+        get: operations["long_video_models_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/long-video/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay for a long-form scan and get a token for the stream service */
+        post: operations["long_video_sessions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -1907,6 +1941,10 @@ export interface components {
          * @enum {string}
          */
         ExplanationStatusEnum: "queued" | "running" | "succeeded" | "failed";
+        FaceCrop: {
+            support: components["schemas"]["SupportEnum"];
+            default: boolean;
+        };
         /**
          * @description * `deepfake` - deepfake
          *     * `ai_generated` - ai_generated
@@ -2934,6 +2972,54 @@ export interface components {
          * @enum {string}
          */
         ScopesEnum: "detect:write" | "jobs:read" | "jobs:write" | "reports:read" | "credits:read" | "news:write";
+        StreamCatalog: {
+            online: boolean;
+            models: components["schemas"]["StreamModel"][];
+            price_per_minute: number;
+            max_bytes: number;
+            max_seconds: number;
+        };
+        StreamModel: {
+            model_id: string;
+            name: string;
+            available: boolean;
+            reason: string;
+            face_crop: components["schemas"]["FaceCrop"];
+        };
+        StreamSession: {
+            /** Format: uuid */
+            session_id: string;
+            /** Format: uuid */
+            job_id: string;
+            ws_url: string;
+            token: string;
+            credits_reserved: number;
+            /** Format: double */
+            reserved_seconds: number;
+        };
+        StreamSessionRequestRequest: {
+            model_id: string;
+            file_name: string;
+            file_size: number;
+            /** Format: double */
+            duration_seconds: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            start_seconds: number;
+            /** Format: double */
+            end_seconds?: number | null;
+            /**
+             * Format: double
+             * @default 5
+             */
+            interval_seconds: number;
+            /** @default false */
+            whole_video: boolean;
+            face_crop?: boolean | null;
+            locale?: components["schemas"]["LocaleEnum"];
+        };
         Subscription: {
             /** Format: uuid */
             readonly id: string;
@@ -2960,6 +3046,13 @@ export interface components {
          * @enum {string}
          */
         SubscriptionStatusEnum: "incomplete" | "active" | "past_due" | "canceled" | "expired";
+        /**
+         * @description * `always` - always
+         *     * `optional` - optional
+         *     * `none` - none
+         * @enum {string}
+         */
+        SupportEnum: "always" | "optional" | "none";
         /**
          * @description * `model` - Model
          *     * `audit` - Audit step
@@ -5038,6 +5131,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuoteResponse"];
+                };
+            };
+        };
+    };
+    long_video_models_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreamCatalog"];
+                };
+            };
+        };
+    };
+    long_video_sessions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StreamSessionRequestRequest"];
+                "multipart/form-data": components["schemas"]["StreamSessionRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StreamSessionRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreamSession"];
                 };
             };
         };

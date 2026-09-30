@@ -22,6 +22,8 @@ REASONING = "sml.reasoning"
 AUDIT_PREFIX = "sml.audit."
 MODEL_PREFIX = "sml.model."
 LONG_VIDEO_PREFIX = "sml.longvideo."
+# Long-form scans streamed to the stream service (apps/stream): tracked as tasks, never published.
+STREAM = "stream"
 
 # Celery task names implemented by the Django-free worker package (apps/worker).
 WORKER_TASK = "sml_worker.run_task"

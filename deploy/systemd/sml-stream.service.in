@@ -1,0 +1,33 @@
+[Unit]
+Description=SML long-form stream service (legacy long-video engine, dedicated GPU)
+After=network-online.target sml-api.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/stream
+# The service reads only what it needs from .env and scrubs its environment at start-up, so the
+# legacy detector subprocesses never see platform secrets.
+EnvironmentFile=@ROOT@/.env
+Environment=PYTHONPATH=@ROOT@/apps/stream
+Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
+Environment=SML_STREAM_GPU=2
+ExecStart=/bin/sh -c 'CUDA_VISIBLE_DEVICES="$SML_STREAM_GPU" exec "${CONDA_ROOT:-@HOME@/anaconda3}/envs/${STREAM_CONDA_ENV:-safe}/bin/python" -m uvicorn sml_stream.app:app --host 127.0.0.1 --port 8100 --no-server-header'
+# Let a running scan report its result before stopping.
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+
+[Install]
+WantedBy=sml.target

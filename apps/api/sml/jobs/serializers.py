@@ -92,6 +92,10 @@ class JobListSerializer(serializers.ModelSerializer):
     @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj: Job) -> str | None:
         media = obj.media
+        if media is None and (obj.options or {}).get("stream"):
+            # Streamed long-form scans keep no media, only a preview frame.
+            preview = next((a for a in obj.artifacts.all() if (a.meta or {}).get("preview")), None)
+            return f"/api/v1/jobs/{obj.pk}/artifacts/{preview.pk}/content" if preview else None
         if media is None or not media.thumbnail_key or media.status != MediaObject.Status.READY:
             return None
         return f"{self.context.get('media_url_prefix', '/api/v1/media')}/{media.pk}/thumbnail"

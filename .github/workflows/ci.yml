@@ -61,6 +61,23 @@ jobs:
       - name: Tests
         run: uv run pytest -q tests
 
+  stream:
+    name: Long-form stream service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/stream
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Tests
+        run: uv run pytest -q
+
   web:
     name: Web (Next.js)
     runs-on: ubuntu-latest

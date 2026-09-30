@@ -239,3 +239,42 @@ class Explanation(TimeStampedModel):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class StreamSession(TimeStampedModel):
+    """A long-form scan whose video is streamed to the stream service and never stored.
+
+    Created (and paid for) before the browser connects; the stream service reports the start,
+    live intervals and the end through the internal API, and the job is settled per minute analysed.
+    """
+
+    class Status(models.TextChoices):
+        CREATED = "created", "Waiting for the upload"
+        RUNNING = "running", "Running"
+        FINISHED = "finished", "Finished"
+        EXPIRED = "expired", "Expired"
+
+    job = models.OneToOneField(Job, on_delete=models.CASCADE, related_name="stream")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stream_sessions")
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.CREATED, db_index=True)
+    model_id = models.CharField(max_length=64)
+    model_name = models.CharField(max_length=128, blank=True, default="")
+    file_name = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()
+    duration_seconds = models.FloatField(help_text="As reported by the browser; the service probes the file.")
+    start_seconds = models.FloatField(default=0.0)
+    end_seconds = models.FloatField(null=True, blank=True)
+    interval_seconds = models.FloatField()
+    whole_video = models.BooleanField(default=False)
+    face_crop = models.BooleanField(null=True, blank=True, help_text="Empty = the detector's default.")
+    reserved_seconds = models.FloatField()
+    analysed_seconds = models.FloatField(default=0.0)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_event_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.file_name} ({self.model_id}, {self.status})"

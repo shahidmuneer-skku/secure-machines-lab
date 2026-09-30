@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatBytes, formatDuration, formatMoney, formatPercent, formatRelative } from "./index"
+import { formatBytes, formatDuration, formatMoney, formatPercent, formatRelative, formatTimestamp } from "./index"
 
 describe("format helpers", () => {
   it("bytes", () => {
@@ -31,5 +31,11 @@ describe("format helpers", () => {
     const now = Date.parse("2026-09-30T12:00:00Z")
     expect(formatRelative("2026-09-30T11:58:00Z", "en", now)).toBe("2 minutes ago")
     expect(formatRelative("2026-10-01T12:00:00Z", "en", now)).toBe("tomorrow")
+  })
+
+  it("timestamps", () => {
+    expect(formatTimestamp(75)).toBe("1:15")
+    expect(formatTimestamp(3725.4)).toBe("1:02:05")
+    expect(formatTimestamp(null)).toBe("—")
   })
 })

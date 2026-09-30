@@ -1,0 +1,36 @@
+[project]
+name = "sml-stream"
+version = "0.1.0"
+description = "Long-form video stream service (runs in the legacy 'safe' conda env in production)"
+requires-python = ">=3.9"
+# Production runs inside the conda env that has torch and the legacy engine; these are the
+# service's own dependencies (all present in that env) for development and tests.
+dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",
+    "ruff>=0.9",
+    "av>=14.0",
+    "pillow>=11.0",
+    "numpy>=1.26",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "BLE", "UP", "S", "SIM", "RUF"]
+ignore = ["S101", "RUF012", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]

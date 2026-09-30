@@ -33,3 +33,6 @@ REST_FRAMEWORK = {
 ACCOUNT_RATE_LIMITS = False
 STATIC_ROOT = Path(tempfile.mkdtemp(prefix="sml-test-static-"))
 TURNSTILE_SECRET_KEY = ""  # CAPTCHA is exercised separately; never call Cloudflare from tests
+STREAM_SHARED_SECRET = "test-stream-secret"  # noqa: S105
+STREAM_INTERNAL_URL = "http://stream.test"
+STREAM_PUBLIC_URL = "ws://stream.test/stream/ws"

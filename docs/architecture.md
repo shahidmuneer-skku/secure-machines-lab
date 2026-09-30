@@ -86,6 +86,15 @@ async SSE endpoint (`/api/v1/events/stream`) relays them; the browser patches Ta
 caches in place and falls back to polling when the stream is unavailable. Queue position and ETA
 come from queue depth, consumers and recent task durations (`sml/jobs/eta.py`).
 
+## Long-form streaming (ADR 0010)
+
+Long videos are not uploaded to storage. `apps/stream` (FastAPI, legacy `safe` conda env, GPU 2)
+receives the file over a WebSocket after Django reserved credits for the selected range and
+issued a signed token. It runs the legacy engines unchanged, streams per-interval results to the
+browser, and reports to `POST /api/internal/streams/<id>/events` (shared key; denied by nginx).
+Django keeps the scan as a normal job with its interval timeline and a preview frame, and settles
+per started minute analysed; a stopped scan pays only for what ran, a failed one pays nothing.
+
 ## Credits (ADR 0005)
 
 - A wallet holds **buckets**: each grant (signup bonus, daily free, purchase, subscription,

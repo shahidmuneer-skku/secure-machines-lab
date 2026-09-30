@@ -43,6 +43,31 @@ def task_progress(task_ids: list[str]) -> dict[str, dict[str, Any]]:
         return {}
 
 
+def record_progress(task_id: str, progress: float, message: str = "", *, log: bool = False,
+                    ttl: int = 24 * 3600) -> None:
+    """Write live progress (and optionally a log line) the way workers do, for tasks run elsewhere."""
+    r = _redis()
+    if r is None:
+        return
+    from django.utils import timezone
+
+    now = timezone.now().isoformat()
+    try:
+        pipe = r.pipeline()
+        key = PROGRESS_KEY.format(task_id)
+        pipe.hset(key, mapping={"progress": f"{max(0.0, min(100.0, progress)):.1f}", "updated_at": now,
+                                **({"message": message[:240]} if message else {})})
+        pipe.expire(key, ttl)
+        if log and message:
+            log_key = LOG_KEY.format(task_id)
+            pipe.rpush(log_key, json.dumps({"at": now, "message": message[:300]}))
+            pipe.ltrim(log_key, -200, -1)
+            pipe.expire(log_key, ttl)
+        pipe.execute()
+    except redis.RedisError:
+        logger.warning("Redis unavailable for live progress", exc_info=True)
+
+
 def task_log(task_id: str, limit: int = 100) -> list[dict[str, Any]]:
     r = _redis()
     if r is None:

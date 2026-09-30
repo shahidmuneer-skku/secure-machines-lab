@@ -14,3 +14,4 @@ consequences. Add a new record instead of rewriting an accepted one; mark the ol
 | [0007](0007-payment-providers.md) | One provider interface; grants only from server-verified payments | Accepted |
 | [0008](0008-model-workers.md) | Django-free workers running existing model scripts as subprocesses | Accepted |
 | [0009](0009-authentication.md) | Sessions for browsers, API keys for machines, MFA for staff | Accepted |
+| [0010](0010-long-form-streaming.md) | Long-form video streamed to a GPU service, charged per minute analysed | Accepted |

@@ -198,3 +198,27 @@ def test_nightly_audit_finds_tampered_wallets_only(user, make_user):
     CreditBucket.objects.filter(wallet__user=other).update(amount_remaining=3)
     assert credits.audit_ledgers() == [str(credits.ensure_wallet(other).pk)]
     assert AuditLog.objects.filter(action="credits.ledger_mismatch").count() == 1
+
+
+def test_settle_charges_part_and_returns_the_rest_to_the_longest_lasting_buckets(user):
+    soon = give(user, 4, days=1)
+    later = give(user, 10, days=30)
+    hold = credits.reserve(user, 12, reference_type="stream", reference_id="s1")  # takes 4 soon + 8 later
+    settled = credits.settle(hold, 5)
+    assert settled.status == CreditHold.Status.CAPTURED and settled.amount == 5
+    soon.refresh_from_db()
+    later.refresh_from_db()
+    assert (soon.amount_remaining, later.amount_remaining) == (0, 9)  # 7 returned to the later bucket
+    assert credits.get_balance(user).balance == 9
+    assert wallet_ok(user)
+
+
+@pytest.mark.parametrize(("amount", "status", "balance"), [(0, CreditHold.Status.RELEASED, 10),
+                                                            (99, CreditHold.Status.CAPTURED, 2)])
+def test_settle_bounds(user, amount, status, balance):
+    give(user, 10)
+    hold = credits.settle(credits.reserve(user, 8, reference_type="stream", reference_id="s2"), amount)
+    assert hold.status == status
+    assert credits.get_balance(user).balance == balance
+    assert wallet_ok(user)
+    assert credits.settle(hold, 1).status == status  # idempotent once settled

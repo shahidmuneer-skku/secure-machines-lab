@@ -48,4 +48,5 @@ app.conf.beat_schedule = {
     "renew-toss-subscriptions": {"task": "sml.maintenance.renew_subscriptions", "schedule": crontab(minute="*/30")},
     "prune-logs": {"task": "sml.maintenance.prune_logs", "schedule": crontab(minute=40, hour=3)},
     "audit-ledgers": {"task": "sml.maintenance.audit_ledgers", "schedule": crontab(minute=10, hour=4)},
+    "expire-streams": {"task": "sml.maintenance.expire_streams", "schedule": 60.0},
 }

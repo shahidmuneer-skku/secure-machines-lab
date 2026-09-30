@@ -4360,6 +4360,96 @@
                 }
             }
         },
+        "/api/v1/long-video/models": {
+            "get": {
+                "operationId": "long_video_models_retrieve",
+                "summary": "Detectors available for long-form streaming, with the price per minute",
+                "tags": [
+                    "long-video"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StreamCatalog"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/long-video/sessions": {
+            "post": {
+                "operationId": "long_video_sessions_create",
+                "summary": "Pay for a long-form scan and get a token for the stream service",
+                "tags": [
+                    "long-video"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamSessionRequestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamSessionRequestRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamSessionRequestRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StreamSession"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "operationId": "me_retrieve",
@@ -7361,6 +7451,21 @@
                 ],
                 "type": "string",
                 "description": "* `queued` - Queued\n* `running` - Running\n* `succeeded` - Done\n* `failed` - Failed"
+            },
+            "FaceCrop": {
+                "type": "object",
+                "properties": {
+                    "support": {
+                        "$ref": "#/components/schemas/SupportEnum"
+                    },
+                    "default": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "default",
+                    "support"
+                ]
             },
             "FamilyEnum": {
                 "enum": [
@@ -10833,6 +10938,154 @@
                 "type": "string",
                 "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases"
             },
+            "StreamCatalog": {
+                "type": "object",
+                "properties": {
+                    "online": {
+                        "type": "boolean"
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StreamModel"
+                        }
+                    },
+                    "price_per_minute": {
+                        "type": "integer"
+                    },
+                    "max_bytes": {
+                        "type": "integer"
+                    },
+                    "max_seconds": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "max_bytes",
+                    "max_seconds",
+                    "models",
+                    "online",
+                    "price_per_minute"
+                ]
+            },
+            "StreamModel": {
+                "type": "object",
+                "properties": {
+                    "model_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "face_crop": {
+                        "$ref": "#/components/schemas/FaceCrop"
+                    }
+                },
+                "required": [
+                    "available",
+                    "face_crop",
+                    "model_id",
+                    "name",
+                    "reason"
+                ]
+            },
+            "StreamSession": {
+                "type": "object",
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "job_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "ws_url": {
+                        "type": "string"
+                    },
+                    "token": {
+                        "type": "string"
+                    },
+                    "credits_reserved": {
+                        "type": "integer"
+                    },
+                    "reserved_seconds": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "credits_reserved",
+                    "job_id",
+                    "reserved_seconds",
+                    "session_id",
+                    "token",
+                    "ws_url"
+                ]
+            },
+            "StreamSessionRequestRequest": {
+                "type": "object",
+                "properties": {
+                    "model_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "file_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "file_size": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "duration_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "minimum": 0.1
+                    },
+                    "start_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "minimum": 0,
+                        "default": 0.0
+                    },
+                    "end_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "interval_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "default": 5.0
+                    },
+                    "whole_video": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "face_crop": {
+                        "type": "boolean",
+                        "nullable": true
+                    },
+                    "locale": {
+                        "$ref": "#/components/schemas/LocaleEnum"
+                    }
+                },
+                "required": [
+                    "duration_seconds",
+                    "file_name",
+                    "file_size",
+                    "model_id"
+                ]
+            },
             "Subscription": {
                 "type": "object",
                 "properties": {
@@ -10905,6 +11158,15 @@
                 ],
                 "type": "string",
                 "description": "* `incomplete` - Incomplete\n* `active` - Active\n* `past_due` - Past due\n* `canceled` - Canceled\n* `expired` - Expired"
+            },
+            "SupportEnum": {
+                "enum": [
+                    "always",
+                    "optional",
+                    "none"
+                ],
+                "type": "string",
+                "description": "* `always` - always\n* `optional` - optional\n* `none` - none"
             },
             "TaskKindEnum": {
                 "enum": [
