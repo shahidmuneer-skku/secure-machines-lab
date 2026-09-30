@@ -100,6 +100,7 @@ function UserMenu() {
   const t = useTranslations()
   const logout = useMutation({
     mutationFn: () => allauth.logout(),
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the previous user's cached data
     onSettled: () => window.location.assign("/login"),
   })
   const source = me?.display_name?.trim() || me?.email?.split("@")[0] || "?"

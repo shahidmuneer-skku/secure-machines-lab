@@ -1,12 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
 import { passkeysSupported } from "@/lib/auth/passkey"
 
-/** WebAuthn support is only knowable in the browser; resolve it after mount to avoid hydration mismatches. */
+import { useClientValue } from "./use-hydrated"
+
+/** WebAuthn support is only knowable in the browser; false during SSR so hydration matches. */
 export function usePasskeysSupported(): boolean {
-  const [supported, setSupported] = useState(false)
-  useEffect(() => setSupported(passkeysSupported()), [])
-  return supported
+  return useClientValue(passkeysSupported, false)
 }

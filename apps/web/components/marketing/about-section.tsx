@@ -1,8 +1,10 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useRef, useState, useMemo } from "react"
 import { Search, Ban, Network } from "lucide-react"
 import type { DashTranslations } from "@/lib/marketing/i18n"
+import { seededRandom } from "@/lib/seeded-random"
 
 function SectionHeader({ idx, eyebrow, title, sub }: {
   idx: string; eyebrow: string; title: React.ReactNode; sub?: string
@@ -35,23 +37,25 @@ function SectionHeader({ idx, eyebrow, title, sub }: {
 
 function ResearchBackdrop() {
   const particles = useMemo(() => {
+    const random = seededRandom(1)
     const arr = []
     for (let i = 0; i < 60; i++) {
       arr.push({
-        x: 20 + Math.random() * 40, y: 10 + Math.random() * 80,
-        size: Math.random() * 2.5 + 0.5, delay: Math.random() * 6,
-        dur: 5 + Math.random() * 6,
-        driftX: (Math.random() - 0.5) * 80, driftY: -30 - Math.random() * 100,
-        hue: Math.random() > 0.7 ? "var(--accent-2)" : Math.random() > 0.5 ? "var(--accent-3)" : "var(--accent)",
+        x: 20 + random() * 40, y: 10 + random() * 80,
+        size: random() * 2.5 + 0.5, delay: random() * 6,
+        dur: 5 + random() * 6,
+        driftX: (random() - 0.5) * 80, driftY: -30 - random() * 100,
+        hue: random() > 0.7 ? "var(--accent-2)" : random() > 0.5 ? "var(--accent-3)" : "var(--accent)",
       })
     }
     return arr
   }, [])
 
   const streaks = useMemo(() => {
+    const random = seededRandom(2)
     const arr = []
     for (let i = 0; i < 14; i++) {
-      arr.push({ y: 20 + Math.random() * 60, len: 60 + Math.random() * 180, delay: Math.random() * 5, dur: 3 + Math.random() * 4 })
+      arr.push({ y: 20 + random() * 60, len: 60 + random() * 180, delay: random() * 5, dur: 3 + random() * 4 })
     }
     return arr
   }, [])
@@ -64,8 +68,8 @@ function ResearchBackdrop() {
         position: "absolute", inset: 0, overflow: "hidden",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        <img src="/images/background.png" alt="" style={{
-          width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%",
+        <Image src="/images/background.webp" alt="" fill sizes="100vw" style={{
+          objectFit: "cover", objectPosition: "center 30%",
           opacity: 0.18, filter: "saturate(1.4) contrast(1.1)",
           maskImage: "radial-gradient(ellipse 60% 70% at 45% 45%, black 20%, transparent 75%)",
           WebkitMaskImage: "radial-gradient(ellipse 60% 70% at 45% 45%, black 20%, transparent 75%)",

@@ -3,9 +3,10 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { HudCard } from "@/components/sml/hud-card"
 import { Button } from "@/components/ui/button"
@@ -24,19 +25,18 @@ export function BillingReturn() {
   const t = useTranslations("billing.return")
   const params = useSearchParams()
   const qc = useQueryClient()
-  const [state, setState] = useState<State>({ kind: "working" })
+  // A canceled/failed checkout is known from the URL alone; only real returns need the server.
+  const canceled = params.get("status") === "cancel" || !!params.get("code")
+  const [state, setState] = useState<State>(() =>
+    canceled ? { kind: "error", message: params.get("message") || t("canceled") } : { kind: "working" })
   const ran = useRef(false)
 
   useEffect(() => {
-    if (ran.current) return
+    if (ran.current || canceled) return
     ran.current = true
     const provider = params.get("provider")
     const kind = params.get("kind")
     const order = params.get("order") ?? params.get("orderId") ?? ""
-    if (params.get("status") === "cancel" || params.get("code")) {
-      setState({ kind: "error", message: params.get("message") || t("canceled") })
-      return
-    }
     const finish = (credits: number) => {
       qc.invalidateQueries({ queryKey: qk.balance })
       qc.invalidateQueries({ queryKey: ["billing"] })
@@ -67,7 +67,7 @@ export function BillingReturn() {
       }
     }
     void run()
-  }, [params, qc, t])
+  }, [canceled, params, qc, t])
 
   return (
     <div className="mx-auto max-w-lg py-10">
@@ -100,16 +100,17 @@ export function BillingReturn() {
 export function MockCheckout() {
   const t = useTranslations("billing.mock")
   const params = useSearchParams()
+  const router = useRouter()
   const order = params.get("order") ?? ""
   const [busy, setBusy] = useState(false)
   const complete = async () => {
     setBusy(true)
     try {
       await api.POST("/api/v1/billing/mock/complete" as never, { body: { order_id: order } } as never)
-      window.location.assign(`/app/billing/return?provider=mock&kind=pack&order=${encodeURIComponent(order)}&status=success`)
+      router.push(`/app/billing/return?provider=mock&kind=pack&order=${encodeURIComponent(order)}&status=success`)
     } catch (e) {
       setBusy(false)
-      alert(isApiError(e) ? e.detail : String(e))
+      toast.error(isApiError(e) ? e.detail : String(e))
     }
   }
   return (

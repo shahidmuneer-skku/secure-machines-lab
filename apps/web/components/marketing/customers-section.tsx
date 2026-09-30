@@ -1,3 +1,4 @@
+import Image from "next/image"
 import type { DashTranslations, Language } from "@/lib/marketing/i18n"
 import { watermarkGalleryImages } from "@/lib/marketing/watermark-gallery.generated"
 
@@ -67,7 +68,7 @@ export default function CustomersSection({
               className={`customers-logo-card${image.prominent ? " customers-logo-card--prominent" : ""}${image.authority ? " customers-logo-card--authority" : ""}${image.police ? " customers-logo-card--police" : ""}${image.broadcasting ? " customers-logo-card--broadcasting" : ""}${image.compact ? " customers-logo-card--compact" : ""}`}
               key={image.src}
             >
-              <img src={image.src} alt={image.alt} loading="lazy" decoding="async" />
+              <Image src={image.src} alt={image.alt} width={640} height={276} sizes="(max-width: 768px) 45vw, 320px" />
             </div>
           ))}
         </div>

@@ -5,7 +5,7 @@ import { ArrowRight, Coins, Loader2, ShieldAlert } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Eyebrow } from "@/components/sml/eyebrow"
 import { HudCard } from "@/components/sml/hud-card"
@@ -38,16 +38,13 @@ export function DetectFlow() {
     () => Array.from(new Set(uploads.items.filter((i) => i.kind && i.state !== "invalid").map((i) => i.kind!))),
     [uploads.items],
   )
-  const available = catalog.data?.models ?? []
-
-  // Default to the recommended set once the catalog loads.
-  useEffect(() => {
-    if (models === null && available.length) {
-      setModels(available.filter((m) => m.default_selected && m.allowed !== false).map((m) => m.id))
-    }
-  }, [available, models])
-
-  const selected = models ?? []
+  const available = useMemo(() => catalog.data?.models ?? [], [catalog.data])
+  // The recommended set until the user changes the selection.
+  const recommended = useMemo(
+    () => available.filter((m) => m.default_selected && m.allowed !== false).map((m) => m.id),
+    [available],
+  )
+  const selected = models ?? recommended
   const request = useMemo(() => ({
     media: uploads.ready.map((r) => r.media!), models: selected,
     catalog: available.map((m) => ({ id: m.id, media: m.media })), auditSteps: audit,

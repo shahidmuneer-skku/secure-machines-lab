@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Loader2, Plus, RotateCcw, Save } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Eyebrow } from "@/components/sml/eyebrow"
@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { useDraft } from "@/hooks/use-draft"
 import { useCan } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
@@ -29,6 +30,9 @@ import { formatDateTime, formatMoney } from "@/lib/format"
 import { AdminError, LoadMore, Loading, usePaged } from "./common"
 
 const onError = (fallback: string) => (e: unknown) => toast.error(isApiError(e) ? e.detail : fallback)
+const EMPTY: Record<string, never> = {}
+const FREE_KEYS = ["guest_trial_images_per_day", "signup_bonus_credits", "signup_bonus_expiry_days", "daily_free_credits",
+  "purchased_credit_expiry_days"] as const
 
 /* ---------------- pricing ---------------- */
 
@@ -39,18 +43,22 @@ export function AdminPricing() {
   const canSettings = useCan("manage_settings")
   const { data: prices, isLoading, error } = useQuery({ queryKey: qk.admin("pricing"), queryFn: async () => data(await api.GET("/api/v1/admin/pricing")) })
   const { data: settings } = useQuery({ queryKey: qk.admin("settings"), queryFn: async () => data(await api.GET("/api/v1/admin/settings")) })
-  const [draft, setDraft] = useState<Record<string, number>>({})
-  const [free, setFree] = useState<Record<string, number>>({})
-  useEffect(() => { if (prices) setDraft(Object.fromEntries(prices.map((p) => [p.key, p.credits]))) }, [prices])
-  useEffect(() => {
-    if (settings) setFree({ guest_trial_images_per_day: settings.guest_trial_images_per_day ?? 0, signup_bonus_credits: settings.signup_bonus_credits ?? 0,
-      signup_bonus_expiry_days: settings.signup_bonus_expiry_days ?? 0, daily_free_credits: settings.daily_free_credits ?? 0,
-      purchased_credit_expiry_days: settings.purchased_credit_expiry_days ?? 0 })
-  }, [settings])
-  const savePrices = useMutation({ mutationFn: async () => data(await api.PUT("/api/v1/admin/pricing", { body: { prices: draft } })),
-    onSuccess: () => { toast.success(t("saved")); qc.invalidateQueries({ queryKey: qk.admin("pricing") }) }, onError: onError(t("failed")) })
-  const saveFree = useMutation({ mutationFn: async () => data(await api.PATCH("/api/v1/admin/settings", { body: free as never })),
-    onSuccess: () => { toast.success(t("saved")); qc.invalidateQueries({ queryKey: qk.admin("settings") }) }, onError: onError(t("failed")) })
+  const serverPrices = useMemo(() => prices && Object.fromEntries(prices.map((p) => [p.key, p.credits])), [prices])
+  const serverFree = useMemo(() => settings && Object.fromEntries(FREE_KEYS.map((k) => [k, settings[k] ?? 0])), [settings])
+  const draft = useDraft<Record<string, number>>(serverPrices, EMPTY)
+  const free = useDraft<Record<string, number>>(serverFree, EMPTY)
+  const savePrices = useMutation({ mutationFn: async () => data(await api.PUT("/api/v1/admin/pricing", { body: { prices: draft.value } })),
+    onSuccess: async () => {
+      toast.success(t("saved"))
+      await qc.invalidateQueries({ queryKey: qk.admin("pricing") })
+      draft.reset()
+    }, onError: onError(t("failed")) })
+  const saveFree = useMutation({ mutationFn: async () => data(await api.PATCH("/api/v1/admin/settings", { body: free.value as never })),
+    onSuccess: async () => {
+      toast.success(t("saved"))
+      await qc.invalidateQueries({ queryKey: qk.admin("settings") })
+      free.reset()
+    }, onError: onError(t("failed")) })
   if (isLoading) return <Loading />
   return (
     <div className="space-y-5">
@@ -65,7 +73,7 @@ export function AdminPricing() {
               <div key={p.key} className="flex items-center justify-between gap-3">
                 <Label htmlFor={`p-${p.key}`} className="font-normal">{p.label}</Label>
                 <Input id={`p-${p.key}`} type="number" min={0} className="w-24 text-right" disabled={!canEdit}
-                  value={draft[p.key] ?? 0} onChange={(e) => setDraft({ ...draft, [p.key]: Number(e.target.value) })} />
+                  value={draft.value[p.key] ?? 0} onChange={(e) => draft.set((d) => ({ ...d, [p.key]: Number(e.target.value) }))} />
               </div>
             ))}
             {canEdit && <Button size="sm" onClick={() => savePrices.mutate()} disabled={savePrices.isPending}><Save className="size-4" /> {t("save")}</Button>}
@@ -75,11 +83,11 @@ export function AdminPricing() {
           <CardHeader><Eyebrow index={2}>{t("freeEyebrow")}</Eyebrow><CardTitle className="mt-1 text-base">{t("freeTitle")}</CardTitle>
             <CardDescription>{t("freeHint")}</CardDescription></CardHeader>
           <CardContent className="space-y-3">
-            {Object.keys(free).map((k) => (
+            {Object.keys(free.value).map((k) => (
               <div key={k} className="flex items-center justify-between gap-3">
                 <Label htmlFor={`f-${k}`} className="font-normal">{t(`free.${k}`)}</Label>
                 <Input id={`f-${k}`} type="number" min={0} className="w-24 text-right" disabled={!canSettings}
-                  value={free[k]} onChange={(e) => setFree({ ...free, [k]: Number(e.target.value) })} />
+                  value={free.value[k]} onChange={(e) => free.set((f) => ({ ...f, [k]: Number(e.target.value) }))} />
               </div>
             ))}
             {canSettings && <Button size="sm" onClick={() => saveFree.mutate()} disabled={saveFree.isPending}><Save className="size-4" /> {t("save")}</Button>}
@@ -331,14 +339,19 @@ export function AdminSettings() {
   const qc = useQueryClient()
   const canEdit = useCan("manage_settings")
   const { data: s, isLoading, error } = useQuery({ queryKey: qk.admin("settings"), queryFn: async () => data(await api.GET("/api/v1/admin/settings")) })
-  const [form, setForm] = useState<Record<string, unknown>>({})
-  useEffect(() => { if (s) setForm(s as Record<string, unknown>) }, [s])
+  const draft = useDraft<Record<string, unknown>>(s as Record<string, unknown> | undefined, EMPTY)
+  const form = draft.value
+  const setForm = draft.set
   const save = useMutation({ mutationFn: async () => {
       const { updated_at, ...body } = form
       void updated_at
       return data(await api.PATCH("/api/v1/admin/settings", { body: body as never }))
     },
-    onSuccess: () => { toast.success(t("saved")); qc.invalidateQueries({ queryKey: qk.admin("settings") }); qc.invalidateQueries({ queryKey: qk.config }) },
+    onSuccess: async () => {
+      toast.success(t("saved"))
+      await Promise.all([qc.invalidateQueries({ queryKey: qk.admin("settings") }), qc.invalidateQueries({ queryKey: qk.config })])
+      draft.reset()
+    },
     onError: onError(t("failed")) })
   if (isLoading) return <Loading />
   const bool = (k: string) => (

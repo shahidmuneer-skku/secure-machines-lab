@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ShieldCheck, Bot } from "lucide-react"
 import type { DashTranslations } from "@/lib/marketing/i18n"
-
-const domain: { ports: { web: number; chatBot: number }; webUrl: string; chatBotFullUrl: string } | null = null
+import { useHydrated } from "@/hooks/use-hydrated"
 
 // The detector now lives inside the platform; the assistant card opens the
 // legacy chatbot when configured, otherwise the news-verification agent.
@@ -315,9 +314,8 @@ function ToolModal({
 
 export default function ToolsSection({ t }: { t: DashTranslations["tools"] }) {
   const [active, setActive] = useState<number | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
+  // Tool URLs depend on window.location, so they are only filled in after hydration.
+  const mounted = useHydrated()
 
   const tools: Tool[] = [
     {

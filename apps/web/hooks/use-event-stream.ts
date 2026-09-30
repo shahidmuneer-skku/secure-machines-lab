@@ -1,7 +1,7 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useEffectEvent, useState } from "react"
 
 import { qk } from "@/lib/api/keys"
 
@@ -20,8 +20,8 @@ const EVENTS = [
 export function useEventStream(enabled: boolean, onEvent?: Handler) {
   const qc = useQueryClient()
   const [connected, setConnected] = useState(false)
-  const handlerRef = useRef(onEvent)
-  handlerRef.current = onEvent
+  // Always calls the latest `onEvent` without reconnecting the stream when it changes.
+  const emit = useEffectEvent((name: string, data: Record<string, unknown>) => onEvent?.(name, data))
 
   useEffect(() => {
     if (!enabled || typeof EventSource === "undefined") return
@@ -46,7 +46,7 @@ export function useEventStream(enabled: boolean, onEvent?: Handler) {
           }
           const data = payload.data ?? {}
           apply(name, data)
-          handlerRef.current?.(name, data)
+          emit(name, data)
         })
       }
       source.onerror = () => {

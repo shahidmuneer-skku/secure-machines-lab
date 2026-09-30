@@ -28,7 +28,6 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  images: { unoptimized: true },
 }
 
 export default withNextIntl(nextConfig)

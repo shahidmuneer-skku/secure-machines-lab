@@ -1,8 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import Image from "next/image"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import type { DashTranslations, Language } from "@/lib/marketing/i18n"
 import { watermarkGalleryImages } from "@/lib/marketing/watermark-gallery.generated"
+
+function subscribeResize(onChange: () => void) {
+  window.addEventListener("resize", onChange)
+  return () => window.removeEventListener("resize", onChange)
+}
 
 function useMouseParallax(strength = 1) {
   const [xy, setXY] = useState({ x: 0, y: 0 })
@@ -26,22 +32,6 @@ function useScrollProgress() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
   return y
-}
-
-function LiveClock() {
-  const [now, setNow] = useState(new Date())
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(t)
-  }, [])
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
-  const kst = new Date(utc.getTime() + 9 * 3600 * 1000)
-  return (
-    <span style={{ fontVariantNumeric: "tabular-nums" }}>
-      {pad(kst.getUTCHours())}:{pad(kst.getUTCMinutes())}:{pad(kst.getUTCSeconds())} KST
-    </span>
-  )
 }
 
 function HeroMarquee({ items }: { items: DashTranslations["hero"]["marquee"] }) {
@@ -79,13 +69,15 @@ function WatermarkGallery({ language }: { language: Language }) {
               aria-hidden={isDuplicate || undefined}
             >
               {images.map((image, index) => (
-                <img
+                <Image
                   className={`watermark-gallery__logo${image.tickerWide ? " watermark-gallery__logo--extra-large" : image.tickerProminent ? " watermark-gallery__logo--prominent" : ""}`}
                   key={`${isDuplicate ? "duplicate" : "source"}-${image.src}`}
                   src={image.src}
                   alt={isDuplicate ? "" : image.alt}
+                  width={440}
+                  height={240}
+                  sizes="220px"
                   loading={index < 4 ? "eager" : "lazy"}
-                  decoding="async"
                 />
               ))}
             </div>
@@ -129,14 +121,7 @@ function HeroStats({ stats }: { stats: DashTranslations["hero"]["stats"] }) {
 export default function HeroSection({ t, language }: { t: DashTranslations["hero"], language: Language }) {
   const { x, y } = useMouseParallax(20)
   const scrollY = useScrollProgress()
-  const [vh, setVh] = useState(800)
-
-  useEffect(() => {
-    setVh(window.innerHeight)
-    const onResize = () => setVh(window.innerHeight)
-    window.addEventListener("resize", onResize)
-    return () => window.removeEventListener("resize", onResize)
-  }, [])
+  const vh = useSyncExternalStore(subscribeResize, () => window.innerHeight, () => 800)
 
   const heroOpacity = Math.max(0, 1 - scrollY / (vh * 0.8))
   const heroTranslate = scrollY * 0.25
@@ -161,7 +146,6 @@ export default function HeroSection({ t, language }: { t: DashTranslations["hero
           <span className="chip"><span className="led"></span> {t.status}</span>
         </div>
         <div style={{ display: "flex", gap: 24, textAlign: "right" }}>
-          {/* <span className="hide-sm"><LiveClock /></span> */}
           {/* <span>v26.4</span> */}
         </div>
       </div>

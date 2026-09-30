@@ -15,6 +15,7 @@ function makeClient() {
         if (isApiError(error) && error.status === 401 && typeof window !== "undefined") {
           const here = window.location.pathname + window.location.search
           if (here.startsWith("/app") || here.startsWith("/admin")) {
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the previous user's cached data
             window.location.assign(`/login?next=${encodeURIComponent(here)}`)
           }
         }

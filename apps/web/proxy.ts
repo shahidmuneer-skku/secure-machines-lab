@@ -23,9 +23,20 @@ function matches(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
+function storageOrigin(): string {
+  const raw = process.env.STORAGE_ORIGIN
+  if (!raw) return ""
+  try {
+    return new URL(raw).origin
+  } catch {
+    return ""
+  }
+}
+
 function csp(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development"
-  const storage = process.env.NEXT_PUBLIC_STORAGE_ORIGIN ? ` ${process.env.NEXT_PUBLIC_STORAGE_ORIGIN}` : ""
+  // Presigned media URLs and multipart upload parts go straight to object storage.
+  const storage = storageOrigin() ? ` ${storageOrigin()}` : ""
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,

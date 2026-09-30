@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Cpu, RotateCw, Search, Thermometer } from "lucide-react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Eyebrow } from "@/components/sml/eyebrow"
@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useDraft } from "@/hooks/use-draft"
 import { useCan } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
@@ -32,6 +33,8 @@ import { AdminError, LoadMore, Loading, usePaged } from "./common"
 
 /* ---------------- roles ---------------- */
 
+const NO_CAPS: Record<number, string[]> = {}
+
 export function AdminRoles() {
   const t = useTranslations("admin.roles")
   const qc = useQueryClient()
@@ -39,11 +42,17 @@ export function AdminRoles() {
   const { data: r, isLoading, error } = useQuery({ queryKey: qk.admin("roles"), queryFn: async () => data(await api.GET("/api/v1/admin/roles")) as unknown as {
     roles: { id: number; name: string; description: string; mfa_required: boolean; is_staff_role: boolean; capabilities: string[]; members: number }[]
     capabilities: { id: string; label: string }[] } })
-  const [draft, setDraft] = useState<Record<number, string[]>>({})
-  useEffect(() => { if (r) setDraft(Object.fromEntries(r.roles.map((x) => [x.id, x.capabilities]))) }, [r])
+  const serverDraft = useMemo(() => r && Object.fromEntries(r.roles.map((x) => [x.id, x.capabilities])), [r])
+  const edits = useDraft<Record<number, string[]>>(serverDraft, NO_CAPS)
+  const draft = edits.value
+  const setDraft = edits.set
   const save = useMutation({
     mutationFn: async (id: number) => data(await api.PUT("/api/v1/admin/roles/{id}", { params: { path: { id } }, body: { capabilities: draft[id] } as never })),
-    onSuccess: () => { toast.success(t("saved")); qc.invalidateQueries({ queryKey: qk.admin("roles") }) },
+    onSuccess: async () => {
+      toast.success(t("saved"))
+      await qc.invalidateQueries({ queryKey: qk.admin("roles") })
+      edits.reset()
+    },
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")),
   })
   if (isLoading) return <Loading />

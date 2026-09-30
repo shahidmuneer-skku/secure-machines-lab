@@ -113,7 +113,8 @@ function PacksAndPlans() {
   const checkout = useCheckout()
   const qc = useQueryClient()
   const { data: sub } = useQuery({ queryKey: qk.subscription,
-    queryFn: async () => data(await api.GET("/api/v1/billing/subscription")) })
+    // No subscription is `null` (React Query rejects `undefined` results).
+    queryFn: async () => data(await api.GET("/api/v1/billing/subscription")) ?? null })
   const providers = (catalog?.providers ?? []) as { id: Provider; currency: Currency }[]
   const [provider, setProvider] = useState<Provider | null>(null)
   const active = provider ?? providers.find((p) => p.id === (locale === "ko" ? "toss" : "stripe"))?.id ?? providers[0]?.id

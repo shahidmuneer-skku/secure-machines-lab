@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, Ban, CheckCircle2, KeyRound, LogOut, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Eyebrow } from "@/components/sml/eyebrow"
@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useCatalog } from "@/hooks/use-catalog"
+import { useDraft } from "@/hooks/use-draft"
 import { useCan } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
@@ -61,6 +62,12 @@ function RestrictionPicker<T extends string>({ label, all, value, onChange, labe
   )
 }
 
+type AccessForm = {
+  allowed_modules: Nullable<string>; allowed_models: Nullable<string>; allowed_audit_steps: Nullable<string>
+  max_inflight_tasks: string; retention_days_override: string; unlimited_credits: boolean; notes: string
+}
+const NO_ROLES: string[] = []
+
 export function AdminUserDetail({ id }: { id: string }) {
   const t = useTranslations("admin.user")
   const locale = useLocale()
@@ -74,33 +81,33 @@ export function AdminUserDetail({ id }: { id: string }) {
   const policy = useQuery({ queryKey: qk.admin("user", id, "access"), queryFn: async () => data(await api.GET("/api/v1/admin/users/{id}/access", { params: { path: { id } } })) })
   const ledger = useQuery({ queryKey: qk.admin("user", id, "ledger"), queryFn: async () => data(await api.GET("/api/v1/admin/users/{id}/ledger", { params: { path: { id } } })) as unknown as
     { id: string; created_at: string; kind: string; delta: number; balance_after: number; memo: string; actor__email: string | null }[] })
-  const [roles, setRoles] = useState<string[]>([])
-  const [access, setAccess] = useState<{ allowed_modules: Nullable<string>; allowed_models: Nullable<string>; allowed_audit_steps: Nullable<string>;
-    max_inflight_tasks: string; retention_days_override: string; unlimited_credits: boolean; notes: string } | null>(null)
+  const rolesDraft = useDraft<string[]>(user.data?.roles, NO_ROLES)
+  const roles = rolesDraft.value
+  const setRoles = rolesDraft.set
+  const serverAccess = useMemo<AccessForm | undefined>(() => policy.data && {
+    allowed_modules: policy.data.allowed_modules ?? null, allowed_models: policy.data.allowed_models ?? null,
+    allowed_audit_steps: policy.data.allowed_audit_steps ?? null, max_inflight_tasks: policy.data.max_inflight_tasks?.toString() ?? "",
+    retention_days_override: policy.data.retention_days_override?.toString() ?? "", unlimited_credits: !!policy.data.unlimited_credits,
+    notes: policy.data.notes ?? "" }, [policy.data])
+  const accessDraft = useDraft<AccessForm | null>(serverAccess, null)
+  const access = accessDraft.value
+  const setAccess = accessDraft.set
   const [delta, setDelta] = useState("")
   const [reason, setReason] = useState("")
   const [expires, setExpires] = useState("")
 
-  useEffect(() => { if (user.data) setRoles(user.data.roles) }, [user.data])
-  useEffect(() => {
-    if (policy.data) setAccess({
-      allowed_modules: policy.data.allowed_modules ?? null, allowed_models: policy.data.allowed_models ?? null,
-      allowed_audit_steps: policy.data.allowed_audit_steps ?? null, max_inflight_tasks: policy.data.max_inflight_tasks?.toString() ?? "",
-      retention_days_override: policy.data.retention_days_override?.toString() ?? "", unlimited_credits: !!policy.data.unlimited_credits,
-      notes: policy.data.notes ?? "" })
-  }, [policy.data])
-
-  const refresh = () => { qc.invalidateQueries({ queryKey: qk.admin("user", id) }); qc.invalidateQueries({ queryKey: ["admin", "users"] }) }
+  const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: qk.admin("user", id) }),
+    qc.invalidateQueries({ queryKey: ["admin", "users"] })])
   const onError = (e: unknown) => toast.error(isApiError(e) ? e.detail : t("failed"))
   const saveRoles = useMutation({ mutationFn: async () => data(await api.PUT("/api/v1/admin/users/{id}/roles", { params: { path: { id } }, body: { roles } as never })),
-    onSuccess: () => { toast.success(t("rolesSaved")); refresh() }, onError })
+    onSuccess: async () => { toast.success(t("rolesSaved")); await refresh(); rolesDraft.reset() }, onError })
   const saveAccess = useMutation({
     mutationFn: async () => data(await api.PUT("/api/v1/admin/users/{id}/access", { params: { path: { id } }, body: {
       allowed_modules: access!.allowed_modules as never, allowed_models: access!.allowed_models, allowed_audit_steps: access!.allowed_audit_steps as never,
       max_inflight_tasks: access!.max_inflight_tasks ? Number(access!.max_inflight_tasks) : null,
       retention_days_override: access!.retention_days_override ? Number(access!.retention_days_override) : null,
       unlimited_credits: access!.unlimited_credits, notes: access!.notes } as never })),
-    onSuccess: () => { toast.success(t("accessSaved")); refresh() }, onError })
+    onSuccess: async () => { toast.success(t("accessSaved")); await refresh(); accessDraft.reset() }, onError })
   const adjust = useMutation({
     mutationFn: async () => data(await api.POST("/api/v1/admin/users/{id}/credits", { params: { path: { id } }, body: {
       delta: Number(delta), reason, expires_in_days: expires ? Number(expires) : null } })),

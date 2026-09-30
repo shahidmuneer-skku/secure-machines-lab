@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Loader2, Trash2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { PasswordInput } from "@/components/auth/password-input"
@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/i18n/config"
+import { useDraft } from "@/hooks/use-draft"
 import { useMe } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
@@ -35,20 +36,23 @@ import { SecuritySection } from "./security-section"
 
 const TIME_ZONES = ["Asia/Seoul", "UTC", "Europe/Berlin", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Tokyo"]
 
+const EMPTY_PROFILE = { display_name: "", locale: "en", time_zone: "Asia/Seoul", marketing_opt_in: false }
+
 function ProfileSection() {
   const t = useTranslations("settings.profile")
   const { data: me, isLoading } = useMe()
   const qc = useQueryClient()
   const router = useRouter()
-  const [form, setForm] = useState({ display_name: "", locale: "en", time_zone: "Asia/Seoul", marketing_opt_in: false })
-  useEffect(() => {
-    if (me) setForm({ display_name: me.display_name ?? "", locale: me.locale ?? "en", time_zone: me.time_zone ?? "Asia/Seoul",
-      marketing_opt_in: !!me.marketing_opt_in })
-  }, [me])
+  const serverForm = useMemo(() => me && { display_name: me.display_name ?? "", locale: me.locale ?? "en",
+    time_zone: me.time_zone ?? "Asia/Seoul", marketing_opt_in: !!me.marketing_opt_in }, [me])
+  const draft = useDraft(serverForm, EMPTY_PROFILE)
+  const form = draft.value
+  const setForm = draft.set
   const save = useMutation({
     mutationFn: async () => data(await api.PATCH("/api/v1/me", { body: form as never })),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.me })
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: qk.me })
+      draft.reset()
       setLocaleCookie(form.locale as Locale)
       router.refresh()
       toast.success(t("saved"))
@@ -101,6 +105,7 @@ function PrivacySection() {
   const [confirm, setConfirm] = useState("")
   const remove = useMutation({
     mutationFn: async () => api.POST("/api/v1/me/delete", { body: { password, confirm } }),
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the previous user's cached data
     onSuccess: () => window.location.assign("/"),
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("deleteFailed")),
   })

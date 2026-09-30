@@ -26,8 +26,8 @@
   --sml-ok: #7bff9f;
   --sml-radius: 18px;
   --sml-sans: var(--font-space-grotesk), var(--font-noto-kr), system-ui, sans-serif;
-  --sml-mono: var(--font-jetbrains), ui-monospace, monospace;
-  --sml-serif: var(--font-instrument), "Times New Roman", serif;
+  --sml-mono: var(--font-jetbrains), var(--font-noto-kr), ui-monospace, monospace;
+  --sml-serif: var(--font-instrument), var(--font-noto-kr), "Times New Roman", serif;
 
   /* light theme (long dashboard sessions, printing) */
   --background: #f7f8fa;
