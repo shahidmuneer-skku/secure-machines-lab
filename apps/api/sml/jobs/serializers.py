@@ -7,6 +7,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from sml.accounts.models import User
 from sml.catalog.registry import registry
 from sml.media.models import MediaObject
 from sml.reports.serializers import ReportSerializer
@@ -205,7 +206,7 @@ class JobCreateSerializer(serializers.Serializer):
                                    help_text="Model ids from GET /catalog/models. Empty = default selection.")
     audit_steps = serializers.ListField(child=serializers.ChoiceField(choices=["face", "safety", "fas"]),
                                         required=False, default=list)
-    locale = serializers.ChoiceField(choices=["en", "ko", "de"], required=False)
+    locale = serializers.ChoiceField(choices=User.Locale.choices, required=False)
     batch_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
     options = serializers.DictField(required=False, default=dict)
 

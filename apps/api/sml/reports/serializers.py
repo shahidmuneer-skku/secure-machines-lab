@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from sml.accounts.models import User
+
 from .models import Report
 
 
@@ -19,4 +21,4 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class ReportRequestSerializer(serializers.Serializer):
     format = serializers.ChoiceField(choices=Report.Format.choices)
-    locale = serializers.ChoiceField(choices=["en", "ko", "de"], required=False)
+    locale = serializers.ChoiceField(choices=User.Locale.choices, required=False)

@@ -5437,7 +5437,7 @@
                     "allowed_modules": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/AllowedModulesEnum"
+                            "$ref": "#/components/schemas/ModuleEnum"
                         },
                         "nullable": true
                     },
@@ -5497,7 +5497,7 @@
                     "allowed_modules": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/AllowedModulesEnum"
+                            "$ref": "#/components/schemas/ModuleEnum"
                         },
                         "nullable": true
                     },
@@ -6008,7 +6008,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -6081,7 +6081,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -6104,15 +6104,6 @@
                 ],
                 "type": "string",
                 "description": "* `face` - face\n* `safety` - safety\n* `fas` - fas\n* `metadata` - metadata"
-            },
-            "AllowedModulesEnum": {
-                "enum": [
-                    "detect",
-                    "long_video",
-                    "news"
-                ],
-                "type": "string",
-                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news"
             },
             "ApiKey": {
                 "type": "object",
@@ -6835,7 +6826,7 @@
                         "format": "uuid"
                     },
                     "provider": {
-                        "$ref": "#/components/schemas/Provider557Enum"
+                        "$ref": "#/components/schemas/ProviderEnum"
                     }
                 },
                 "required": [
@@ -7430,24 +7421,6 @@
                     "util"
                 ]
             },
-            "Id539Enum": {
-                "enum": [
-                    "detect",
-                    "long_video",
-                    "news"
-                ],
-                "type": "string",
-                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news"
-            },
-            "Id557Enum": {
-                "enum": [
-                    "toss",
-                    "stripe",
-                    "mock"
-                ],
-                "type": "string",
-                "description": "* `toss` - toss\n* `stripe` - stripe\n* `mock` - mock"
-            },
             "IdLabel": {
                 "type": "object",
                 "properties": {
@@ -7502,7 +7475,7 @@
                         }
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/LocaleC4aEnum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "batch_name": {
                         "type": "string",
@@ -8239,7 +8212,7 @@
                     "updated_at"
                 ]
             },
-            "Locale0d2Enum": {
+            "LocaleEnum": {
                 "enum": [
                     "en",
                     "ko",
@@ -8247,15 +8220,6 @@
                 ],
                 "type": "string",
                 "description": "* `en` - English\n* `ko` - 한국어\n* `de` - Deutsch"
-            },
-            "LocaleC4aEnum": {
-                "enum": [
-                    "en",
-                    "ko",
-                    "de"
-                ],
-                "type": "string",
-                "description": "* `en` - en\n* `ko` - ko\n* `de` - de"
             },
             "LongVideoModelInfo": {
                 "type": "object",
@@ -8298,7 +8262,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "time_zone": {
                         "type": "string",
@@ -8370,7 +8334,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "time_zone": {
                         "type": "string",
@@ -8769,16 +8733,17 @@
             "ModuleEnum": {
                 "enum": [
                     "detect",
-                    "long_video"
+                    "long_video",
+                    "news"
                 ],
                 "type": "string",
-                "description": "* `detect` - detect\n* `long_video` - long_video"
+                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news"
             },
             "ModuleInfo": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/Id539Enum"
+                        "$ref": "#/components/schemas/ModuleEnum"
                     },
                     "allowed": {
                         "type": "boolean"
@@ -9150,7 +9115,7 @@
                         "maxItems": 10
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/LocaleC4aEnum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     }
                 },
                 "required": [
@@ -9427,7 +9392,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -9546,7 +9511,7 @@
                         "maxLength": 120
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/Locale0d2Enum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     },
                     "time_zone": {
                         "type": "string",
@@ -10412,15 +10377,6 @@
                 "type": "string",
                 "description": "* `pack` - pack\n* `plan` - plan"
             },
-            "Provider557Enum": {
-                "enum": [
-                    "toss",
-                    "stripe",
-                    "mock"
-                ],
-                "type": "string",
-                "description": "* `toss` - toss\n* `stripe` - stripe\n* `mock` - mock"
-            },
             "ProviderEnum": {
                 "enum": [
                     "toss",
@@ -10434,7 +10390,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/Id557Enum"
+                        "$ref": "#/components/schemas/ProviderEnum"
                     },
                     "currency": {
                         "$ref": "#/components/schemas/ProviderInfoCurrencyEnum"
@@ -10793,7 +10749,7 @@
                         "$ref": "#/components/schemas/ReportFormatEnum"
                     },
                     "locale": {
-                        "$ref": "#/components/schemas/LocaleC4aEnum"
+                        "$ref": "#/components/schemas/LocaleEnum"
                     }
                 },
                 "required": [

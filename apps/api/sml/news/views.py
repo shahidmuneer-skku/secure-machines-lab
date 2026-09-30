@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from sml import api_schemas as schemas
+from sml.accounts.models import User
 from sml.apikeys.permissions import require_scope
 from sml.core.exceptions import ApiError
 from sml.core.idempotency import idempotent
@@ -29,7 +30,7 @@ class NewsCaseSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=10_000, required=False, allow_blank=True)
     social_media_link = serializers.URLField(max_length=1000, required=False, allow_blank=True)
     media_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list, max_length=10)
-    locale = serializers.ChoiceField(choices=["en", "ko", "de"], required=False)
+    locale = serializers.ChoiceField(choices=User.Locale.choices, required=False)
 
 
 class NewsCaseListCreateView(APIView):

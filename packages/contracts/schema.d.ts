@@ -1399,7 +1399,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AccessPolicy: {
-            allowed_modules: components["schemas"]["AllowedModulesEnum"][] | null;
+            allowed_modules: components["schemas"]["ModuleEnum"][] | null;
             allowed_models: string[] | null;
             allowed_audit_steps: components["schemas"]["AllowedAuditStepsEnum"][] | null;
             max_inflight_tasks: number | null;
@@ -1411,7 +1411,7 @@ export interface components {
             readonly updated_at: string;
         };
         AccessPolicyRequest: {
-            allowed_modules?: components["schemas"]["AllowedModulesEnum"][] | null;
+            allowed_modules?: components["schemas"]["ModuleEnum"][] | null;
             allowed_models?: string[] | null;
             allowed_audit_steps?: components["schemas"]["AllowedAuditStepsEnum"][] | null;
             max_inflight_tasks?: number | null;
@@ -1542,7 +1542,7 @@ export interface components {
             /** Format: email */
             readonly email: string;
             display_name: string;
-            locale: components["schemas"]["Locale0d2Enum"];
+            locale: components["schemas"]["LocaleEnum"];
             is_active: boolean;
             disabled_reason: string;
             /** Format: date-time */
@@ -1559,7 +1559,7 @@ export interface components {
         };
         AdminUserRequest: {
             display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
+            locale?: components["schemas"]["LocaleEnum"];
             is_active?: boolean;
             disabled_reason?: string;
             marketing_opt_in?: boolean;
@@ -1572,13 +1572,6 @@ export interface components {
          * @enum {string}
          */
         AllowedAuditStepsEnum: "face" | "safety" | "fas" | "metadata";
-        /**
-         * @description * `detect` - detect
-         *     * `long_video` - long_video
-         *     * `news` - news
-         * @enum {string}
-         */
-        AllowedModulesEnum: "detect" | "long_video" | "news";
         ApiKey: {
             /** Format: uuid */
             readonly id: string;
@@ -1767,7 +1760,7 @@ export interface components {
             product: components["schemas"]["ProductEnum"];
             /** Format: uuid */
             product_id: string;
-            provider: components["schemas"]["Provider557Enum"];
+            provider: components["schemas"]["ProviderEnum"];
         };
         CheckoutResponse: {
             order_id: string;
@@ -1934,20 +1927,6 @@ export interface components {
             mem_total_mb: number;
             temp_c: number;
         };
-        /**
-         * @description * `detect` - detect
-         *     * `long_video` - long_video
-         *     * `news` - news
-         * @enum {string}
-         */
-        Id539Enum: "detect" | "long_video" | "news";
-        /**
-         * @description * `toss` - toss
-         *     * `stripe` - stripe
-         *     * `mock` - mock
-         * @enum {string}
-         */
-        Id557Enum: "toss" | "stripe" | "mock";
         IdLabel: {
             id: string;
             label: string;
@@ -1961,7 +1940,7 @@ export interface components {
             /** @description Model ids from GET /catalog/models. Empty = default selection. */
             models?: string[];
             audit_steps?: components["schemas"]["AuditStepsEnum"][];
-            locale?: components["schemas"]["LocaleC4aEnum"];
+            locale?: components["schemas"]["LocaleEnum"];
             batch_name?: string;
             options?: {
                 [key: string]: unknown;
@@ -2184,14 +2163,7 @@ export interface components {
          *     * `de` - Deutsch
          * @enum {string}
          */
-        Locale0d2Enum: "en" | "ko" | "de";
-        /**
-         * @description * `en` - en
-         *     * `ko` - ko
-         *     * `de` - de
-         * @enum {string}
-         */
-        LocaleC4aEnum: "en" | "ko" | "de";
+        LocaleEnum: "en" | "ko" | "de";
         LongVideoModelInfo: {
             id: string;
             name: string;
@@ -2204,7 +2176,7 @@ export interface components {
             /** Format: email */
             readonly email: string;
             display_name: string;
-            locale: components["schemas"]["Locale0d2Enum"];
+            locale: components["schemas"]["LocaleEnum"];
             time_zone: string;
             marketing_opt_in: boolean;
             /** Format: date-time */
@@ -2221,7 +2193,7 @@ export interface components {
             /** Format: email */
             readonly email: string;
             display_name: string;
-            locale: components["schemas"]["Locale0d2Enum"];
+            locale: components["schemas"]["LocaleEnum"];
             time_zone: string;
             marketing_opt_in: boolean;
             /** Format: date-time */
@@ -2330,11 +2302,12 @@ export interface components {
         /**
          * @description * `detect` - detect
          *     * `long_video` - long_video
+         *     * `news` - news
          * @enum {string}
          */
-        ModuleEnum: "detect" | "long_video";
+        ModuleEnum: "detect" | "long_video" | "news";
         ModuleInfo: {
-            id: components["schemas"]["Id539Enum"];
+            id: components["schemas"]["ModuleEnum"];
             allowed: boolean;
             price: {
                 [key: string]: number;
@@ -2421,7 +2394,7 @@ export interface components {
             description?: string;
             social_media_link?: string;
             media_ids?: string[];
-            locale?: components["schemas"]["LocaleC4aEnum"];
+            locale?: components["schemas"]["LocaleEnum"];
         };
         /**
          * @description * `openclaude` - OpenClaude (local Qwen)
@@ -2542,7 +2515,7 @@ export interface components {
         };
         PatchedAdminUserRequest: {
             display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
+            locale?: components["schemas"]["LocaleEnum"];
             is_active?: boolean;
             disabled_reason?: string;
             marketing_opt_in?: boolean;
@@ -2573,7 +2546,7 @@ export interface components {
         };
         PatchedMeRequest: {
             display_name?: string;
-            locale?: components["schemas"]["Locale0d2Enum"];
+            locale?: components["schemas"]["LocaleEnum"];
             time_zone?: string;
             marketing_opt_in?: boolean;
         };
@@ -2807,13 +2780,6 @@ export interface components {
          */
         ProductEnum: "pack" | "plan";
         /**
-         * @description * `toss` - toss
-         *     * `stripe` - stripe
-         *     * `mock` - mock
-         * @enum {string}
-         */
-        Provider557Enum: "toss" | "stripe" | "mock";
-        /**
          * @description * `toss` - Toss Payments
          *     * `stripe` - Stripe
          *     * `mock` - Mock (development)
@@ -2821,7 +2787,7 @@ export interface components {
          */
         ProviderEnum: "toss" | "stripe" | "mock";
         ProviderInfo: {
-            id: components["schemas"]["Id557Enum"];
+            id: components["schemas"]["ProviderEnum"];
             currency: components["schemas"]["ProviderInfoCurrencyEnum"];
         };
         /**
@@ -2933,7 +2899,7 @@ export interface components {
         ReportFormatEnum: "pdf" | "hwp" | "csv" | "zip";
         ReportRequestRequest: {
             format: components["schemas"]["ReportFormatEnum"];
-            locale?: components["schemas"]["LocaleC4aEnum"];
+            locale?: components["schemas"]["LocaleEnum"];
         };
         /**
          * @description * `queued` - Queued

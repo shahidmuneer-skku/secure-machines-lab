@@ -8,8 +8,10 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from sml.accounts.models import AccessPolicy
 from sml.accounts.serializers import MeSerializer
 from sml.apikeys.serializers import ApiKeyUsageDailySerializer, ApiRequestLogSerializer
+from sml.billing.models import Provider
 from sml.billing.serializers import CreditPackSerializer, PlanSerializer
 from sml.jobs.serializers import JobDetailSerializer, JobListSerializer
 
@@ -97,7 +99,7 @@ class ModelCatalogSerializer(serializers.Serializer):
 
 
 class ModuleInfoSerializer(serializers.Serializer):
-    id = serializers.ChoiceField(choices=["detect", "long_video", "news"])
+    id = serializers.ChoiceField(choices=AccessPolicy.MODULES)
     allowed = serializers.BooleanField()
     price = serializers.DictField(child=serializers.IntegerField())
 
@@ -125,7 +127,7 @@ class PriceListSerializer(serializers.Serializer):
 # --- billing -------------------------------------------------------------------------------
 
 class ProviderInfoSerializer(serializers.Serializer):
-    id = serializers.ChoiceField(choices=["toss", "stripe", "mock"])
+    id = serializers.ChoiceField(choices=Provider.choices)
     currency = serializers.ChoiceField(choices=["KRW", "USD"])
 
 

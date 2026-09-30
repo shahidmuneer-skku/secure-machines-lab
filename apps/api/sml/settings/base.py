@@ -331,12 +331,13 @@ SPECTACULAR_SETTINGS = {
         "PaymentKindEnum": "sml.billing.models.Payment.Kind",
         "SubscriptionStatusEnum": "sml.billing.models.Subscription.Status",
         "ProviderEnum": "sml.billing.models.Provider",
+        "LocaleEnum": "sml.accounts.models.User.Locale",
+        "ModuleEnum": "sml.accounts.models.AccessPolicy.MODULES",
         "CurrencyEnum": "sml.billing.models.Currency",
         "ReportStatusEnum": "sml.reports.models.Report.Status",
         "ReportFormatEnum": "sml.reports.models.Report.Format",
         "LedgerKindEnum": "sml.credits.models.LedgerKind",
         "MediaStatusEnum": "sml.media.models.MediaObject.Status",
-        "LocaleEnum": [("en", "English"), ("ko", "Korean"), ("de", "German")],
         "MediaTypeEnum": [("image", "Image"), ("video", "Video")],
     },
     "APPEND_COMPONENTS": {
@@ -371,6 +372,8 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_DEFAULT_QUEUE = "sml.default"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# Beat keeps runtime state; it lives with the other runtime files in var/ (git-ignored).
+CELERY_BEAT_SCHEDULE_FILENAME = str(REPO_ROOT / "var" / "celerybeat-schedule")
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TIMEZONE = "UTC"
 

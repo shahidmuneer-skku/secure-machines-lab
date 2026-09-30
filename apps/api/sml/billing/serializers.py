@@ -4,7 +4,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import CreditPack, Payment, Plan, Subscription, localized
+from .models import CreditPack, Payment, Plan, Provider, Subscription, localized
 from .services import display_price
 
 
@@ -99,4 +99,4 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class CheckoutSerializer(serializers.Serializer):
     product = serializers.ChoiceField(choices=["pack", "plan"])
     product_id = serializers.UUIDField()
-    provider = serializers.ChoiceField(choices=["toss", "stripe", "mock"])
+    provider = serializers.ChoiceField(choices=Provider.choices)
