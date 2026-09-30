@@ -26,8 +26,10 @@ S3_ENDPOINT_URL = ""
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 EVENTS_BACKEND = "memory"
-REST_FRAMEWORK = {  # noqa: F405
+REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # noqa: F405
     "DEFAULT_THROTTLE_CLASSES": [],
 }
 ACCOUNT_RATE_LIMITS = False
+STATIC_ROOT = Path(tempfile.mkdtemp(prefix="sml-test-static-"))
+TURNSTILE_SECRET_KEY = ""  # CAPTCHA is exercised separately; never call Cloudflare from tests
