@@ -1375,5 +1375,21 @@
     "eyebrow": "법적 고지",
     "germanNote": "Diese Seite ist derzeit nur auf Englisch und Koreanisch verfügbar. Maßgeblich ist die koreanische Fassung.",
     "koreanPrevails": "이 영문 텍스트와 한국어 버전이 상이할 경우, 한국어 버전이 우선합니다."
+  },
+  "pages": {
+    "home": "홈",
+    "dashboard": "대시보드로 이동",
+    "notFound": {
+      "eyebrow": "찾을 수 없음",
+      "title": "존재하지 않는 페이지입니다",
+      "body": "링크가 잘못되었거나 페이지가 이동 또는 삭제되었습니다. 생성한 결과는 결과 메뉴에서 확인할 수 있습니다."
+    },
+    "error": {
+      "eyebrow": "오류",
+      "title": "문제가 발생했습니다",
+      "body": "페이지를 표시할 수 없습니다. 업로드한 파일과 작업은 안전합니다. 다시 시도하거나 잠시 후 다시 방문해 주세요.",
+      "retry": "다시 시도",
+      "reference": "참조 번호: {digest}"
+    }
   }
 }

@@ -1375,5 +1375,21 @@
     "eyebrow": "Legal",
     "germanNote": "Diese Seite ist derzeit nur auf Englisch und Koreanisch verfügbar. Maßgeblich ist die koreanische Fassung.",
     "koreanPrevails": "If this English text and the Korean version differ, the Korean version prevails."
+  },
+  "pages": {
+    "home": "Home",
+    "dashboard": "Go to dashboard",
+    "notFound": {
+      "eyebrow": "Not found",
+      "title": "This page doesn't exist",
+      "body": "The link may be broken, or the page was moved or deleted. Results you created are listed under Results."
+    },
+    "error": {
+      "eyebrow": "Error",
+      "title": "Something went wrong",
+      "body": "The page could not be displayed. Your uploads and jobs are safe — try again, or come back in a moment.",
+      "retry": "Try again",
+      "reference": "Reference: {digest}"
+    }
   }
 }
