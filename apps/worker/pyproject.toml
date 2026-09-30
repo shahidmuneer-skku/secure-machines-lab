@@ -1,0 +1,31 @@
+[project]
+name = "sml-worker"
+version = "0.1.0"
+description = "Secure Machines Lab model worker runtime (Django-free Celery consumers + model adapters)"
+requires-python = ">=3.10"
+dependencies = [
+  "celery>=5.5",
+  "redis>=5.2",
+  "boto3>=1.35",
+  "pyyaml>=6.0",
+  "httpx>=0.28",
+  "pillow>=11.0",
+  "av>=14.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.9"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["sml_worker*"]
+
+[tool.setuptools.package-data]
+sml_worker = ["agents/assets/**/*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"

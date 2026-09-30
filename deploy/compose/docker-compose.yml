@@ -1,0 +1,94 @@
+# Infrastructure for development and single-host deployments.
+# Django, Next.js and the model workers run on the host (GPU workers need the
+# owner's conda envs); see README.md. All ports bind to 127.0.0.1 only.
+name: sml
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sml}
+      POSTGRES_USER: ${POSTGRES_USER:-sml}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports: ["127.0.0.1:${POSTGRES_PORT:-55432}:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sml} -d ${POSTGRES_DB:-sml}"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    ports: ["127.0.0.1:${REDIS_PORT:-56379}:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    hostname: sml-rabbit
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-sml}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
+      RABBITMQ_DEFAULT_VHOST: sml
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-55672}:5672"
+      - "127.0.0.1:${RABBITMQ_MGMT_PORT:-55673}:15672"
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      retries: 20
+
+  s3:
+    # S3-compatible object storage (SeaweedFS). Any S3 provider works: point
+    # S3_ENDPOINT_URL at MinIO / AWS S3 / R2 instead and drop this service.
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '{"identities":[{"name":"sml","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json
+        exec weed server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.port=8333 -s3.config=/tmp/s3.json -master.volumeSizeLimitMB=1024 -volume.max=0
+    ports:
+      - "127.0.0.1:${S3_PORT:-58333}:8333"
+    volumes: [s3data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1"]
+      interval: 5s
+      retries: 30
+
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      s3: {condition: service_healthy}
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-sml-media}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3000}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 30); do aws --endpoint-url http://s3:8333 s3api head-bucket --bucket "$$S3_BUCKET" 2>/dev/null && break
+          aws --endpoint-url http://s3:8333 s3api create-bucket --bucket "$$S3_BUCKET" && break; sleep 2; done
+        printf '{"CORSRules":[{"AllowedOrigins":["%s"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]}' "$$PUBLIC_WEB_URL" > /tmp/cors.json
+        aws --endpoint-url http://s3:8333 s3api put-bucket-cors --bucket "$$S3_BUCKET" --cors-configuration file:///tmp/cors.json || echo "CORS not applied (uploads through the API still work)"
+    restart: "no"
+
+volumes:
+  pgdata:
+  redisdata:
+  rabbitdata:
+  s3data:

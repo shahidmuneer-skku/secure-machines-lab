@@ -1,0 +1,68 @@
+# Role definitions (Django groups). Applied by `manage.py seed_rbac`.
+# Capabilities are declared in apps/api/sml/accounts/models.py (CAPABILITIES).
+# "*" grants every capability. Staff roles require a session verified with MFA.
+
+user_capabilities: &user_caps
+  - run_detection
+  - run_long_video
+  - run_news_verification
+  - use_reasoning
+  - manage_own_api_keys
+  - purchase_credits
+
+roles:
+  super_admin:
+    description: Everything, including role definitions, pricing and platform settings.
+    staff: true
+    mfa_required: true
+    capabilities: ["*"]
+
+  admin:
+    description: Manage users, access, jobs, models, queues and credit grants. No role or pricing edits.
+    staff: true
+    mfa_required: true
+    capabilities:
+      - *user_caps
+      - view_users
+      - manage_users
+      - manage_user_access
+      - view_all_jobs
+      - manage_all_jobs
+      - grant_credits
+      - manage_models
+      - view_queues
+      - manage_queues
+      - view_system
+      - view_audit_log
+      - view_billing
+      - view_api_usage
+
+  billing_admin:
+    description: Payments, refunds, invoices, credit packs and subscription plans.
+    staff: true
+    mfa_required: true
+    capabilities:
+      - *user_caps
+      - view_users
+      - view_billing
+      - manage_billing
+      - refund_limited
+      - grant_credits
+      - view_audit_log
+
+  support:
+    description: Read-only helpdesk access to users, jobs and billing; limited refunds. No media access.
+    staff: true
+    mfa_required: true
+    capabilities:
+      - *user_caps
+      - view_users
+      - view_all_jobs
+      - view_billing
+      - refund_limited
+
+  user:
+    description: Default role for registered users.
+    default: true
+    capabilities:
+      - *user_caps

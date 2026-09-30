@@ -1,0 +1,513 @@
+# Detection model registry (data-driven; see docs/adding-a-model.md).
+#
+# Each entry is a *selectable model*. Models with separate deepfake / AI-generated
+# weights are listed as separate variants (owner decision 2026-09-30).
+#
+# Invocation templates are argv lists (never shell strings). Placeholders:
+#   {python}            <CONDA_ROOT>/envs/<conda_env>/bin/python
+#   {models_root}       MODELS_ROOT (legacy layout: detection_models/, deepfake_detection-main/, ...)
+#   {input}             absolute path of the staged input file (named <stem>.<ext>)
+#   {input_dir}         directory that contains only the staged input
+#   {stem}              artifact stem (the task id) — outputs are collected by this stem
+#   {workdir}           per-task scratch directory (deleted afterwards)
+#   {media}             image | video
+#   {page_type}         legacy page type derived from media + variant family
+#   {original_name_b64} base64 of the user's original file name
+#
+# Parsers: standard | b2 | safe_csv | center  (all also read FACES_JSON: and the
+# inference_csv "Total result" row). Artifacts are collected from
+# {models_root}/{inference_images,detected,inference_csv}/<stem>*.
+
+defaults:
+  timeout_seconds: 300
+  weight: 1.0
+  gpu_mem_mb: 6000
+
+# Aggregation shown to users as one verdict (weighted mean of fake probability).
+aggregation:
+  method: weighted_mean
+
+models:
+  - id: xception
+    legacy_ids: [VideoDet1, Xception]
+    display_name: {en: Xception, ko: Xception, de: Xception}
+    description:
+      en: Classic face-manipulation detector (FaceForensics++). Fast.
+      ko: 얼굴 조작 탐지 모델(FaceForensics++ 학습). 빠름.
+      de: Klassischer Detektor für Gesichtsmanipulation (FaceForensics++). Schnell.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: true
+    trial: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "deepfake_detection-main/image_detecotors/test_for_ifake.py",
+               "--img_path", "{input}",
+               "--weight_path", "deepfake_detection-main/pretrained_model/xception/training_all_manipulation.pt",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Altfreezing/demo.py", "--method_name", "VideoDet1",
+               "--file_name", "{stem}", "--video_path", "{input}", "--output_path", "./detected"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: qad
+    legacy_ids: [QAD]
+    display_name: {en: QAD, ko: QAD, de: QAD}
+    description:
+      en: Quality-agnostic deepfake detector, robust to compression.
+      ko: 압축에 강한 품질 무관 딥페이크 탐지 모델.
+      de: Qualitätsunabhängiger Deepfake-Detektor, robust gegenüber Kompression.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: true
+    trial: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/QAD/test_for_ifake.py", "--img_path", "{input}",
+               "--weight_path",
+               "detection_models/QAD/pretrained_model/train_img224_shuflfe_warmup3_patient12_raw_c23_c40_one_cycle_batch64_best.pth",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/QAD/predict_from_video.py", "--file_name", "{stem}",
+               "--video_path", "{input}", "--model_path",
+               "./detection_models/QAD/pretrained_model/train_img224_shuflfe_warmup3_patient12_raw_c23_c40_one_cycle_batch64_best.pth",
+               "--output_path", "./detected", "--cuda"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: skku
+    legacy_ids: [SKKU, BEYBI]
+    display_name: {en: SKKU, ko: SKKU, de: SKKU}
+    description:
+      en: CLIP + LoRA detector for face swaps and AI-generated faces.
+      ko: 얼굴 교체 및 AI 생성 얼굴 탐지를 위한 CLIP + LoRA 모델.
+      de: CLIP + LoRA-Detektor für Face-Swaps und KI-generierte Gesichter.
+    family: general
+    face_required: true
+    xai: attention
+    default_selected: true
+    trial: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/BEYBI/image_detection.py", "--current_dir", "./detection_models/BEYBI",
+               "--image_path", "{input}", "--model_path", "checkpoint/3_best_model.pt", "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: BEYBI
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/BEYBI/video_detection.py", "--current_dir", "./detection_models/BEYBI",
+               "--file_name", "{stem}", "--video_path", "{input}", "--output_path", "./detected"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: effort-deepfake
+    legacy_ids: [Effort]
+    display_name: {en: "Effort · Deepfake", ko: "Effort · 딥페이크", de: "Effort · Deepfake"}
+    description:
+      en: Effort detector with face-forgery weights (FaceForensics++).
+      ko: 얼굴 위조 가중치(FaceForensics++)를 사용하는 Effort 모델.
+      de: Effort-Detektor mit Gewichten für Gesichtsfälschungen (FaceForensics++).
+    family: deepfake
+    face_required: true
+    xai: attention
+    default_selected: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/image_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/effort.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/effort_FF.pth",
+               "--image", "{input}",
+               "--landmark_model", "./detection_models/for_ifakedetector/DF_inference/dlib_tools/shape_predictor_81_face_landmarks.dat",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/video_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/effort.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/effort_FF.pth",
+               "--video", "{input}", "--artifact_stem", "{stem}"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: effort-aigen
+    legacy_ids: []
+    variant_of: effort-deepfake
+    display_name: {en: "Effort · AI-Gen", ko: "Effort · AI 생성", de: "Effort · KI-generiert"}
+    description:
+      en: Effort detector with AI-generated-image weights (Chameleon).
+      ko: AI 생성 이미지 가중치(Chameleon)를 사용하는 Effort 모델.
+      de: Effort-Detektor mit Gewichten für KI-generierte Bilder (Chameleon).
+    family: ai_generated
+    face_required: false
+    xai: attention
+    default_selected: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/image_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/effort.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/effort_chameleon.pth",
+               "--image", "{input}",
+               "--landmark_model", "./detection_models/for_ifakedetector/DF_inference/dlib_tools/shape_predictor_81_face_landmarks.dat",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/video_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/effort.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/effort_chameleon.pth",
+               "--video", "{input}", "--artifact_stem", "{stem}"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: skku-r
+    legacy_ids: [ReViT, SKKU-R]
+    display_name: {en: SKKU-R, ko: SKKU-R, de: SKKU-R}
+    description:
+      en: ReViT transformer detector for manipulated faces.
+      ko: 조작된 얼굴 탐지를 위한 ReViT 트랜스포머 모델.
+      de: ReViT-Transformer-Detektor für manipulierte Gesichter.
+    family: deepfake
+    face_required: true
+    xai: attention
+    default_selected: true
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/image_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/revit.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/revit_3M.pth",
+               "--image", "{input}",
+               "--landmark_model", "./detection_models/for_ifakedetector/DF_inference/dlib_tools/shape_predictor_81_face_landmarks.dat",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+      video:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/for_ifakedetector/DF_inference/video_inference.py",
+               "--detector_config", "./detection_models/for_ifakedetector/DF_inference/config/detector/revit.yaml",
+               "--weights", "./detection_models/for_ifakedetector/DF_inference/ckpt/revit_3M.pth",
+               "--video", "{input}", "--artifact_stem", "{stem}"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: b2
+    legacy_ids: [B2, BEYBI2]
+    display_name: {en: B2, ko: B2, de: B2}
+    description:
+      en: CLIP-based generalist detector for diverse generators.
+      ko: 다양한 생성 모델에 대응하는 CLIP 기반 범용 탐지 모델.
+      de: CLIP-basierter Generalist für verschiedene Generatoren.
+    family: general
+    face_required: true
+    xai: attention
+    default_selected: false
+    media:
+      image:
+        conda_env: GID
+        cwd: "{models_root}/detection_models/BEYBI2_updated"
+        stage_input_dir: true
+        convert_webp_to_jpg: true
+        argv: ["{python}", "inference.py", "--dataset_root", "{input_dir}", "--weight_path", "model_best.pt",
+               "--default_setting", "train_clip.yaml",
+               "--landmark_model_path", "{models_root}/detection_models/BEYBI2_updated/dlib_tools/shape_predictor_81_face_landmarks.dat",
+               "--artifact_base", "{stem}"]
+        parser: b2
+      video:
+        conda_env: GID
+        cwd: "{models_root}"
+        stage_input_dir: true
+        argv: ["{python}", "detection_models/BEYBI2_updated/inference.py", "--dataset_root", "{input_dir}",
+               "--video_path", "{input}", "--output_path", "./detected", "--file_name", "{stem}"]
+        parser: b2
+        timeout_seconds: 1800
+
+  - id: skku-aigc
+    legacy_ids: [SKKU-AIGC, Safe]
+    display_name: {en: SKKU-AIGC, ko: SKKU-AIGC, de: SKKU-AIGC}
+    description:
+      en: Detects fully AI-generated images and videos (no face needed).
+      ko: 완전히 AI로 생성된 이미지·영상을 탐지합니다(얼굴 불필요).
+      de: Erkennt vollständig KI-generierte Bilder und Videos (kein Gesicht nötig).
+    family: ai_generated
+    face_required: false
+    xai: none
+    default_selected: true
+    trial: true
+    media:
+      image:
+        conda_env: safe
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Safe/inference.py", "--image", "{input}",
+               "--model_path", "{models_root}/detection_models/Safe/SafeChallenge/no_temp_2000_iter.pt",
+               "--result_file_path", "{workdir}/safe_result.csv", "--artifact_base", "{stem}"]
+        parser: safe_csv
+        result_file: "{workdir}/safe_result.csv"
+      video:
+        conda_env: safe
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Safe/run_safe_video.py", "--video_path", "{input}",
+               "--file_name", "{stem}", "--original_name", "{original_name_b64}",
+               "--output_path", "./detected", "--base_dir", "{models_root}"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: skku-p
+    legacy_ids: [SKKU-P]
+    display_name: {en: SKKU-P, ko: SKKU-P, de: SKKU-P}
+    description:
+      en: Mask2Former + DINOv3 detector with per-face scores. Heavy; most accurate on faces.
+      ko: 얼굴별 점수를 제공하는 Mask2Former + DINOv3 모델. 무겁지만 얼굴에서 가장 정확합니다.
+      de: Mask2Former + DINOv3 mit Scores pro Gesicht. Rechenintensiv, am genauesten bei Gesichtern.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: false
+    gpu_mem_mb: 30000
+    fallbacks:
+      on_no_face: center   # inference.sh reports SKKU_P_NO_FACE_DETECTED and runs Center itself
+    media:
+      image: &skkup_image
+        conda_env: wacv
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-P/inference.sh", "{input}", "{stem}", "image", "{page_type}"]
+        parser: standard
+        timeout_seconds: 900
+      video:
+        <<: *skkup_image
+        argv: ["bash", "detection_models/SKKU-P/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        timeout_seconds: 3600
+
+  - id: skku-p2
+    legacy_ids: [SKKU-P2]
+    display_name: {en: SKKU-P2, ko: SKKU-P2, de: SKKU-P2}
+    description:
+      en: SKKU-P successor on a DINOv3 ViT-7B backbone. Very heavy.
+      ko: DINOv3 ViT-7B 백본 기반 SKKU-P 후속 모델. 매우 무거움.
+      de: SKKU-P-Nachfolger mit DINOv3-ViT-7B-Backbone. Sehr rechenintensiv.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: false
+    gpu_mem_mb: 40000
+    media:
+      image:
+        conda_env: wacv
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-P2/inference.sh", "{input}", "{stem}", "image", "{page_type}"]
+        parser: standard
+        timeout_seconds: 900
+      video:
+        conda_env: wacv
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-P2/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        parser: standard
+        timeout_seconds: 3600
+
+  - id: skku-p3
+    legacy_ids: [SKKU-P3]
+    display_name: {en: SKKU-P3, ko: SKKU-P3, de: SKKU-P3}
+    description:
+      en: SKKU-P pipeline on DINOv3 ViT-H+ with multi-face support.
+      ko: 다중 얼굴을 지원하는 DINOv3 ViT-H+ 기반 SKKU-P 파이프라인.
+      de: SKKU-P-Pipeline auf DINOv3 ViT-H+ mit Mehrgesichts-Unterstützung.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: false
+    gpu_mem_mb: 20000
+    media:
+      image:
+        conda_env: wacv
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-P3/inference.sh", "{input}", "{stem}", "image", "{page_type}"]
+        parser: standard
+        timeout_seconds: 900
+      video:
+        conda_env: wacv
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-P3/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        parser: standard
+        timeout_seconds: 3600
+
+  - id: skku-g
+    legacy_ids: [SKKU-G]
+    display_name: {en: SKKU-G, ko: SKKU-G, de: SKKU-G}
+    description:
+      en: Generator-fingerprint detector for synthetic media.
+      ko: 합성 미디어를 위한 생성기 지문 기반 탐지 모델.
+      de: Detektor auf Basis von Generator-Fingerabdrücken.
+    family: ai_generated
+    face_required: false
+    xai: none
+    default_selected: false
+    gpu_mem_mb: 20000
+    media:
+      image:
+        conda_env: SKKU-G
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-G/inference.sh", "{input}", "{stem}", "image", "{page_type}"]
+        parser: standard
+        timeout_seconds: 900
+      video:
+        conda_env: SKKU-G
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/SKKU-G/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        parser: standard
+        timeout_seconds: 3600
+
+  - id: skku-snet
+    legacy_ids: [SKKU-SNET, SpecXNet]
+    display_name: {en: SKKU-SNET, ko: SKKU-SNET, de: SKKU-SNET}
+    description:
+      en: Spectral (frequency-domain) detector for AI-generated images.
+      ko: 주파수 영역 기반 AI 생성 이미지 탐지 모델.
+      de: Spektraler (Frequenzbereich) Detektor für KI-generierte Bilder.
+    family: ai_generated
+    face_required: false
+    xai: gradcam
+    default_selected: true
+    media:
+      image:
+        conda_env: gid
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/SpecXNet/predict_with_image.py", "--image", "{input}",
+               "--arch", "ffc_xception", "--ratio", "0.5", "--lfu", "--use_se", "--gradcam",
+               "--gradcam_out_dir", "./inference_images", "--inference_dir", "./inference_images",
+               "--output", "/dev/null", "--page_type", "{page_type}",
+               "--resume", "detection_models/SpecXNet/checkpoint_big/ffc_xception/fixFULL-ckpt.best.pth.tar",
+               "--artifact_stem", "{stem}"]
+        parser: standard
+
+  - id: skku-phys
+    legacy_ids: [SKKU-PHYS]
+    display_name: {en: SKKU-PHYS, ko: SKKU-PHYS, de: SKKU-PHYS}
+    description:
+      en: Physics-aware detector (lighting, depth and camera consistency) for AI-generated images.
+      ko: 조명·깊이·카메라 일관성을 분석하는 물리 기반 AI 생성 이미지 탐지 모델.
+      de: Physikbasierter Detektor (Licht, Tiefe, Kamerakonsistenz) für KI-generierte Bilder.
+    family: ai_generated
+    face_required: false
+    xai: none
+    default_selected: false
+    media:
+      image:
+        conda_env: phydf_restored
+        cwd: "{models_root}"
+        argv: ["bash", "detection_models/physDF/inference_api.sh", "{input}", "{stem}", "physics-image"]
+        parser: standard
+        timeout_seconds: 600
+
+  - id: center
+    legacy_ids: [center, Center-I, Center-V]
+    display_name: {en: Center, ko: Center, de: Center}
+    description:
+      en: DINOv3-based detector (Center-I for images, Center-V for videos).
+      ko: DINOv3 기반 탐지 모델(이미지 Center-I, 영상 Center-V).
+      de: DINOv3-basierter Detektor (Center-I für Bilder, Center-V für Videos).
+    family: general
+    face_required: false
+    xai: gradcam
+    default_selected: true
+    trial: true
+    media:
+      image:
+        conda_env: center
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Center/run_center_image.py", "--image_path", "{input}",
+               "--config_path", "{models_root}/detection_models/Center/Centaur_dinov3small/configs/args.json",
+               "--base_dir", "{models_root}", "--artifact_base", "{stem}"]
+        parser: center
+      video:
+        conda_env: center
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Center/run_center_video.py", "--video_path", "{input}",
+               "--file_name", "{stem}", "--original_name", "{original_name_b64}", "--output_path", "./detected",
+               "--base_dir", "{models_root}",
+               "--config_path", "{models_root}/detection_models/Center/Centaur_avif/configs/args.json"]
+        parser: standard
+        timeout_seconds: 1800
+
+  - id: inzi
+    legacy_ids: [Inzi]
+    display_name: {en: Inzi, ko: Inzi, de: Inzi}
+    description: {en: Legacy research model (disabled)., ko: 레거시 연구 모델(비활성)., de: Legacy-Forschungsmodell (deaktiviert).}
+    family: general
+    enabled: false
+    face_required: false
+    xai: none
+    media:
+      image:
+        conda_env: mixture3
+        cwd: "{models_root}"
+        argv: ["{python}", "detection_models/Inzi/predict_with_image.py", "--data", "{input}",
+               "--arch", "ffc_resnet152", "--lfu"]
+        parser: standard
+
+# Long-form video scanner (interval timeline). Runs the long-video-processor engine.
+long_video_models:
+  - id: skku-aigc-long
+    display_name: {en: "SKKU-AIGC · Long-form", ko: "SKKU-AIGC · 장편 영상", de: "SKKU-AIGC · Langvideo"}
+    description:
+      en: Temporal transformer that scores every interval of a long video.
+      ko: 긴 영상의 모든 구간을 점수화하는 시간적 트랜스포머 모델.
+      de: Temporaler Transformer, der jedes Intervall eines langen Videos bewertet.
+    default_selected: true
+    conda_env: safe
+    cwd: "{long_video_root}"
+    argv: ["{python}", "-u", "inference_long_video.py", "--video", "{input}", "--interval", "{interval}"]
+    parser: long_video_events
+    timeout_seconds: 14400
+
+# Audit chain (pre/post analysis steps). Users choose them per job within their permissions.
+audit_steps:
+  - id: face
+    display_name: {en: Face detection, ko: 얼굴 탐지, de: Gesichtserkennung}
+    description: {en: Finds faces and crops them for face-based models., ko: 얼굴을 찾아 얼굴 기반 모델용으로 잘라냅니다., de: Findet Gesichter und schneidet sie für gesichtsbasierte Modelle zu.}
+    conda_env: mixture3
+    cwd: "{models_root}"
+    argv: ["{python}", "detect_faces_only.py", "{input}"]
+    parser: json_stdout
+    timeout_seconds: 300
+  - id: safety
+    display_name: {en: Content safety (NSFW), ko: 유해성 검사(NSFW), de: Inhaltssicherheit (NSFW)}
+    description: {en: Flags adult or harmful content., ko: 성인·유해 콘텐츠를 표시합니다., de: Markiert nicht jugendfreie oder schädliche Inhalte.}
+    conda_env: nsfw-image-detection-384
+    cwd: "{models_root}/nsfw_detection/nsfw-image-detection-384"
+    argv: ["{python}", "detect_nsfw.py", "--json", "{input}"]
+    video_argv: ["{python}", "detect_nsfw.py", "--json", "--video-max-frames", "48", "{input}"]
+    parser: json_stdout_last_line
+    timeout_seconds: 600
+  - id: fas
+    display_name: {en: Face anti-spoofing, ko: 얼굴 위변조 방지(FAS), de: Anti-Spoofing}
+    description: {en: Checks whether a face is a photo/screen replay rather than a live capture., ko: 얼굴이 실제 촬영인지 사진·화면 재촬영인지 확인합니다., de: Prüft, ob ein Gesicht ein Foto/Bildschirm statt einer Live-Aufnahme ist.}
+    conda_env: mixture3
+    cwd: "{models_root}"
+    argv: ["{python}", "run_fas_analysis.py", "{input}", "--margin", "0", "--image_size", "224", "--cuda", "0"]
+    parser: json_stdout_last_line
+    timeout_seconds: 600
+  - id: metadata
+    display_name: {en: Metadata & C2PA provenance, ko: 메타데이터 및 C2PA 출처, de: Metadaten & C2PA-Herkunft}
+    description: {en: "Reads EXIF/XMP/C2PA and flags AI-generation indicators. Always runs.", ko: "EXIF/XMP/C2PA를 읽고 AI 생성 흔적을 표시합니다. 항상 실행됩니다.", de: "Liest EXIF/XMP/C2PA und markiert Hinweise auf KI-Generierung. Läuft immer."}
+    builtin: true
