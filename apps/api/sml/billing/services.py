@@ -97,21 +97,43 @@ def _purchase_expiry(pack: CreditPack | None) -> datetime | None:
     return timezone.now() + timedelta(days=days) if days else None
 
 
-@transaction.atomic
+class _AmountMismatch(Exception):
+    pass
+
+
 def fulfil_payment(payment: Payment, verified: VerifiedPayment) -> Payment:
-    """Mark paid and grant credits. Idempotent; refuses amount/currency mismatches."""
+    """Mark paid and grant credits. Idempotent; refuses amount/currency mismatches.
+
+    Callers must not wrap this in their own transaction: a mismatch is flagged in a
+    separate commit so the flag survives the error raised to the caller.
+    """
+    try:
+        return _fulfil(payment, verified)
+    except _AmountMismatch:
+        _flag_amount_mismatch(payment, verified)
+        raise ApiError("Payment amount did not match the order. Our team has been notified.") from None
+
+
+def _flag_amount_mismatch(payment: Payment, verified: VerifiedPayment) -> None:
+    logger.error("Amount mismatch for %s: expected %s %s, provider %s %s", payment.order_id, payment.amount,
+                 payment.currency, verified.amount, verified.currency)
+    with transaction.atomic():
+        flagged = (Payment.objects.filter(pk=payment.pk).exclude(status=Payment.Status.PAID)
+                   .update(status=Payment.Status.FAILED, failure_reason="Amount mismatch — flagged for review",
+                           updated_at=timezone.now()))
+        if flagged:
+            audit.record("billing.amount_mismatch", target=payment,
+                         after={"expected": payment.amount, "currency": payment.currency,
+                                "received": verified.amount, "received_currency": verified.currency})
+
+
+@transaction.atomic
+def _fulfil(payment: Payment, verified: VerifiedPayment) -> Payment:
     payment = Payment.objects.select_for_update().get(pk=payment.pk)
     if payment.status == Payment.Status.PAID:
         return payment
     if verified.amount != payment.amount or verified.currency.upper() != payment.currency:
-        logger.error("Amount mismatch for %s: expected %s %s, provider %s %s", payment.order_id, payment.amount,
-                     payment.currency, verified.amount, verified.currency)
-        payment.status = Payment.Status.FAILED
-        payment.failure_reason = "Amount mismatch — flagged for review"
-        payment.save(update_fields=["status", "failure_reason", "updated_at"])
-        audit.record("billing.amount_mismatch", target=payment,
-                     after={"expected": payment.amount, "received": verified.amount})
-        raise ApiError("Payment amount did not match the order. Our team has been notified.")
+        raise _AmountMismatch()
     now = timezone.now()
     payment.status = Payment.Status.PAID
     payment.provider_payment_id = verified.provider_payment_id or payment.provider_payment_id
@@ -207,7 +229,7 @@ def handle_webhook(provider_name: str, body: bytes, headers: dict[str, str]) -> 
         try:
             _apply_event(provider_name, ev)
             record.processed_at = timezone.now()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Webhook %s/%s failed", provider_name, ev.event_id)
             record.error = str(exc)[:2000]
         record.save(update_fields=["processed_at", "error"])
@@ -327,7 +349,7 @@ def renew_due_subscriptions() -> int:
                 verified = VerifiedPayment(f"mock_{payment.order_id}", payment.amount, payment.currency, "mock")
             fulfil_payment(payment, verified)
             count += 1
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 - one failed renewal must not stop the batch
             logger.warning("Renewal failed for %s: %s", sub.pk, exc)
             payment.status = Payment.Status.FAILED
             payment.failure_reason = str(exc)[:255]
