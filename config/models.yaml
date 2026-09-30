@@ -23,6 +23,14 @@ defaults:
   weight: 1.0
   gpu_mem_mb: 6000
 
+# Extra environment variables per conda environment, applied to every model and audit step
+# that uses it (on top of the activation the worker always does: PATH, CONDA_PREFIX).
+# {env_prefix} is <CONDA_ROOT>/envs/<name>; search-path variables are prepended.
+conda_envs:
+  mixture3:
+    # dlib in this env links OpenBLAS without an RPATH; the env ships libopenblas.so.0 in lib/.
+    LD_LIBRARY_PATH: "{env_prefix}/lib"
+
 # Aggregation shown to users as one verdict (weighted mean of fake probability).
 aggregation:
   method: weighted_mean

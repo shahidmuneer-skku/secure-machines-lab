@@ -33,8 +33,19 @@ working directory you choose. Your script must:
   automatically; a per-frame CSV also drives the live progress bar for videos.
 
 Do not choose a GPU in code: the worker sets `CUDA_VISIBLE_DEVICES` (and
-`CUDA_DEVICE_ORDER=PCI_BUS_ID`). The platform's secrets are removed from the environment the
-script sees.
+`CUDA_DEVICE_ORDER=PCI_BUS_ID`). The script runs with its conda environment activated
+(`PATH`, `CONDA_PREFIX`, `CONDA_EXE`), so a nested `python` call uses the same environment. It
+receives an allow-listed environment only: locale, home, CUDA, Hugging Face / Torch caches; never
+the platform's database, broker, payment or email settings.
+
+If an environment needs extra variables (for example a library path because it was copied from
+another machine), declare them once for the environment instead of per model:
+
+```yaml
+conda_envs:
+  mixture3:
+    LD_LIBRARY_PATH: "{env_prefix}/lib"   # prepended; {env_prefix} = <CONDA_ROOT>/envs/mixture3
+```
 
 ## 2. Add the registry entry
 

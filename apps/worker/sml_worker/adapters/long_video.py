@@ -12,8 +12,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..config import config, gpu_env
+from ..config import config
 from ..context import Canceled, TaskContext
+from ..procenv import model_env
 from .base import AdapterError, ModelResult
 
 
@@ -47,8 +48,7 @@ class LongVideoAdapter:
                   "interval": f"{interval:g}", "long_video_root": str(c.long_video_root)}
         argv = [str(p).format(**values) for p in self.spec["argv"]]
         cwd = str(self.spec.get("cwd", "{long_video_root}")).format(long_video_root=c.long_video_root)
-        env = dict(os.environ, PYTHONUNBUFFERED="1")
-        env.update(gpu_env())
+        env = model_env(self.spec.get("conda_env"))
         ctx.log(f"Scanning long video in {interval:g}s intervals"
                 + (f" (~{expected} intervals)" if expected else ""))
         proc = subprocess.Popen(argv, cwd=cwd, env=env, stdout=subprocess.PIPE,

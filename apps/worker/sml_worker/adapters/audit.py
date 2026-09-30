@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import time
 from pathlib import Path
 from typing import Any
 
-from ..config import config, gpu_env
+from ..config import config
 from ..context import TaskContext
+from ..procenv import model_env
 from .base import AdapterError, ModelResult
 
 
@@ -60,8 +60,7 @@ class AuditAdapter:
                   "models_root": str(c.models_root)}
         argv = [str(p).format(**values) for p in template]
         cwd = str(self.step.get("cwd", "{models_root}")).format(models_root=c.models_root)
-        env = dict(os.environ)
-        env.update(gpu_env())
+        env = model_env(self.step.get("conda_env"))
         ctx.log(f"Running audit step: {self.step.get('display_name', {}).get('en', self.id)}")
         ctx.progress(10, "Running", force=True)
         start = time.monotonic()

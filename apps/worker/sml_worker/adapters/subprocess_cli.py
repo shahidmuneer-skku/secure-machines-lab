@@ -25,6 +25,7 @@ from typing import Any
 
 from ..config import config, gpu_env
 from ..context import Canceled, TaskContext
+from ..procenv import model_env
 from . import parsers
 from .base import AdapterError, ModelResult
 
@@ -104,18 +105,7 @@ class SubprocessAdapter:
         return argv
 
     def _env(self) -> dict[str, str]:
-        c = config()
-        env = {k: v for k, v in os.environ.items() if not k.startswith(("DJANGO_", "AWS_", "S3_", "STRIPE_",
-                                                                         "TOSS_", "API_KEY_", "FIELD_ENC"))}
-        env.update({
-            "CONDA_BIN": str(c.conda_root / "bin" / "conda"),
-            "FAKEDETECTOR_ROOT": str(c.models_root),
-            "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128",
-            "OMP_NUM_THREADS": "4",
-            "PYTHONUNBUFFERED": "1",
-        })
-        env.update(gpu_env())
-        return env
+        return model_env(self.spec.get("conda_env"))
 
     # --- run ----------------------------------------------------------------------------
 
@@ -196,14 +186,15 @@ class SubprocessAdapter:
         parser = self.spec.get("parser", "standard")
         no_face = parsers.detect_no_face(stdout, stderr)
         if code != 0:
-            tail = stderr.strip().splitlines()[-3:] if stderr.strip() else []
+            # Staff-only detail (error_detail); users see the classified code only.
+            tail = stderr.strip().splitlines()[-20:] if stderr.strip() else []
             if any(m in stderr for m in OOM_MARKERS):
                 raise AdapterError("GPU_OOM", "The GPU ran out of memory.")
             if any(m in stderr for m in ARCH_MARKERS):
                 raise AdapterError("GPU_UNSUPPORTED", "This model's environment does not support the assigned GPU.")
             if no_face and self.model.get("face_required"):
                 return ModelResult(no_face=True)
-            raise AdapterError("RUNTIME_ERROR", f"Exit code {code}: {' | '.join(tail)[:300]}")
+            raise AdapterError("RUNTIME_ERROR", f"Exit code {code}: {' | '.join(tail)[-3000:]}")
 
         if parser == "b2":
             prob = parsers.parse_b2(stdout)
