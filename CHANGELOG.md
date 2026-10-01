@@ -83,6 +83,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Restarting a model worker (deploys, systemctl) lost the tasks it was running or holding: the pool
   processes received the stop signal and Celery acknowledged their messages as failed. Tasks now go
   back to the queue, and the model subprocess is stopped instead of running on without a worker.
+- Canceling (or deleting) a job whose work was still queued did not tell the workers, so they still
+  ran every detector for it and new jobs waited behind that backlog. Workers now skip it.
 - Per-frame video scores: per-frame percentages such as `73%` (SKKU/BEYBI) were dropped, so its
   timeline was empty; a total row of frame counts above 100 (`Total result,145,0`) lost the count;
   the `processing` placeholder row counted as a frame scored 0.5; and `Total result,0,0,no_face` read

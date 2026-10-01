@@ -174,10 +174,11 @@ def cancel_job(job: Job, *, actor: Any = None) -> Job:
         pending = job.tasks.filter(status__in=[JobTask.Status.PENDING, JobTask.Status.DISPATCHED])
         pending.update(status=JobTask.Status.CANCELED, finished_at=now, stage_message="Canceled")
         emit(job, "job.cancel_requested", "Cancellation requested", public="Cancellation requested", level="warning")
-        running = job.tasks.filter(status=JobTask.Status.RUNNING).exists()
-        if running:
-            transaction.on_commit(lambda: request_cancel(str(job.pk)))
-        else:
+        # Always flag the job for the workers: tasks already handed to the broker stay in its queues
+        # after they are marked canceled here, and a worker checks the flag before starting one (and
+        # while it runs). Without it, canceled work still ran and held up everyone's queue.
+        transaction.on_commit(lambda: request_cancel(str(job.pk)))
+        if not job.tasks.filter(status=JobTask.Status.RUNNING).exists():
             finalize_job(job)
     job.refresh_from_db()
     return job

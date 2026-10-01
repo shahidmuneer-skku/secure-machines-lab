@@ -101,7 +101,9 @@ def task_log(task_id: str, limit: int = 100) -> list[dict[str, Any]]:
         return []
 
 
-def request_cancel(job_id: str, ttl: int = 6 * 3600) -> None:
+def request_cancel(job_id: str, ttl: int = 3 * 24 * 3600) -> None:
+    """Tells workers to stop the job's running tasks and skip its queued ones. Queued messages do not
+    expire, so the flag outlives any realistic backlog."""
     r = _redis()
     if r is not None:
         try:

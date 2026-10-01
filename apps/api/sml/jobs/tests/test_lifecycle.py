@@ -383,3 +383,17 @@ def test_several_jobs_are_canceled_at_once(api, user, make_user, job_for):
     assert foreign.status == Job.Status.QUEUED
     assert credits.get_balance(user).balance == 5  # queued work is refunded
     assert api.post("/api/v1/jobs/cancel", {"ids": []}, format="json").status_code == 400
+
+
+def test_canceling_queued_work_tells_the_workers_to_skip_it(user, job_for, monkeypatch,
+                                                            django_capture_on_commit_callbacks):
+    """Queued tasks are already in the broker's queues; the cancel flag makes workers skip them."""
+    flagged: list[str] = []
+    monkeypatch.setattr("sml.jobs.live.request_cancel", flagged.append)
+    fund(user, 5)
+    job = job_for(user)
+    with django_capture_on_commit_callbacks(execute=True):
+        services.cancel_job(job)
+    assert flagged == [str(job.pk)]
+    job.refresh_from_db()
+    assert job.status == Job.Status.CANCELED
