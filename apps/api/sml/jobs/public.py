@@ -10,7 +10,7 @@ Each function here builds a plain dict from a job and its prefetched tasks/artif
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import PurePosixPath
 from typing import Any
 
@@ -23,9 +23,6 @@ ANALYSIS_KINDS = (JobTask.Kind.MODEL, JobTask.Kind.LONG_VIDEO)
 PUBLIC_ARTIFACT_KINDS = {Artifact.Kind.XAI: "heatmap", Artifact.Kind.FACE: "face", Artifact.Kind.VIDEO: "video"}
 PUBLIC_OPTIONS = ("stream", "interval_seconds", "start_sec", "end_sec", "whole_video")
 TIMELINE_POINTS = 200
-# Evidence images per kind. Not one per detector: that would clutter the page and tell users how
-# many detectors ran.
-MAX_EVIDENCE_PER_KIND = 4
 
 
 # --- progress ----------------------------------------------------------------------------------
@@ -241,25 +238,39 @@ def is_public_artifact(artifact: Artifact) -> bool:
             and artifact.label.strip().lower() not in ("original", "input"))
 
 
+def _heatmap_rank(artifact: Artifact) -> int:
+    """Which of a detector's images is its heatmap: the blended whole-image map first, then other
+    whole-image maps, then face-only maps; raw colour maps last."""
+    label = artifact.label.strip().lower()
+    if label in ("grad-cam", "gradcam", "attention"):
+        return 0
+    if "overlay" in label:
+        return 1
+    if "heatmap" in label and "overlay" not in label:
+        return 5
+    if artifact.kind == Artifact.Kind.XAI and "face" not in label:
+        return 2
+    return 3 if artifact.kind == Artifact.Kind.XAI else 4
+
+
 def evidence_artifacts(job: Job, tasks: list[JobTask] | None = None) -> list[Artifact]:
-    """The few evidence images users get: from the detectors that weigh most in the verdict and are
-    most decisive, at most MAX_EVIDENCE_PER_KIND of each kind."""
+    """One heatmap from each detector whose heatmap the administrator shows to users (Admin → Models).
+
+    Detectors write several images (maps, overlays, per-face crops); users get the single main map
+    of each chosen detector, ordered by the detector's weight, and nothing from the others.
+    """
     reg = registry()
-    rank: dict[Any, tuple[float, float]] = {}
+    shown: dict[Any, float] = {}
     for t in tasks if tasks is not None else job.tasks.all():
         spec = reg.get(t.target)
-        prob = (t.result or {}).get("fake_prob")
-        decisiveness = abs(float(prob) - 0.5) if isinstance(prob, (int, float)) else 0.0
-        rank[t.pk] = (-(spec.weight if spec else 1.0), -decisiveness)
-    candidates = sorted((a for a in job.artifacts.all() if is_public_artifact(a)),
-                        key=lambda a: (rank.get(a.task_id, (0.0, 0.0)), a.created_at))
-    chosen, counts = [], Counter[str]()
-    for art in candidates:
-        kind = PUBLIC_ARTIFACT_KINDS[art.kind]
-        if counts[kind] < MAX_EVIDENCE_PER_KIND:
-            chosen.append(art)
-            counts[kind] += 1
-    return chosen
+        if t.kind == JobTask.Kind.MODEL and spec is not None and spec.show_heatmap:
+            shown[t.pk] = spec.weight
+    by_task: dict[Any, list[Artifact]] = defaultdict(list)
+    for art in job.artifacts.all():
+        if art.task_id in shown and is_public_artifact(art) and art.content_type.startswith("image/"):
+            by_task[art.task_id].append(art)
+    chosen = [min(arts, key=lambda a: (_heatmap_rank(a), a.created_at)) for arts in by_task.values()]
+    return sorted(chosen, key=lambda a: (-shown[a.task_id], a.created_at))
 
 
 def is_downloadable(job: Job, artifact: Artifact) -> bool:

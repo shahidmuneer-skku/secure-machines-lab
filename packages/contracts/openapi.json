@@ -463,6 +463,9 @@
                                     "trial": {
                                         "type": "boolean"
                                     },
+                                    "show_heatmap": {
+                                        "type": "boolean"
+                                    },
                                     "note": {
                                         "type": "string"
                                     }
@@ -6439,6 +6442,10 @@
                         },
                         "description": "Media types this detector runs on in every job."
                     },
+                    "show_heatmap": {
+                        "type": "boolean",
+                        "description": "Users see this detector's heatmap (one image)."
+                    },
                     "trial": {
                         "type": "boolean"
                     },
@@ -6476,6 +6483,7 @@
                     "note",
                     "queue",
                     "run_on",
+                    "show_heatmap",
                     "stats_24h",
                     "trial",
                     "weight"
@@ -10141,9 +10149,13 @@
                         "type": "string",
                         "maxLength": 64
                     },
-                    "long_video_face_crop": {
-                        "type": "boolean",
-                        "nullable": true
+                    "long_video_face_crops": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean",
+                            "nullable": true
+                        },
+                        "description": "{model_id: true|false|null}; null returns the detector to its default."
                     }
                 }
             },
@@ -11587,11 +11599,6 @@
                         "type": "string",
                         "description": "Empty = the first available detector."
                     },
-                    "face_crop": {
-                        "type": "boolean",
-                        "nullable": true,
-                        "description": "Empty = the detector's default."
-                    },
                     "models": {
                         "type": "array",
                         "items": {
@@ -11600,7 +11607,6 @@
                     }
                 },
                 "required": [
-                    "face_crop",
                     "model",
                     "models",
                     "online"
@@ -11622,12 +11628,27 @@
                         "type": "string"
                     },
                     "face_crop": {
-                        "$ref": "#/components/schemas/FaceCropEnum"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FaceCropEnum"
+                            }
+                        ],
+                        "description": "Whether the detector can crop to faces before scoring.\n\n* `always` - always\n* `optional` - optional\n* `none` - none"
+                    },
+                    "face_crop_default": {
+                        "type": "boolean"
+                    },
+                    "face_crop_setting": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "Admin's choice; null = the default."
                     }
                 },
                 "required": [
                     "available",
                     "face_crop",
+                    "face_crop_default",
+                    "face_crop_setting",
                     "model_id",
                     "name",
                     "reason"

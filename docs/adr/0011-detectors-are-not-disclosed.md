@@ -12,12 +12,14 @@ it fake. Long-form scans use one admin-chosen detector.
 
 - *What runs is configuration.* Admin → Models sets, per detector, whether it runs on every image
   and every video (`ModelOverride.run_on_image/run_on_video`, defaulting to `default_selected` in
-  `models.yaml`), the extra checks every job runs (`PlatformSettings.audit_steps`; metadata always)
-  and the long-form detector (`PlatformSettings.long_video_model`). Requests carry files and options
+  `models.yaml`), whose heatmap users see (`ModelOverride.show_heatmap`, default Center — one image
+  per chosen detector), the extra checks every job runs (`PlatformSettings.audit_steps`; metadata
+  always), the long-form detector (`PlatformSettings.long_video_model`) and, per long-form detector,
+  face cropping (`PlatformSettings.long_video_face_crops`; missing = the detector's default). Requests carry files and options
   only; `models` / `audit_steps` fields are ignored.
 - *One projection for users.* `sml/jobs/public.py` builds everything user-facing from a job:
-  generic steps, verdict reasons, provenance, check results, a combined video timeline and at most
-  four evidence images per kind with generic labels and file names. The user serializers, reports,
+  generic steps, verdict reasons, provenance, check results, a combined video timeline and one heatmap
+  (the main blended map) from each detector the admin chose, with generic labels and file names. The user serializers, reports,
   the explanation prompt and the news-agent prompt are all built from it. The detailed serializers
   are named `Admin*` and only admin endpoints use them.
 - *Timeline events have two messages.* `JobEvent.message` is the operator's; users see only events

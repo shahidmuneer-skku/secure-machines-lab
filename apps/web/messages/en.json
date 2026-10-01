@@ -457,9 +457,9 @@
       "streamPreview": "Preview frame",
       "streamNotStored": "Streamed scan: the video itself was not stored.",
       "artifact": {
-        "heatmap": "Heatmap {n}",
-        "face": "Face {n}",
-        "video": "Annotated video {n}"
+        "heatmap": "{n, plural, =0 {Heatmap} other {Heatmap #}}",
+        "face": "{n, plural, =0 {Face map} other {Face map #}}",
+        "video": "{n, plural, =0 {Annotated video} other {Annotated video #}}"
       }
     },
     "verdict": {
@@ -779,13 +779,20 @@
         "automatic": "Automatic (first available)",
         "unavailable": "unavailable",
         "faceCrop": "Crop to faces before scoring",
-        "faceCropDefault": "Detector default",
+        "faceCropDefault": "{on, select, true {Default (on)} other {Default (off)}}",
         "faceCropOn": "On",
         "faceCropOff": "Off",
-        "faceCropFixed": "This detector decides face cropping itself.",
         "saved": "Saved",
-        "failed": "That didn't work."
-      }
+        "failed": "That didn't work.",
+        "faceCropHint": "Set per detector; it applies whenever that detector is the one in use.",
+        "faceCropFor": "Face cropping for {model}",
+        "faceCropAlways": "Always crops to faces",
+        "faceCropNone": "Not supported"
+      },
+      "heatmap": "Heatmap",
+      "heatmapFor": "Show {model}'s heatmap to users",
+      "heatmapsSummary": "{count, plural, one {Users see the heatmap of {names}} other {Users see # heatmaps: {names}}}",
+      "noHeatmaps": "Users see no heatmap"
     },
     "pricing": {
       "eyebrow": "Admin · Pricing",

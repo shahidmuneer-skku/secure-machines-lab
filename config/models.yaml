@@ -36,6 +36,7 @@ conda_envs:
 
 # What runs: users never choose. `default_selected: true` means "runs on every job of each media type
 # the model supports" until an admin changes it per media type on Admin → Models (ADR 0011).
+# `show_heatmap: true` means users see that detector's heatmap (one image); the admin can switch it.
 
 # Aggregation shown to users as one verdict (weighted mean of fake probability).
 aggregation:
@@ -447,6 +448,7 @@ models:
     face_required: false
     xai: gradcam
     default_selected: true
+    show_heatmap: true   # users see this detector's heatmap (owner's default, 2026-10-01)
     trial: true
     media:
       image:

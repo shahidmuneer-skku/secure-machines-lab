@@ -12,6 +12,8 @@ class ModelOverride(models.Model):
     run_on_image = models.BooleanField(null=True, blank=True, help_text="Runs on every image job. Empty = models.yaml.")
     run_on_video = models.BooleanField(null=True, blank=True, help_text="Runs on every video job. Empty = models.yaml.")
     trial = models.BooleanField(null=True, blank=True)
+    show_heatmap = models.BooleanField(
+        null=True, blank=True, help_text="Users see this detector's heatmap (one image). Empty = models.yaml.")
     note = models.CharField(max_length=255, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 

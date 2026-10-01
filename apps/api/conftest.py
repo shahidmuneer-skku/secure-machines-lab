@@ -155,6 +155,21 @@ def use_detectors(db) -> Callable[..., list[str]]:  # type: ignore[no-untyped-de
 
 
 @pytest.fixture
+def show_heatmaps(db) -> Callable[..., list[str]]:  # type: ignore[no-untyped-def]
+    """Choose whose heatmaps users see, as an admin would on Admin → Models."""
+    from sml.catalog.models import ModelOverride
+    from sml.catalog.registry import invalidate_overrides, registry
+
+    def configure(ids: list[str]) -> list[str]:
+        for spec in registry().models.values():
+            ModelOverride.objects.update_or_create(model_id=spec.id, defaults={"show_heatmap": spec.id in ids})
+        invalidate_overrides()
+        return ids
+
+    return configure
+
+
+@pytest.fixture
 def worker() -> Any:
     """Plays the model worker: reports task events the way sml_worker does."""
     from sml.jobs.results import record_task_event

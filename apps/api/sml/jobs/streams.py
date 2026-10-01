@@ -152,7 +152,7 @@ def create_session(user: Any, req: StreamRequest) -> tuple[StreamSession, str]:
     access.assert_module_allowed(user, "long_video")
     model = _validate(req)
     model_id = str(model["model_id"])
-    face_crop = PlatformSettings.load().long_video_face_crop
+    face_crop = (PlatformSettings.load().long_video_face_crops or {}).get(model_id)  # None = detector default
     q = quote(req)
     seconds = range_seconds(req)
     now = timezone.now()

@@ -364,6 +364,7 @@ class AdminModelSerializer(serializers.Serializer):
     weight = serializers.FloatField()
     run_on = serializers.ListField(child=serializers.ChoiceField(choices=["image", "video"]),
                                    help_text="Media types this detector runs on in every job.")
+    show_heatmap = serializers.BooleanField(help_text="Users see this detector's heatmap (one image).")
     trial = serializers.BooleanField()
     gpu_mem_mb = serializers.IntegerField()
     queue = serializers.CharField()
@@ -436,13 +437,15 @@ class SetupStreamModelSerializer(serializers.Serializer):
     name = serializers.CharField()
     available = serializers.BooleanField()
     reason = serializers.CharField(allow_blank=True)
-    face_crop = serializers.ChoiceField(choices=["always", "optional", "none"])
+    face_crop = serializers.ChoiceField(choices=["always", "optional", "none"],
+                                        help_text="Whether the detector can crop to faces before scoring.")
+    face_crop_default = serializers.BooleanField()
+    face_crop_setting = serializers.BooleanField(allow_null=True, help_text="Admin's choice; null = the default.")
 
 
 class SetupLongVideoSerializer(serializers.Serializer):
     online = serializers.BooleanField()
     model = serializers.CharField(allow_blank=True, help_text="Empty = the first available detector.")
-    face_crop = serializers.BooleanField(allow_null=True, help_text="Empty = the detector's default.")
     models = SetupStreamModelSerializer(many=True)
 
 
@@ -454,4 +457,6 @@ class DetectionSetupSerializer(serializers.Serializer):
 class DetectionSetupUpdateSerializer(serializers.Serializer):
     audit_steps = serializers.ListField(child=serializers.CharField(max_length=32), required=False)
     long_video_model = serializers.CharField(max_length=64, allow_blank=True, required=False)
-    long_video_face_crop = serializers.BooleanField(allow_null=True, required=False)
+    long_video_face_crops = serializers.DictField(
+        child=serializers.BooleanField(allow_null=True), required=False,
+        help_text="{model_id: true|false|null}; null returns the detector to its default.")

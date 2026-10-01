@@ -35,6 +35,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   API clients see the verdict, its evidence and generic progress steps only — no detector names,
   counts, per-detector scores, logs or methods in the app, the API, live events, reports or the AI
   explanations (ADR 0011). Staff keep the full detail in the admin console, including per-task logs.
+- Heatmaps: the administrator chooses whose heatmap users see (one image per detector; Center by
+  default). Face cropping for long-form scans is set per detector.
 - Metadata markers: a definite AI-generation marker labels a file "Likely AI-generated" regardless
   of the detectors; a weak hint only when the detectors judged it fake.
 - The detect page is upload → review; the dashboard shows analyses by type.

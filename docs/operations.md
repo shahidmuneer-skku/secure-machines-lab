@@ -126,9 +126,10 @@ so a restore can reference files that no longer exist; affected jobs show as pur
 
 **Choosing what runs.** Admin → Models: per detector, *Images* and *Videos* switch whether it runs
 on every job of that type (the cards above the table show how many run; a type with none is
-refused with a generic message). The cards below choose the extra checks every job runs (face
-detection, content safety, anti-spoofing; metadata / C2PA always runs) and the long-form detector
-and face cropping. Users never see detector names, counts or logs (ADR 0011); per-task results,
+refused with a generic message). *Heatmap* chooses whose heatmap users see (one image per
+detector, its main blended map; Center by default). The cards below choose the extra checks every
+job runs (face detection, content safety, anti-spoofing; metadata / C2PA always runs), the
+long-form detector, and face cropping for each long-form detector that supports it. Users never see detector names, counts or logs (ADR 0011); per-task results,
 logs and errors are in Admin → Jobs → the job.
 
 **AI-generation markers.** A definite marker in the file's metadata (C2PA / IPTC declaration,

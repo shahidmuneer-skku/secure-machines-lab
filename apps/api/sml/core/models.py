@@ -53,8 +53,10 @@ class PlatformSettings(models.Model):
         max_length=64, blank=True, default="",
         help_text="Stream-service detector for long-form scans. Empty = the first available one.",
     )
-    long_video_face_crop = models.BooleanField(
-        null=True, blank=True, help_text="Crop to faces before long-form scoring. Empty = the detector's default.",
+    long_video_face_crops = models.JSONField(
+        default=dict, blank=True,
+        help_text="Per long-form detector: crop to faces before scoring ({model_id: true|false}). "
+                  "Missing = the detector's default.",
     )
 
     # Free credits

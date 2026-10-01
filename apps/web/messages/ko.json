@@ -457,9 +457,9 @@
       "streamPreview": "미리보기 프레임",
       "streamNotStored": "스트리밍 스캔: 영상 자체는 저장되지 않았습니다.",
       "artifact": {
-        "heatmap": "히트맵 {n}",
-        "face": "얼굴 {n}",
-        "video": "분석 영상 {n}"
+        "heatmap": "{n, plural, =0 {히트맵} other {히트맵 #}}",
+        "face": "{n, plural, =0 {얼굴 맵} other {얼굴 맵 #}}",
+        "video": "{n, plural, =0 {분석 영상} other {분석 영상 #}}"
       }
     },
     "verdict": {
@@ -779,13 +779,20 @@
         "automatic": "자동(사용 가능한 첫 모델)",
         "unavailable": "사용 불가",
         "faceCrop": "점수 계산 전 얼굴 영역으로 자르기",
-        "faceCropDefault": "모델 기본값",
+        "faceCropDefault": "{on, select, true {기본값(켜짐)} other {기본값(꺼짐)}}",
         "faceCropOn": "켜짐",
         "faceCropOff": "꺼짐",
-        "faceCropFixed": "이 모델은 얼굴 자르기를 직접 결정합니다.",
         "saved": "저장했습니다",
-        "failed": "처리하지 못했습니다."
-      }
+        "failed": "처리하지 못했습니다.",
+        "faceCropHint": "탐지 모델별로 설정하며, 해당 모델을 사용할 때 적용됩니다.",
+        "faceCropFor": "{model} 얼굴 자르기",
+        "faceCropAlways": "항상 얼굴로 자름",
+        "faceCropNone": "지원 안 함"
+      },
+      "heatmap": "히트맵",
+      "heatmapFor": "사용자에게 {model}의 히트맵 표시",
+      "heatmapsSummary": "{count, plural, one {사용자에게 {names}의 히트맵 표시} other {사용자에게 히트맵 #개 표시: {names}}}",
+      "noHeatmaps": "사용자에게 히트맵을 표시하지 않음"
     },
     "pricing": {
       "eyebrow": "관리자 · 요금제",

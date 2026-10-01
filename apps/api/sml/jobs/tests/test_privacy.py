@@ -35,12 +35,25 @@ def plain_image_detectors(n: int = 2) -> list[str]:
     return [m.id for m in registry().enabled_for("image") if not m.fallbacks][:n]
 
 
+def detector_images(job: Job, task: JobTask) -> list[dict[str, Any]]:
+    """What detectors typically write: the input, a blended map, a raw map, a face map, per-frame data."""
+    key = f"jobs/{job.pk}/{task.target}"
+    return [
+        {"kind": "xai", "label": "Original", "content_type": "image/png", "storage_key": f"{key}_original.png"},
+        {"kind": "xai", "label": "gradcam heatmap", "content_type": "image/png", "storage_key": f"{key}_heat.png"},
+        {"kind": "xai", "label": "Grad-CAM", "content_type": "image/png", "storage_key": f"{key}_gradcam.png"},
+        {"kind": "face", "label": "face attention", "content_type": "image/png", "storage_key": f"{key}_face.png"},
+        {"kind": "frames", "label": "Per-frame scores", "content_type": "text/csv", "storage_key": f"{key}_frames.csv"},
+    ]
+
+
 @pytest.fixture
-def finished_job(user, make_media, use_detectors):  # type: ignore[no-untyped-def]
-    """A finished image job with two detectors, a heatmap and a per-frame CSV artifact."""
+def finished_job(user, make_media, use_detectors, show_heatmaps):  # type: ignore[no-untyped-def]
+    """A finished image job with two detectors; users see the first detector's heatmap."""
     def make(prob: float = 0.9, indicators: dict[str, Any] | None = None) -> Job:
         credits.grant(user, 10, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
         use_detectors(plain_image_detectors())
+        show_heatmaps(plain_image_detectors()[:1])
         job = services.create_job(user, services.JobRequest(media=make_media(user)))
         dispatch_pending()
         for task in job.tasks.all():
@@ -51,12 +64,7 @@ def finished_job(user, make_media, use_detectors):  # type: ignore[no-untyped-de
                 artifacts: list[dict[str, Any]] = []
             else:
                 result = {"fake_prob": prob}
-                artifacts = [
-                    {"kind": "xai", "label": f"{task.target} Grad-CAM", "content_type": "image/png",
-                     "storage_key": f"jobs/{job.pk}/{task.target}_gradcam.png"},
-                    {"kind": "frames", "label": "Per-frame scores", "content_type": "text/csv",
-                     "storage_key": f"jobs/{job.pk}/{task.target}_frames.csv"},
-                ]
+                artifacts = detector_images(job, task)
             record_task_event({"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
                                "result": result, "artifacts": artifacts})
         job.refresh_from_db()
@@ -87,7 +95,10 @@ def test_the_user_view_never_names_detectors(api, user, finished_job):
     assert all(s["status"] == "done" for s in detail["steps"])
     assert detail["verdict"] == "fake" and detail["fake_probability"] == pytest.approx(0.9)
     assert detail["verdict_reasons"][0]["code"] == "analysis"
-    assert {a["label"] for a in detail["artifacts"]} == {"heatmap"}  # per-detector CSVs are not listed
+    # One heatmap — the chosen detector's blended map — and nothing else (no raw maps, faces or CSVs).
+    assert [a["label"] for a in detail["artifacts"]] == ["heatmap"]
+    chosen = job.artifacts.get(pk=detail["artifacts"][0]["id"])
+    assert chosen.storage_key.endswith(f"{plain_image_detectors()[0]}_gradcam.png")
 
 
 def test_staff_still_see_everything(client_for, make_user, finished_job):
@@ -124,7 +135,7 @@ def test_artifacts_download_only_as_generic_evidence(api, finished_job, monkeypa
 
     monkeypatch.setattr(views, "serve_object", fake_serve)
     job = finished_job()
-    heatmap = job.artifacts.get(kind="xai", storage_key__contains=plain_image_detectors()[0])
+    heatmap = job.artifacts.get(storage_key__endswith=f"{plain_image_detectors()[0]}_gradcam.png")
     frames = job.artifacts.filter(kind="frames").first()
     assert api.get(f"/api/v1/jobs/{job.pk}/artifacts/{heatmap.pk}/content").status_code == 200
     assert served[0].startswith("heatmap-") and plain_image_detectors()[0] not in served[0]
@@ -209,26 +220,36 @@ def test_ai_generation_markers(api, finished_job, prob, indicators, verdict, fla
         assert detail["provenance"]["evidence"][0]["detail"] == indicators["evidence"][0]["detail"]
 
 
-def test_users_get_a_few_evidence_images_not_one_per_detector(api, user, make_media, use_detectors, platform):
+def test_the_admin_chooses_whose_heatmaps_users_see(api, user, make_media, use_detectors, show_heatmaps, platform):
     platform.free_max_inflight_tasks = 20  # dispatch every detector at once
     platform.save()
-    ids = [m.id for m in registry().enabled_for("image") if not m.fallbacks][:6]
-    assert len(ids) == 6
+    ids = [m.id for m in registry().enabled_for("image") if not m.fallbacks][:4]
     use_detectors(ids)
+    show_heatmaps(ids[1:3])
     credits.grant(user, 5, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
     job = services.create_job(user, services.JobRequest(media=make_media(user)))
     dispatch_pending()
     for task in job.tasks.all():
         record_task_event({"event": "started", "task_id": str(task.pk), "attempt": 1})
-        artifacts = [] if task.kind == JobTask.Kind.AUDIT else [
-            {"kind": "xai", "label": "Original", "content_type": "image/png", "storage_key": f"k/{task.pk}/orig.png"},
-            {"kind": "xai", "label": "attention", "content_type": "image/png", "storage_key": f"k/{task.pk}/att.png"},
-        ]
-        result = {} if task.kind == JobTask.Kind.AUDIT else {"fake_prob": 0.7}
+        model = task.kind == JobTask.Kind.MODEL
         record_task_event({"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
-                           "result": result, "artifacts": artifacts})
+                           "result": {"fake_prob": 0.7} if model else {},
+                           "artifacts": detector_images(job, task) if model else []})
     detail = api.get(f"/api/v1/jobs/{job.pk}").json()
-    assert len(detail["artifacts"]) == 4 and {a["kind"] for a in detail["artifacts"]} == {"heatmap"}
-    shown = {a["id"] for a in detail["artifacts"]}
-    hidden = job.artifacts.exclude(pk__in=shown).first()
+    shown = [job.artifacts.get(pk=a["id"]).storage_key for a in detail["artifacts"]]
+    assert sorted(shown) == sorted(f"jobs/{job.pk}/{m}_gradcam.png" for m in ids[1:3])
+    hidden = job.artifacts.exclude(pk__in=[a["id"] for a in detail["artifacts"]]).filter(kind="xai").first()
     assert api.get(f"/api/v1/jobs/{job.pk}/artifacts/{hidden.pk}/content").status_code == 404
+
+    show_heatmaps([])
+    assert api.get(f"/api/v1/jobs/{job.pk}").json()["artifacts"] == []
+
+
+def test_admin_toggles_heatmaps_per_detector(client_for, make_user):
+    admin = client_for(make_user(roles=("admin",)), mfa=True)
+    model = plain_image_detectors()[0]
+    res = admin.patch("/api/v1/admin/models", {"model_id": model, "show_heatmap": True}, format="json")
+    assert res.status_code == 200, res.content
+    listed = {m["id"]: m for m in admin.get("/api/v1/admin/models").json()}
+    assert listed[model]["show_heatmap"] is True
+    assert listed["center"]["show_heatmap"] is True  # owner's default (models.yaml)

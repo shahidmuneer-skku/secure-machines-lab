@@ -457,9 +457,9 @@
       "streamPreview": "Vorschaubild",
       "streamNotStored": "Gestreamter Scan: Das Video selbst wurde nicht gespeichert.",
       "artifact": {
-        "heatmap": "Heatmap {n}",
-        "face": "Gesicht {n}",
-        "video": "Analysiertes Video {n}"
+        "heatmap": "{n, plural, =0 {Heatmap} other {Heatmap #}}",
+        "face": "{n, plural, =0 {Gesichtskarte} other {Gesichtskarte #}}",
+        "video": "{n, plural, =0 {Analysiertes Video} other {Analysiertes Video #}}"
       }
     },
     "verdict": {
@@ -779,13 +779,20 @@
         "automatic": "Automatisch (erster verfügbarer)",
         "unavailable": "nicht verfügbar",
         "faceCrop": "Vor der Bewertung auf Gesichter zuschneiden",
-        "faceCropDefault": "Standard des Detektors",
+        "faceCropDefault": "{on, select, true {Standard (an)} other {Standard (aus)}}",
         "faceCropOn": "An",
         "faceCropOff": "Aus",
-        "faceCropFixed": "Dieser Detektor entscheidet selbst über den Zuschnitt.",
         "saved": "Gespeichert",
-        "failed": "Das hat nicht funktioniert."
-      }
+        "failed": "Das hat nicht funktioniert.",
+        "faceCropHint": "Pro Detektor festgelegt; gilt, sobald dieser Detektor verwendet wird.",
+        "faceCropFor": "Gesichtszuschnitt für {model}",
+        "faceCropAlways": "Schneidet immer auf Gesichter zu",
+        "faceCropNone": "Nicht unterstützt"
+      },
+      "heatmap": "Heatmap",
+      "heatmapFor": "Heatmap von {model} für Nutzer anzeigen",
+      "heatmapsSummary": "{count, plural, one {Nutzer sehen die Heatmap von {names}} other {Nutzer sehen # Heatmaps: {names}}}",
+      "noHeatmaps": "Nutzer sehen keine Heatmap"
     },
     "pricing": {
       "eyebrow": "Admin · Preise",

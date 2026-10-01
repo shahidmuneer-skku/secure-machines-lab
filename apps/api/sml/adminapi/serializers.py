@@ -132,7 +132,7 @@ class PlatformSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlatformSettings
         # What jobs run is edited (and validated) on Admin → Models (DetectionSetupView).
-        exclude = ["id", "audit_steps", "long_video_model", "long_video_face_crop"]
+        exclude = ["id", "audit_steps", "long_video_model", "long_video_face_crops"]
         read_only_fields = ["updated_at"]
 
 

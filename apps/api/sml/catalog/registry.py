@@ -15,7 +15,7 @@ import yaml
 from django.conf import settings
 from django.core.cache import cache
 
-OVERRIDES_CACHE_KEY = "model-overrides:v2"
+OVERRIDES_CACHE_KEY = "model-overrides:v3"
 
 
 def model_queue(model_id: str) -> str:
@@ -32,6 +32,7 @@ class ModelSpec:
     xai: str
     enabled: bool
     runs_on: frozenset[str]  # media types this detector runs on in every job (admin-chosen)
+    show_heatmap: bool  # users see this detector's heatmap (admin-chosen)
     trial: bool
     weight: float
     gpu_mem_mb: int
@@ -107,6 +108,8 @@ class Registry:
                 xai=m.get("xai", "none"),
                 enabled=ov.get("enabled") if ov.get("enabled") is not None else bool(m.get("enabled", True)),
                 runs_on=_runs_on(m, ov),
+                show_heatmap=(ov["show_heatmap"] if ov.get("show_heatmap") is not None
+                              else bool(m.get("show_heatmap", False))),
                 trial=ov["trial"] if ov.get("trial") is not None else bool(m.get("trial", False)),
                 weight=float(ov["weight"] if ov.get("weight") is not None
                              else m.get("weight", defaults.get("weight", 1.0))),
@@ -156,7 +159,7 @@ def _overrides() -> dict[str, dict[str, Any]]:
 
         data = {
             o.model_id: {"enabled": o.enabled, "weight": o.weight, "run_on_image": o.run_on_image,
-                         "run_on_video": o.run_on_video, "trial": o.trial}
+                         "run_on_video": o.run_on_video, "trial": o.trial, "show_heatmap": o.show_heatmap}
             for o in ModelOverride.objects.all()
         }
         cache.set(OVERRIDES_CACHE_KEY, data, 30)

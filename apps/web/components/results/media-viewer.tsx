@@ -27,7 +27,11 @@ export function MediaViewer({ job }: { job: JobDetail }) {
   // Streamed long-form scans keep no video, only a preview frame (served as the thumbnail).
   const streamPreview = job.options?.stream ? job.thumbnail_url : null
   // Unlabelled evidence: "Heatmap 1, 2, …" (users are not told which detector produced which map).
-  const label = (a: JobArtifact) => t(`media.artifact.${a.kind}`, { n: xai.filter((x) => x.kind === a.kind).indexOf(a) + 1 })
+  // Numbered only when the admin shows several (n = 0 renders "Heatmap").
+  const label = (a: JobArtifact) => {
+    const same = xai.filter((x) => x.kind === a.kind)
+    return t(`media.artifact.${a.kind}`, { n: same.length > 1 ? same.indexOf(a) + 1 : 0 })
+  }
 
   return (
     <HudCard>

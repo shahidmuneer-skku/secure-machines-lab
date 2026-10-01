@@ -436,7 +436,8 @@ class ModelAdminView(APIView):
             out.append({
                 "id": spec.id, "name": spec.name("en"), "family": spec.family, "media": sorted(spec.media),
                 "enabled": spec.enabled, "weight": spec.weight, "run_on": sorted(spec.runs_on),
-                "trial": spec.trial, "gpu_mem_mb": spec.gpu_mem_mb, "queue": spec.queue,
+                "show_heatmap": spec.show_heatmap, "trial": spec.trial, "gpu_mem_mb": spec.gpu_mem_mb,
+                "queue": spec.queue,
                 "consumers": consumers.get(spec.queue, 0), "note": o.note if o else "",
                 "stats_24h": stats.get(spec.id, {"runs": 0, "failed": 0, "waiting": 0}),
                 "conda_envs": sorted({m.get("conda_env", "") for m in spec.media.values()}),
@@ -446,7 +447,7 @@ class ModelAdminView(APIView):
     @extend_schema(tags=TAG, request={"application/json": {"type": "object", "properties": {
         "model_id": {"type": "string"}, "enabled": {"type": "boolean"}, "weight": {"type": "number"},
         "run_on_image": {"type": "boolean"}, "run_on_video": {"type": "boolean"}, "trial": {"type": "boolean"},
-        "note": {"type": "string"}}}},
+        "show_heatmap": {"type": "boolean"}, "note": {"type": "string"}}}},
         responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:
         model_id = str(request.data.get("model_id", ""))
@@ -457,7 +458,7 @@ class ModelAdminView(APIView):
             if request.data.get(f"run_on_{media}") and not spec.supports(media):
                 raise ApiError(f"{spec.name('en')} cannot analyse {media}s.")
         o, _ = ModelOverride.objects.get_or_create(model_id=spec.id)
-        fields = ("enabled", "run_on_image", "run_on_video", "trial")
+        fields = ("enabled", "run_on_image", "run_on_video", "trial", "show_heatmap")
         before = {"weight": o.weight, **{f: getattr(o, f) for f in fields}}
         for field in fields:
             if field in request.data:
@@ -495,13 +496,32 @@ class DetectionSetupView(APIView):
                         "always": a.builtin, "enabled": a.builtin or a.id in (cfg.audit_steps or [])}
                        for a in reg.audit_steps.values()],
             "long_video": {
-                "online": online, "model": cfg.long_video_model, "face_crop": cfg.long_video_face_crop,
+                "online": online, "model": cfg.long_video_model,
                 "models": [{"model_id": m["model_id"], "name": m.get("name") or m["model_id"],
                             "available": bool(m.get("available")), "reason": m.get("reason") or "",
-                            "face_crop": (m.get("face_crop") or {}).get("support", "none")}
+                            "face_crop": (m.get("face_crop") or {}).get("support", "none"),
+                            "face_crop_default": bool((m.get("face_crop") or {}).get("default", False)),
+                            "face_crop_setting": (cfg.long_video_face_crops or {}).get(m["model_id"])}
                            for m in stream_models],
             },
         }
+
+    @staticmethod
+    def _face_crops(cfg: PlatformSettings, changes: dict[str, bool | None]) -> dict[str, bool]:
+        """Merge per-detector face-crop choices; null returns a detector to its default."""
+        support = {m["model_id"]: (m.get("face_crop") or {}).get("support", "none")
+                   for m in streams.available_models(use_cache=False)}
+        merged = dict(cfg.long_video_face_crops or {})
+        for model_id, value in changes.items():
+            if model_id not in support:
+                raise ApiError(f"The stream service does not offer {model_id}.")
+            if value is None:
+                merged.pop(model_id, None)
+            elif support[model_id] != "optional":
+                raise ApiError(f"{model_id} decides face cropping itself ({support[model_id]}).")
+            else:
+                merged[model_id] = bool(value)
+        return merged
 
     @extend_schema(tags=TAG, responses=schemas.DetectionSetupSerializer,
                    summary="Extra checks run on every job and the long-form video detector")
@@ -515,7 +535,7 @@ class DetectionSetupView(APIView):
         d = ser.validated_data
         cfg = PlatformSettings.load()
         before = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
-                  "long_video_face_crop": cfg.long_video_face_crop}
+                  "long_video_face_crops": dict(cfg.long_video_face_crops or {})}
         if "audit_steps" in d:
             reg = registry()
             unknown = [s for s in d["audit_steps"] if s not in reg.audit_steps]
@@ -528,11 +548,11 @@ class DetectionSetupView(APIView):
                 if d["long_video_model"] not in offered:
                     raise ApiError("The stream service does not offer that detector.")
             cfg.long_video_model = d["long_video_model"]
-        if "long_video_face_crop" in d:
-            cfg.long_video_face_crop = d["long_video_face_crop"]
+        if "long_video_face_crops" in d:
+            cfg.long_video_face_crops = self._face_crops(cfg, d["long_video_face_crops"])
         cfg.save()
         after = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
-                 "long_video_face_crop": cfg.long_video_face_crop}
+                 "long_video_face_crops": cfg.long_video_face_crops}
         audit.record("admin.detection_setup", request=request, target_type="core.platformsettings", target_id="1",
                      before=before, after=after)
         return Response(self._payload())

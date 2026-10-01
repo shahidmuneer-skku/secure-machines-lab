@@ -1655,6 +1655,8 @@ export interface components {
             weight: number;
             /** @description Media types this detector runs on in every job. */
             run_on: components["schemas"]["RunOnEnum"][];
+            /** @description Users see this detector's heatmap (one image). */
+            show_heatmap: boolean;
             trial: boolean;
             gpu_mem_mb: number;
             queue: string;
@@ -2737,7 +2739,10 @@ export interface components {
         PatchedDetectionSetupUpdateRequest: {
             audit_steps?: string[];
             long_video_model?: string;
-            long_video_face_crop?: boolean | null;
+            /** @description {model_id: true|false|null}; null returns the detector to its default. */
+            long_video_face_crops?: {
+                [key: string]: boolean | null;
+            };
         };
         PatchedMeRequest: {
             display_name?: string;
@@ -3170,8 +3175,6 @@ export interface components {
             online: boolean;
             /** @description Empty = the first available detector. */
             model: string;
-            /** @description Empty = the detector's default. */
-            face_crop: boolean | null;
             models: components["schemas"]["SetupStreamModel"][];
         };
         SetupStreamModel: {
@@ -3179,7 +3182,17 @@ export interface components {
             name: string;
             available: boolean;
             reason: string;
+            /**
+             * @description Whether the detector can crop to faces before scoring.
+             *
+             *     * `always` - always
+             *     * `optional` - optional
+             *     * `none` - none
+             */
             face_crop: components["schemas"]["FaceCropEnum"];
+            face_crop_default: boolean;
+            /** @description Admin's choice; null = the default. */
+            face_crop_setting: boolean | null;
         };
         /**
          * @description * `s3` - s3
@@ -3614,6 +3627,7 @@ export interface operations {
                     run_on_image?: boolean;
                     run_on_video?: boolean;
                     trial?: boolean;
+                    show_heatmap?: boolean;
                     note?: string;
                 };
             };

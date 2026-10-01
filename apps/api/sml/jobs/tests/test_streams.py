@@ -77,7 +77,7 @@ def test_session_reserves_the_selected_range_per_started_minute(user):
 def test_the_admin_chooses_the_long_form_detector(user, platform):
     fund(user)
     platform.long_video_model = "skku-p2"  # offered but unavailable (missing env)
-    platform.long_video_face_crop = True
+    platform.long_video_face_crops = {"skku-p2": False, "skku-aigc": True}  # set per detector
     platform.save()
     with pytest.raises(ApiError, match="not available right now"):
         streams.create_session(user, request())
@@ -86,7 +86,7 @@ def test_the_admin_chooses_the_long_form_detector(user, platform):
         session, _ = streams.create_session(user, request())
     finally:
         CATALOG[1]["available"] = False
-    assert (session.model_id, session.face_crop) == ("skku-p2", True)
+    assert (session.model_id, session.face_crop) == ("skku-p2", False)
 
 
 def test_a_session_is_claimed_once_by_the_stream_service(user, client_for):
@@ -259,3 +259,23 @@ def test_worker_sweeps_leave_stream_tasks_alone(user):
     session, _ = streams.create_session(user, request())
     JobTask.objects.filter(job=session.job).update(dispatched_at=timezone.now() - timedelta(days=3))
     assert requeue_stale() == 0
+
+
+def test_face_cropping_is_set_per_long_form_detector(client_for, make_user, platform):
+    CATALOG.append({"model_id": "beybi", "name": "SKKU (BEYBI)", "available": True, "reason": "",
+                    "face_crop": {"support": "always", "default": True}})
+    try:
+        admin = client_for(make_user(roles=("admin",)), mfa=True)
+        url = "/api/v1/admin/models/setup"
+        res = admin.patch(url, {"long_video_face_crops": {"skku-aigc": True, "skku-p2": False}}, format="json")
+        assert res.status_code == 200, res.content
+        models = {m["model_id"]: m for m in res.json()["long_video"]["models"]}
+        assert (models["skku-aigc"]["face_crop_setting"], models["skku-p2"]["face_crop_setting"]) == (True, False)
+        assert models["beybi"]["face_crop_setting"] is None and models["beybi"]["face_crop"] == "always"
+        # A detector that always crops cannot be switched; null returns one to its default.
+        assert admin.patch(url, {"long_video_face_crops": {"beybi": False}}, format="json").status_code == 400
+        admin.patch(url, {"long_video_face_crops": {"skku-p2": None}}, format="json")
+        platform.refresh_from_db()
+        assert platform.long_video_face_crops == {"skku-aigc": True}
+    finally:
+        CATALOG.pop()

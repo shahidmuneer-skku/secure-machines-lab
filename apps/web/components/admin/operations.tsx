@@ -307,6 +307,7 @@ export function AdminModels() {
   })
   if (isLoading) return <Loading />
   const runs = (media: "image" | "video") => (models ?? []).filter((m) => m.enabled && m.run_on.includes(media)).length
+  const heatmaps = (models ?? []).filter((m) => m.enabled && m.show_heatmap).map((m) => m.name)
   const mediaSwitch = (m: NonNullable<typeof models>[number], media: "image" | "video") => m.media.includes(media) ? (
     <Switch checked={m.run_on.includes(media)} disabled={!canEdit || !m.enabled}
       onCheckedChange={(v) => patch.mutate({ model_id: m.id, [`run_on_${media}`]: v })}
@@ -316,19 +317,25 @@ export function AdminModels() {
     <div className="space-y-5">
       <PageHeader eyebrow={t("eyebrow")} index={6} title={t("title")} description={t("subtitle")} />
       <AdminError error={error} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         {(["image", "video"] as const).map((media) => (
           <HudCard key={media} className="gap-1 py-4"><CardContent className="px-4">
             <p className="mono-label text-muted-foreground">{t(`media.${media}`)}</p>
             <p className={runs(media) ? "text-sm" : "text-sm text-warn"}>{t("runsSummary", { count: runs(media) })}</p>
           </CardContent></HudCard>
         ))}
+        <HudCard className="gap-1 py-4"><CardContent className="px-4">
+          <p className="mono-label text-muted-foreground">{t("heatmap")}</p>
+          <p className="truncate text-sm" title={heatmaps.join(", ")}>
+            {heatmaps.length ? t("heatmapsSummary", { count: heatmaps.length, names: heatmaps.join(", ") }) : t("noHeatmaps")}
+          </p>
+        </CardContent></HudCard>
       </div>
       <HudCard><CardContent className="overflow-x-auto pt-4">
         <Table>
           <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("enabled")}</TableHead>
             <TableHead>{t("media.image")}</TableHead><TableHead>{t("media.video")}</TableHead>
-            <TableHead>{t("trial")}</TableHead><TableHead>{t("weight")}</TableHead><TableHead className="text-right">{t("consumers")}</TableHead>
+            <TableHead>{t("heatmap")}</TableHead><TableHead>{t("trial")}</TableHead><TableHead>{t("weight")}</TableHead><TableHead className="text-right">{t("consumers")}</TableHead>
             <TableHead className="text-right">{t("runs")}</TableHead><TableHead>{t("envs")}</TableHead></TableRow></TableHeader>
           <TableBody>
             {(models ?? []).map((m) => (
@@ -337,6 +344,8 @@ export function AdminModels() {
                 <TableCell><Switch checked={m.enabled} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, enabled: v })} aria-label={t("enabled")} /></TableCell>
                 <TableCell>{mediaSwitch(m, "image")}</TableCell>
                 <TableCell>{mediaSwitch(m, "video")}</TableCell>
+                <TableCell><Switch checked={m.show_heatmap} disabled={!canEdit || !m.enabled}
+                  onCheckedChange={(v) => patch.mutate({ model_id: m.id, show_heatmap: v })} aria-label={t("heatmapFor", { model: m.name })} /></TableCell>
                 <TableCell><Switch checked={m.trial} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, trial: v })} aria-label={t("trial")} /></TableCell>
                 <TableCell><Input type="number" step="0.1" min="0" max="10" defaultValue={m.weight} disabled={!canEdit} className="h-8 w-20"
                   onBlur={(e) => Number(e.target.value) !== m.weight && patch.mutate({ model_id: m.id, weight: Number(e.target.value) })} aria-label={t("weight")} /></TableCell>
@@ -362,7 +371,8 @@ function DetectionSetup() {
   const { data: setup, error } = useQuery({ queryKey: qk.admin("models", "setup"),
     queryFn: async () => data(await api.GET("/api/v1/admin/models/setup")) })
   const save = useMutation({
-    mutationFn: async (body: { audit_steps?: string[]; long_video_model?: string; long_video_face_crop?: boolean | null }) =>
+    mutationFn: async (body: { audit_steps?: string[]; long_video_model?: string;
+      long_video_face_crops?: Record<string, boolean | null> }) =>
       data(await api.PATCH("/api/v1/admin/models/setup", { body })),
     onSuccess: (next) => { qc.setQueryData(qk.admin("models", "setup"), next); toast.success(t("saved")) },
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")),
@@ -370,8 +380,6 @@ function DetectionSetup() {
   if (!setup) return <AdminError error={error} />
   const enabledChecks = setup.checks.filter((c) => c.enabled && !c.always).map((c) => c.id)
   const lv = setup.long_video
-  const chosen = lv.models.find((m) => m.model_id === lv.model)
-  const faceCropFixed = chosen ? chosen.face_crop !== "optional" : false
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <HudCard>
@@ -408,18 +416,29 @@ function DetectionSetup() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="lv-face">{t("faceCrop")}</Label>
-            <Select value={lv.face_crop == null ? "default" : lv.face_crop ? "on" : "off"}
-              disabled={!canEdit || faceCropFixed || save.isPending}
-              onValueChange={(v) => save.mutate({ long_video_face_crop: v === "default" ? null : v === "on" })}>
-              <SelectTrigger id="lv-face" className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">{t("faceCropDefault")}</SelectItem>
-                <SelectItem value="on">{t("faceCropOn")}</SelectItem>
-                <SelectItem value="off">{t("faceCropOff")}</SelectItem>
-              </SelectContent>
-            </Select>
-            {faceCropFixed && <p className="text-xs text-muted-foreground">{t("faceCropFixed")}</p>}
+            <p className="text-sm font-medium">{t("faceCrop")}</p>
+            <p className="text-xs text-muted-foreground">{t("faceCropHint")}</p>
+            <ul className="divide-y rounded-lg border">
+              {lv.models.map((m) => (
+                <li key={m.model_id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <span className={m.available ? "" : "text-muted-foreground"}>{m.name}</span>
+                  {m.face_crop === "optional" ? (
+                    <Select value={m.face_crop_setting == null ? "default" : m.face_crop_setting ? "on" : "off"}
+                      disabled={!canEdit || save.isPending}
+                      onValueChange={(v) => save.mutate({ long_video_face_crops: { [m.model_id]: v === "default" ? null : v === "on" } })}>
+                      <SelectTrigger className="h-8 w-44" aria-label={t("faceCropFor", { model: m.name })}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">{t("faceCropDefault", { on: String(m.face_crop_default) })}</SelectItem>
+                        <SelectItem value="on">{t("faceCropOn")}</SelectItem>
+                        <SelectItem value="off">{t("faceCropOff")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">{t(m.face_crop === "always" ? "faceCropAlways" : "faceCropNone")}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         </CardContent>
       </HudCard>
