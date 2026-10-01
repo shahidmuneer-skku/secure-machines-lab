@@ -161,6 +161,7 @@ def _on_finished(job: Job, task: JobTask, payload: dict[str, Any]) -> None:
         task.status = JobTask.Status.SUCCEEDED
         task.result = normalize_result(payload.get("result") or {})
         task.stage_message = "Done"
+        task.error_code = task.error_message = task.error_detail = ""  # left over from a failed attempt
         task.save()
         _emit_success(job, task)
         return

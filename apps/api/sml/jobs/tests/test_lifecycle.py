@@ -344,3 +344,20 @@ def test_a_fresh_kept_result_is_left_to_the_message(user, job_for, worker, monke
                "result": {"fake_prob": 0.2}, "kept_at": timezone.now().isoformat()}
     monkeypatch.setattr(live, "kept_results", lambda ids: {str(task.pk): payload})
     assert requeue_stale() == 0
+
+
+def test_a_successful_retry_clears_the_previous_error(user, job_for, worker):
+    fund(user, 5)
+    a, _ = image_models()
+    job = job_for(user)
+    dispatch_pending()
+    task = job.tasks.get(target=a)
+    worker.start(task)
+    worker.fail(task, code="RUNTIME_ERROR", message="ImportError: libcusolver")
+    dispatch_pending()
+    task.refresh_from_db()
+    worker.start(task)
+    worker.succeed(task, {"fake_prob": 0.4})
+    task.refresh_from_db()
+    assert (task.status, task.attempt) == (JobTask.Status.SUCCEEDED, 2)
+    assert task.error_code == task.error_message == task.error_detail == ""
