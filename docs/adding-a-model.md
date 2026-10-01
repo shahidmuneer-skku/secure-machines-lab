@@ -1,9 +1,21 @@
 # Adding a detection model
 
-Models are data, not code: an entry in `config/models.yaml` makes a model selectable in the
-UI and the API, gives it its own queue (`sml.model.<id>`), and tells the worker how to run it.
-Model code is never imported into the platform; the worker runs your script as a subprocess
-from the model's own conda environment.
+Models are data, not code: an entry in `config/models.yaml` registers a detector, gives it its own
+queue (`sml.model.<id>`), and tells the worker how to run it. Model code is never imported into the
+platform; the worker runs your script as a subprocess from the model's own conda environment.
+Users never choose or see detectors: the admin decides on **Admin → Models** which ones run on
+every image and every video job (ADR 0011).
+
+## Where things live
+
+| What | Where (this server) | Setting |
+| --- | --- | --- |
+| Detector code and weights | `~/fakedetector/fakedetector/detection_models/<Name>/` | `MODELS_ROOT` in `.env` |
+| Conda environments | `~/anaconda3/envs/<env>/` | `CONDA_ROOT` |
+| Long-form video detectors | `~/fakedetector/long-video-processor/` | `LONG_VIDEO_ROOT` |
+| Registry: how each detector runs | `config/models.yaml` | `MODELS_CONFIG_PATH` |
+| Output parsers, run logic | `apps/worker/sml_worker/adapters/` (`parsers.py`, `subprocess_cli.py`) | — |
+| Runtime choices (on/off per media, category, heatmap, weight) | Admin → Models (database overrides) | — |
 
 ## 1. Make the script runnable from the command line
 
@@ -57,13 +69,14 @@ models:
       en: One line for operators (admin console only; users never see detectors).
       ko: 운영자용 한 줄 설명(관리 콘솔 전용, 사용자에게는 표시되지 않음).
       de: Eine Zeile für Betreiber (nur Admin-Konsole; Nutzer sehen keine Detektoren).
-    family: deepfake                # deepfake | ai_generated | general
+    family: deepfake                # result group users see: deepfake (face swap) | ai_generated | general
     face_required: true             # enables "no face" handling
-    xai: gradcam                    # gradcam | attention | none (shown as a badge)
+    xai: gradcam                    # gradcam | attention | none (informational)
     default_selected: false         # runs on every job of each supported media type (until Admin → Models overrides it)
+    show_heatmap: false             # users see this detector's heatmap (one image)
     trial: false                    # used for guest trial checks
-    weight: 1.0                     # weight in the combined verdict
-    gpu_mem_mb: 6000                # informational, for capacity planning
+    weight: 1.0                     # weight within its result group
+    gpu_mem_mb: 6000                # GPU memory reserved before it starts, until its first run measures the real peak
     # variant_of: my-detector       # for separate deepfake / AI-generated weights of one model
     # fallbacks:
     #   on_no_face: center          # run another model when this one finds no face
@@ -83,7 +96,7 @@ models:
         timeout_seconds: 1800
 ```
 
-Only list the media types the model supports; the picker disables it for other files.
+Only list the media types the model supports; it can only be switched on for those.
 Placeholders available in `argv` and `cwd`: `{python}`, `{models_root}`, `{long_video_root}`,
 `{input}`, `{input_dir}`, `{stem}`, `{workdir}`, `{media}`, `{page_type}`,
 `{original_name_b64}`, `{interval}`. Other per-media keys: `result_file` (for `safe_csv`,
@@ -97,17 +110,18 @@ billing.
 1. Make the conda environment available under `CONDA_ROOT/envs/<name>` on every GPU host.
    While it is missing, the worker (with `SML_WORKER_SIMULATE=auto`) returns simulated scores
    that are flagged as simulated in the result; set `SML_WORKER_SIMULATE=0` in production.
-2. Restart the API side (it caches the registry) and the model workers. Workers started with
-   `--all` pick up the new queue automatically; a dedicated worker can be started with
-   `--models my-detector`:
+2. Restart the Celery API worker and the model workers (the API itself re-reads `models.yaml`
+   when the file changes). Workers started with `--detectors` or `--all` pick up the new queue
+   automatically; a dedicated worker can be started with `--models my-detector`:
 
    ```bash
-   sudo systemctl restart sml-api sml-celery 'sml-worker@*'
+   sudo systemctl restart sml-celery 'sml-worker@*'
    ```
 
-3. In **Admin → Models** check that the model is listed with its queue and consumers. The same
-   page turns it on or off for every image job and every video job, changes its weight, or adds it
-   to the trial selection at runtime (stored as overrides; `models.yaml` is untouched).
+3. In **Admin → Models** check that the model is listed with its queue and consumers (workers).
+   The same page decides, at runtime and without editing `models.yaml`: whether it runs on every
+   image and every video job, its category (face swap / AI-generated / general — the result group
+   users see), whether users see its heatmap, its weight, and the trial selection.
 
 ## 4. Verify
 
