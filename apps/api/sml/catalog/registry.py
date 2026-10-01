@@ -6,6 +6,7 @@ model ids, queues and invocation templates.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -14,6 +15,8 @@ from typing import Any
 import yaml
 from django.conf import settings
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 OVERRIDES_CACHE_KEY = "model-overrides:v4"
 
@@ -79,6 +82,13 @@ class AuditStepSpec:
         return self.display_name.get(lang) or self.display_name.get("en") or self.id
 
 
+def _family(model_id: str, family: str | None) -> str:
+    if family in FAMILIES:
+        return family
+    logger.warning("Model %s has family %r; counting it towards the AI-generation analysis", model_id, family)
+    return "ai_generated"
+
+
 def _runs_on(raw_model: dict[str, Any], override: dict[str, Any]) -> frozenset[str]:
     """Media types the detector runs on: the admin's per-media choice, else models.yaml's
     `default_selected` (which applies to every media type the detector supports)."""
@@ -91,8 +101,9 @@ def _runs_on(raw_model: dict[str, Any], override: dict[str, Any]) -> frozenset[s
     return frozenset(chosen)
 
 
-# Result groups users see, in display order (the detectors' families; ADR 0011).
-FAMILIES = ("deepfake", "ai_generated", "general")
+# Result groups users see, in display order (the detectors' families; ADR 0011): the face-swap
+# analysis and the AI-generation analysis (owner, 2026-10-01: no separate "general" analysis).
+FAMILIES = ("deepfake", "ai_generated")
 
 
 class Registry:
@@ -107,7 +118,7 @@ class Registry:
                 id=m["id"],
                 display_name=m.get("display_name", {"en": m["id"]}),
                 description=m.get("description", {}),
-                family=ov.get("family") or m.get("family", "general"),
+                family=_family(m["id"], ov.get("family") or m.get("family")),
                 face_required=bool(m.get("face_required", False)),
                 xai=m.get("xai", "none"),
                 enabled=ov.get("enabled") if ov.get("enabled") is not None else bool(m.get("enabled", True)),

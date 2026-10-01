@@ -60,8 +60,7 @@ def _few_shots(limit: int = 3) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
-ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis",
-                  "general": "general analysis"}
+ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis"}
 
 
 def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], forensics: list[dict[str, Any]],
@@ -70,7 +69,7 @@ def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], foren
     for f in forensics:  # per file, one result per analysis; the report must not reveal the detectors
         parts = []
         for a in f.get("analyses") or []:
-            name = ANALYSIS_NAMES.get(a.get("analysis"), "general analysis")
+            name = ANALYSIS_NAMES.get(a.get("analysis"), "AI-generation analysis")
             if a.get("fake_prob") is not None:
                 parts.append(f"{name}: fake probability {float(a['fake_prob']) * 100:.1f}%")
             else:

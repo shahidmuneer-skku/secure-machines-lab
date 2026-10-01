@@ -116,14 +116,16 @@ def ai_generated(job: Job) -> bool:
 
 
 # Detector family → the name of the result users see.
-ANALYSIS_IDS = {"deepfake": "face_swap", "ai_generated": "ai_generated", "general": "general"}
+ANALYSIS_IDS = {"deepfake": "face_swap", "ai_generated": "ai_generated"}
 
 
 def analyses(job: Job) -> list[dict[str, Any]]:
-    """The result of each analysis (face swap, AI generation, general): verdict and probability only."""
-    return [{"id": ANALYSIS_IDS.get(g.get("group"), "general"), "status": g.get("status", "done"),
+    """The result of each analysis (face swap, AI generation): verdict and probability only.
+
+    Jobs from before 2026-10-01 may also hold a "general" group; it is not shown any more."""
+    return [{"id": ANALYSIS_IDS[g["group"]], "status": g.get("status", "done"),
              "verdict": g.get("verdict") or "", "fake_probability": g.get("fake_probability")}
-            for g in (job.summary or {}).get("groups") or []]
+            for g in (job.summary or {}).get("groups") or [] if g.get("group") in ANALYSIS_IDS]
 
 
 def evidence_items(items: Any) -> list[dict[str, str]]:
@@ -182,7 +184,7 @@ def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, Any]]:
     long_task = _task(tasks, JobTask.Kind.LONG_VIDEO)
     if long_task is not None:
         spec = reg.get(long_task.target)
-        group = ANALYSIS_IDS.get(spec.family if spec else "general", "general")
+        group = ANALYSIS_IDS.get(spec.family if spec else "", "ai_generated")
         return [{"analysis": group, "start_sec": float(i.get("start_sec") or 0.0),
                  "end_sec": float(i.get("end_sec") or 0.0), "fake_prob": float(i.get("fake_prob") or 0.0)}
                 for i in (long_task.result or {}).get("intervals") or [] if isinstance(i, dict)]
@@ -198,7 +200,7 @@ def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, Any]]:
             continue
         spec = reg.get(t.target)
         weight = spec.weight if spec else 1.0
-        group = ANALYSIS_IDS.get(spec.family if spec else "general", "general")
+        group = ANALYSIS_IDS.get(spec.family if spec else "", "ai_generated")
         for idx, f in enumerate(frames):
             try:
                 second = float(f.get("frame")) / fps

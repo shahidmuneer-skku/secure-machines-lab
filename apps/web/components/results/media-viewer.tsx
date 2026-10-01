@@ -109,11 +109,10 @@ export function MediaViewer({ job }: { job: JobDetail }) {
   )
 }
 
-const ANALYSES = ["face_swap", "ai_generated", "general"] as const
+const ANALYSES = ["face_swap", "ai_generated"] as const
 type AnalysisId = (typeof ANALYSES)[number]
 const ANALYSIS_COLOR: Record<AnalysisId, string> = {
   face_swap: "var(--viz-analysis-face-swap)", ai_generated: "var(--viz-analysis-ai-generated)",
-  general: "var(--viz-analysis-general)",
 }
 const formatClock = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`
 
@@ -124,7 +123,7 @@ function VideoTimeline({ job, videoRef }: { job: JobDetail; videoRef: React.RefO
     queryKey: ["jobs", "intervals", job.id], queryFn: () => [], enabled: false, staleTime: Infinity })
   const { rows, present } = useMemo(() => {
     const points: TimelinePoint[] = job.timeline.length ? job.timeline
-      : (liveIntervals ?? []).map((i) => ({ ...i, analysis: "general", end_sec: i.start_sec } as TimelinePoint))
+      : (liveIntervals ?? []).map((i) => ({ ...i, analysis: job.analyses[0]?.id ?? "ai_generated", end_sec: i.start_sec } as TimelinePoint))
     const byTime = new Map<number, Record<string, number>>()
     const seen = new Set<AnalysisId>()
     for (const p of points) {
@@ -134,7 +133,7 @@ function VideoTimeline({ job, videoRef }: { job: JobDetail; videoRef: React.RefO
       seen.add(p.analysis as AnalysisId)
     }
     return { rows: [...byTime.values()].sort((a, b) => a.x - b.x), present: ANALYSES.filter((a) => seen.has(a)) }
-  }, [job.timeline, liveIntervals])
+  }, [job.timeline, job.analyses, liveIntervals])
   const config = Object.fromEntries(present.map((a) => [a, { label: t(`analysis.name.${a}`), color: ANALYSIS_COLOR[a] }])) satisfies ChartConfig
   if (!rows.length) return null
   return (

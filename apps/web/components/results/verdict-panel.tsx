@@ -18,7 +18,7 @@ type Reason = { code: string; strength?: string; evidence?: { detail: string }[]
 type Analysis = JobDetail["analyses"][number]
 
 /**
- * One result per analysis (face swap, AI generation, general). Users see each analysis' verdict and
+ * One result per analysis (face swap, AI generation). Users see each analysis' verdict and
  * probability, never how many detectors it combines.
  */
 function AnalysisResults({ analyses }: { analyses: Analysis[] }) {

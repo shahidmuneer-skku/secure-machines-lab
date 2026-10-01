@@ -464,7 +464,7 @@
     },
     "verdict": {
       "eyebrow": "Verdict",
-      "title": "Combined result",
+      "title": "Analysis Result",
       "fakeProbability": "Fake probability",
       "failed": "The analysis failed. You were not charged.",
       "canceled": "This job was canceled. Reserved credits were returned.",
@@ -578,8 +578,7 @@
       "probabilityOf": "{name}: fake probability",
       "name": {
         "face_swap": "Face-swap analysis",
-        "ai_generated": "AI-generation analysis",
-        "general": "General analysis"
+        "ai_generated": "AI-generation analysis"
       }
     }
   },
@@ -807,8 +806,7 @@
       "categoryFor": "Category of {model}",
       "family": {
         "deepfake": "Face swap",
-        "ai_generated": "AI-generated",
-        "general": "General"
+        "ai_generated": "AI-generated"
       }
     },
     "pricing": {

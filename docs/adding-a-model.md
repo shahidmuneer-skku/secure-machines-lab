@@ -69,7 +69,7 @@ models:
       en: One line for operators (admin console only; users never see detectors).
       ko: 운영자용 한 줄 설명(관리 콘솔 전용, 사용자에게는 표시되지 않음).
       de: Eine Zeile für Betreiber (nur Admin-Konsole; Nutzer sehen keine Detektoren).
-    family: deepfake                # result group users see: deepfake (face swap) | ai_generated | general
+    family: deepfake                # result group users see: deepfake (face swap) | ai_generated
     face_required: true             # enables "no face" handling
     xai: gradcam                    # gradcam | attention | none (informational)
     default_selected: false         # runs on every job of each supported media type (until Admin → Models overrides it)
@@ -120,8 +120,8 @@ billing.
 
 3. In **Admin → Models** check that the model is listed with its queue and consumers (workers).
    The same page decides, at runtime and without editing `models.yaml`: whether it runs on every
-   image and every video job, its category (face swap / AI-generated / general — the result group
-   users see), whether users see its heatmap, its weight, and the trial selection.
+   image and every video job, its category (face swap / AI-generated — the result group users
+   see), whether users see its heatmap, its weight, and the trial selection.
 
 ## 4. Verify
 

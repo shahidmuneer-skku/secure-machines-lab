@@ -474,8 +474,7 @@
                                         "enum": [
                                             "",
                                             "deepfake",
-                                            "ai_generated",
-                                            "general"
+                                            "ai_generated"
                                         ],
                                         "description": "Result group; empty = models.yaml."
                                     }
@@ -6751,11 +6750,10 @@
             "AnalysisEnum": {
                 "enum": [
                     "face_swap",
-                    "ai_generated",
-                    "general"
+                    "ai_generated"
                 ],
                 "type": "string",
-                "description": "* `face_swap` - face_swap\n* `ai_generated` - ai_generated\n* `general` - general"
+                "description": "* `face_swap` - face_swap\n* `ai_generated` - ai_generated"
             },
             "AnalysisResult": {
                 "type": "object",
@@ -8060,11 +8058,10 @@
             "FamilyEnum": {
                 "enum": [
                     "deepfake",
-                    "ai_generated",
-                    "general"
+                    "ai_generated"
                 ],
                 "type": "string",
-                "description": "* `deepfake` - deepfake\n* `ai_generated` - ai_generated\n* `general` - general"
+                "description": "* `deepfake` - deepfake\n* `ai_generated` - ai_generated"
             },
             "FreeAllowance": {
                 "type": "object",

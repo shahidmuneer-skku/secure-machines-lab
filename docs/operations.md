@@ -126,7 +126,7 @@ so a restore can reference files that no longer exist; affected jobs show as pur
 
 **Choosing what runs.** Admin → Models: per detector, *Images* and *Videos* switch whether it runs
 on every job of that type (the cards above the table show how many run; a type with none is
-refused with a generic message). *Category* puts a detector in the face-swap, AI-generation or general
+refused with a generic message). *Category* puts a detector in the face-swap or the AI-generation
 analysis: users see one result per analysis (never how many detectors it combines), and the file is
 flagged when any analysis says fake. *Heatmap* chooses whose heatmap users see (one image per
 detector, its main blended map; Center by default). The cards below choose the extra checks every

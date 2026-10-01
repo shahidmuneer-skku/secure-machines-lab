@@ -18,8 +18,9 @@ it fake. Long-form scans use one admin-chosen detector.
   face cropping (`PlatformSettings.long_video_face_crops`; missing = the detector's default). Requests carry files and options
   only; `models` / `audit_steps` fields are ignored.
 - *One projection for users.* `sml/jobs/public.py` builds everything user-facing from a job:
-  generic steps, one result per analysis — face swap, AI generation, general (the detectors'
-  families, editable on Admin → Models) — with its verdict and probability but never how many
+  generic steps, one result per analysis — face swap and AI generation (the detectors' families,
+  editable on Admin → Models; there is no separate "general" analysis) — with its verdict and
+  probability but never how many
   detectors it combines, verdict reasons, provenance, check results, a video timeline per analysis
   and one heatmap
   (the main blended map) from each detector the admin chose, with generic labels and file names. The user serializers, reports,

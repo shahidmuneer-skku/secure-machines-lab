@@ -358,7 +358,7 @@ class ModelStatsSerializer(serializers.Serializer):
 class AdminModelSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    family = serializers.ChoiceField(choices=["deepfake", "ai_generated", "general"])
+    family = serializers.ChoiceField(choices=["deepfake", "ai_generated"])
     media = serializers.ListField(child=serializers.CharField())
     enabled = serializers.BooleanField()
     weight = serializers.FloatField()

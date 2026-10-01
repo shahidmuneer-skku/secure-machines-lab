@@ -464,7 +464,7 @@
     },
     "verdict": {
       "eyebrow": "Ergebnis",
-      "title": "Kombiniertes Ergebnis",
+      "title": "Analyseergebnis",
       "fakeProbability": "Deepfake-Wahrscheinlichkeit",
       "failed": "Die Analyse ist fehlgeschlagen. Es wurden keine Gebühren berechnet.",
       "canceled": "Dieser Auftrag wurde storniert. Die reservierten Credits wurden zurückgegeben.",
@@ -578,8 +578,7 @@
       "probabilityOf": "{name}: Fake-Wahrscheinlichkeit",
       "name": {
         "face_swap": "Face-Swap-Analyse",
-        "ai_generated": "KI-Generierungs-Analyse",
-        "general": "Allgemeine Analyse"
+        "ai_generated": "KI-Generierungs-Analyse"
       }
     }
   },
@@ -807,8 +806,7 @@
       "categoryFor": "Kategorie von {model}",
       "family": {
         "deepfake": "Face-Swap",
-        "ai_generated": "KI-generiert",
-        "general": "Allgemein"
+        "ai_generated": "KI-generiert"
       }
     },
     "pricing": {

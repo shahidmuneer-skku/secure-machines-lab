@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 LANG_NAMES = {"en": "English", "ko": "Korean (한국어)", "de": "German (Deutsch)"}
 
 
-ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis",
-                  "general": "general analysis"}
+ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis"}
 
 
 def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str], locale: str) -> str:
@@ -46,8 +45,9 @@ def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str],
                                  "software": provenance.get("software"),
                                  "c2pa_status": provenance.get("c2pa_status")},
                     "results_by_analysis": [
-                        {"analysis": ANALYSIS_NAMES.get(a.get("id"), "general analysis"), "verdict": a.get("verdict"),
-                         "fake_probability": a.get("fake_probability"), "status": a.get("status")}
+                        {"analysis": ANALYSIS_NAMES.get(a.get("id"), "AI-generation analysis"),
+                         "verdict": a.get("verdict"), "fake_probability": a.get("fake_probability"),
+                         "status": a.get("status")}
                         for a in context.get("analyses") or []],
                     "additional_checks": checks},
                    indent=2, ensure_ascii=False),
@@ -59,7 +59,7 @@ def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str],
         "  edges and blending seams, background warping, text rendering, hands, temporal flicker (video).",
         "  Refer to the heatmap regions when relevant.",
         "### Provenance — what EXIF / C2PA metadata does or doesn't show.",
-        "### Results by analysis — what the face-swap, AI-generation and general analyses each found,",
+        "### Results by analysis — what the face-swap and AI-generation analyses each found,",
         "  in plain language (only those present above).",
         "### Caveats — what could make this assessment wrong.",
         "",

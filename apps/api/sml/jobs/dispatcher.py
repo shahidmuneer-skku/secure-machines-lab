@@ -81,7 +81,7 @@ def _news_case(job: Job) -> dict[str, Any] | None:
 
 
 def _forensics(job: Job) -> list[dict[str, Any]]:
-    """Per attached file, the result of each analysis (face swap, AI generation, general), handed to
+    """Per attached file, the result of each analysis (face swap, AI generation), handed to
     the news agent as one input. The agent's report is shown to the user, so it is never told which
     detectors ran or how many."""
     from sml.core.models import PlatformSettings
@@ -99,7 +99,7 @@ def _forensics(job: Job) -> list[dict[str, Any]]:
         media = tasks[0].media or job.media
         xai = [a.storage_key for t in tasks for a in t.artifacts.filter(kind="xai", content_type__startswith="image/")]
         out.append({"file": media.original_name if media else "",
-                    "analyses": [{"analysis": ANALYSIS_IDS.get(g["group"], "general"), "status": g["status"],
+                    "analyses": [{"analysis": ANALYSIS_IDS[g["group"]], "status": g["status"],
                                   "fake_prob": g["fake_probability"]}
                                  for g in group_results(tasks, threshold, reg)],
                     "xai_keys": xai[:2]})

@@ -1,4 +1,4 @@
-"""Results per analysis (face swap / AI generation / general) and the headline verdict (owner, 2026-10-01).
+"""Results per analysis (face swap / AI generation) and the headline verdict (owner, 2026-10-01).
 
 Users see one result per analysis — verdict and probability — and never how many detectors each
 combines. The headline is fake when any analysis says fake and shows the highest probability.
@@ -68,10 +68,10 @@ def test_each_analysis_has_its_own_result_and_any_fake_flags_the_file(api, run_j
 
 
 def test_the_headline_is_authentic_only_when_every_analysis_is(api, run_job):
-    job = run_job({detectors("deepfake", 1)[0]: 0.3, detectors("general", 1)[0]: 0.4})
+    job = run_job({detectors("deepfake", 1)[0]: 0.3, detectors("ai_generated", 1)[0]: 0.4})
     detail = api.get(f"/api/v1/jobs/{job.pk}").json()
     assert detail["verdict"] == "real" and detail["fake_probability"] == pytest.approx(0.4)  # the higher one
-    assert [a["id"] for a in detail["analyses"]] == ["face_swap", "general"]
+    assert [a["id"] for a in detail["analyses"]] == ["face_swap", "ai_generated"]
 
 
 def test_no_face_is_reported_for_the_face_swap_analysis_only(api, run_job):
@@ -84,15 +84,28 @@ def test_no_face_is_reported_for_the_face_swap_analysis_only(api, run_job):
 
 
 def test_the_admin_can_move_a_detector_to_another_analysis(api, client_for, make_user, run_job):
-    moved = detectors("general", 1)[0]
+    moved = detectors("ai_generated", 1)[0]
     admin = client_for(make_user(roles=("admin",)), mfa=True)
     res = admin.patch("/api/v1/admin/models", {"model_id": moved, "family": "deepfake"}, format="json")
     assert res.status_code == 200, res.content
-    assert admin.patch("/api/v1/admin/models", {"model_id": moved, "family": "xray"}, format="json").status_code == 400
+    for invalid in ("general", "xray"):  # there are two analyses only
+        res = admin.patch("/api/v1/admin/models", {"model_id": moved, "family": invalid}, format="json")
+        assert res.status_code == 400
     job = run_job({moved: 0.9})
     assert [a["id"] for a in api.get(f"/api/v1/jobs/{job.pk}").json()["analyses"]] == ["face_swap"]
     admin.patch("/api/v1/admin/models", {"model_id": moved, "family": ""}, format="json")  # back to models.yaml
-    assert registry().get(moved).family == "general"
+    assert registry().get(moved).family == "ai_generated"
+
+
+def test_every_detector_belongs_to_one_of_the_two_analyses():
+    assert {m.family for m in registry().models.values()} == {"deepfake", "ai_generated"}
+
+
+def test_older_jobs_with_a_general_analysis_show_only_the_two(api, run_job):
+    job = run_job({detectors("deepfake", 1)[0]: 0.9})
+    job.summary["groups"].append({"group": "general", "status": "done", "fake_probability": 0.1, "verdict": "real"})
+    job.save(update_fields=["summary"])
+    assert [a["id"] for a in api.get(f"/api/v1/jobs/{job.pk}").json()["analyses"]] == ["face_swap"]
 
 
 def test_reports_list_the_analyses(run_job):

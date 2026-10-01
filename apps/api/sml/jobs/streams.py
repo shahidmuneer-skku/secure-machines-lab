@@ -197,7 +197,7 @@ def create_session(user: Any, req: StreamRequest) -> tuple[StreamSession, str]:
 
 def _family(model_id: str) -> str:
     spec = registry().get(model_id)
-    return spec.family if spec else "general"
+    return spec.family if spec else "ai_generated"
 
 
 def claim_session(session_id: str) -> dict[str, Any]:

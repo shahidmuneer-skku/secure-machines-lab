@@ -345,7 +345,7 @@ export function AdminModels() {
                   <Select value={m.family} disabled={!canEdit} onValueChange={(v) => patch.mutate({ model_id: m.id, family: v })}>
                     <SelectTrigger className="h-8 w-40" aria-label={t("categoryFor", { model: m.name })}><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(["deepfake", "ai_generated", "general"] as const).map((f) => <SelectItem key={f} value={f}>{t(`family.${f}`)}</SelectItem>)}
+                      {(["deepfake", "ai_generated"] as const).map((f) => <SelectItem key={f} value={f}>{t(`family.${f}`)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </TableCell>

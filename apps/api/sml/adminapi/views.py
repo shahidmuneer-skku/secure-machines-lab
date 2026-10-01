@@ -448,7 +448,7 @@ class ModelAdminView(APIView):
         "model_id": {"type": "string"}, "enabled": {"type": "boolean"}, "weight": {"type": "number"},
         "run_on_image": {"type": "boolean"}, "run_on_video": {"type": "boolean"}, "trial": {"type": "boolean"},
         "show_heatmap": {"type": "boolean"}, "note": {"type": "string"},
-        "family": {"type": "string", "enum": ["", "deepfake", "ai_generated", "general"],
+        "family": {"type": "string", "enum": ["", "deepfake", "ai_generated"],
                    "description": "Result group; empty = models.yaml."}}}},
         responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:

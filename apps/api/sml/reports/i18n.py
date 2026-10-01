@@ -3,7 +3,7 @@
 LABELS = {
     "en": {
         "analysis_face_swap": "Face-swap analysis", "analysis_ai_generated": "AI-generation analysis",
-        "analysis_general": "General analysis", "ai_generated": "Likely AI-generated",
+        "ai_generated": "Likely AI-generated",
         "title": "Media Forensics Report", "subtitle": "Deepfake & AI-generated media analysis",
         "verdict": "Verdict", "fake": "Likely manipulated / AI-generated", "real": "Likely authentic",
         "no_face": "No face detected", "inconclusive": "Inconclusive", "probability": "Fake probability",
@@ -30,7 +30,7 @@ LABELS = {
     },
     "ko": {
         "analysis_face_swap": "얼굴 합성(페이스 스왑) 분석", "analysis_ai_generated": "AI 생성 분석",
-        "analysis_general": "일반 분석", "ai_generated": "AI 생성 가능성 높음", "title": "미디어 포렌식 보고서",
+        "ai_generated": "AI 생성 가능성 높음", "title": "미디어 포렌식 보고서",
         "subtitle": "딥페이크 및 AI 생성 미디어 분석", "verdict": "판정", "fake": "조작 또는 AI 생성 가능성 높음",
         "real": "원본일 가능성 높음", "no_face": "얼굴이 감지되지 않음", "inconclusive": "판단 불가",
         "probability": "가짜 확률", "file": "파일", "file_name": "파일명", "type": "유형", "size": "크기",
@@ -54,7 +54,7 @@ LABELS = {
     },
     "de": {
         "analysis_face_swap": "Face-Swap-Analyse", "analysis_ai_generated": "KI-Generierungs-Analyse",
-        "analysis_general": "Allgemeine Analyse", "ai_generated": "Wahrscheinlich KI-generiert",
+        "ai_generated": "Wahrscheinlich KI-generiert",
         "title": "Medienforensik-Bericht", "subtitle": "Analyse von Deepfakes und KI-generierten Medien",
         "verdict": "Ergebnis", "fake": "Wahrscheinlich manipuliert / KI-generiert", "real": "Wahrscheinlich echt",
         "no_face": "Kein Gesicht erkannt", "inconclusive": "Nicht eindeutig",

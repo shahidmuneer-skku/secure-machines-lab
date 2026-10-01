@@ -240,7 +240,7 @@ def _metadata_flags(indicators: dict[str, Any], *, detectors_say_fake: bool) -> 
 
 
 def group_results(tasks: list[JobTask], threshold: float, reg: Any = None) -> list[dict[str, Any]]:
-    """One result per detector family (face swap, AI-generated, general) that ran.
+    """One result per detector family (face swap, AI-generated) that ran.
 
     Each group's probability is the weighted mean of its detectors that produced a score; users see
     the group's verdict and probability, never how many detectors it combines (ADR 0011).

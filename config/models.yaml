@@ -116,7 +116,7 @@ models:
       en: CLIP + LoRA detector for face swaps and AI-generated faces.
       ko: 얼굴 교체 및 AI 생성 얼굴 탐지를 위한 CLIP + LoRA 모델.
       de: CLIP + LoRA-Detektor für Face-Swaps und KI-generierte Gesichter.
-    family: general
+    family: deepfake
     face_required: true
     xai: attention
     default_selected: true
@@ -240,7 +240,7 @@ models:
       en: CLIP-based generalist detector for diverse generators.
       ko: 다양한 생성 모델에 대응하는 CLIP 기반 범용 탐지 모델.
       de: CLIP-basierter Generalist für verschiedene Generatoren.
-    family: general
+    family: deepfake
     face_required: true
     xai: attention
     default_selected: false
@@ -447,7 +447,7 @@ models:
       en: DINOv3-based detector (Center-I for images, Center-V for videos).
       ko: DINOv3 기반 탐지 모델(이미지 Center-I, 영상 Center-V).
       de: DINOv3-basierter Detektor (Center-I für Bilder, Center-V für Videos).
-    family: general
+    family: ai_generated
     face_required: false
     xai: gradcam
     default_selected: true
@@ -475,7 +475,7 @@ models:
     legacy_ids: [Inzi]
     display_name: {en: Inzi, ko: Inzi, de: Inzi}
     description: {en: Legacy research model (disabled)., ko: 레거시 연구 모델(비활성)., de: Legacy-Forschungsmodell (deaktiviert).}
-    family: general
+    family: ai_generated
     enabled: false
     face_required: false
     xai: none

@@ -1745,10 +1745,9 @@ export interface components {
         /**
          * @description * `face_swap` - face_swap
          *     * `ai_generated` - ai_generated
-         *     * `general` - general
          * @enum {string}
          */
-        AnalysisEnum: "face_swap" | "ai_generated" | "general";
+        AnalysisEnum: "face_swap" | "ai_generated";
         AnalysisResult: {
             id: components["schemas"]["AnalysisEnum"];
             status: components["schemas"]["AnalysisResultStatusEnum"];
@@ -2121,10 +2120,9 @@ export interface components {
         /**
          * @description * `deepfake` - deepfake
          *     * `ai_generated` - ai_generated
-         *     * `general` - general
          * @enum {string}
          */
-        FamilyEnum: "deepfake" | "ai_generated" | "general";
+        FamilyEnum: "deepfake" | "ai_generated";
         FreeAllowance: {
             guest_trial_images_per_day: number;
             signup_bonus_credits: number;
@@ -3664,7 +3662,7 @@ export interface operations {
                      * @description Result group; empty = models.yaml.
                      * @enum {string}
                      */
-                    family?: "" | "deepfake" | "ai_generated" | "general";
+                    family?: "" | "deepfake" | "ai_generated";
                 };
             };
         };

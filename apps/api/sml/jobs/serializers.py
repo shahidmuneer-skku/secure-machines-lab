@@ -326,14 +326,14 @@ class CheckSerializer(serializers.Serializer):
 
 
 class AnalysisResultSerializer(serializers.Serializer):
-    id = serializers.ChoiceField(choices=["face_swap", "ai_generated", "general"])
+    id = serializers.ChoiceField(choices=["face_swap", "ai_generated"])
     status = serializers.ChoiceField(choices=["done", "no_face", "failed"])
     verdict = serializers.CharField(allow_blank=True)
     fake_probability = serializers.FloatField(allow_null=True)
 
 
 class TimelinePointSerializer(serializers.Serializer):
-    analysis = serializers.ChoiceField(choices=["face_swap", "ai_generated", "general"])
+    analysis = serializers.ChoiceField(choices=["face_swap", "ai_generated"])
     start_sec = serializers.FloatField()
     end_sec = serializers.FloatField()
     fake_prob = serializers.FloatField()

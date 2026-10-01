@@ -64,7 +64,6 @@
   /* One line per analysis in video timelines (categorical, validated light: dataviz validate_palette). */
   --viz-analysis-face-swap: #0891b2;
   --viz-analysis-ai-generated: #7c5cff;
-  --viz-analysis-general: #b45309;
   --viz-grid: #e6e8ee;
   --radius: 0.875rem;
   --sidebar: #ffffff;
@@ -111,7 +110,6 @@
   --viz-other: #8b6cf0;
   --viz-analysis-face-swap: #1aa3c2;
   --viz-analysis-ai-generated: #8a6bff;
-  --viz-analysis-general: #c98420;
   --viz-grid: rgba(255, 255, 255, 0.06);
   --sidebar: #090b10;
   --sidebar-foreground: #f2f2f5;

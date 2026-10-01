@@ -10,7 +10,6 @@ class ModelOverride(models.Model):
     class Family(models.TextChoices):
         DEEPFAKE = "deepfake", "Face swap (deepfake)"
         AI_GENERATED = "ai_generated", "AI-generated"
-        GENERAL = "general", "General"
 
     model_id = models.CharField(max_length=64, unique=True)
     family = models.CharField(max_length=16, choices=Family.choices, blank=True, default="",
