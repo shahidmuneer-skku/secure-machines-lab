@@ -206,3 +206,25 @@ def test_a_worker_shutdown_stops_the_model_and_requeues_the_task(worker_env, ctx
     with pytest.raises(Reject) as rejected:
         worker_app.run_task.run({"task_id": "t-1", "kind": "model"})
     assert rejected.value.requeue is True
+
+
+def test_a_duplicate_delivery_of_a_finished_task_is_skipped(monkeypatch):
+    """RabbitMQ re-queues held messages when a channel closes; a finished attempt must not run again."""
+    import json
+
+    from sml_worker import runner
+
+    kept = {"sml:task-result:t1": json.dumps({"task_id": "t1", "attempt": 1, "status": "succeeded"})}
+
+    class FakeRedis:
+        def get(self, key):  # type: ignore[no-untyped-def]
+            return kept.get(key)
+
+    monkeypatch.setattr(runner, "redis_client", lambda: FakeRedis())
+    assert runner.already_finished("t1", 1)
+    assert not runner.already_finished("t1", 2)  # a retry is a new attempt and runs
+    assert not runner.already_finished("t2", 1)
+    ran: list[str] = []
+    monkeypatch.setattr(runner, "TaskContext", lambda *a, **k: ran.append("started"))
+    runner.run_envelope(None, {"task_id": "t1", "attempt": 1, "kind": "model", "target": "x"})
+    assert ran == []

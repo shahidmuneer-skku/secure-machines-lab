@@ -1,6 +1,11 @@
 """Idempotently applies RabbitMQ topology that queue declarations don't cover:
 the dead-letter exchange, the dead-letter queue, and the policy routing
 rejected/expired messages from every sml.* queue into it.
+
+The policy also raises the delivery-acknowledgement timeout. Workers acknowledge a task when it
+ends (acks_late), and a detector can run for an hour or wait for GPU memory before that; past
+RabbitMQ's default 30 minutes the broker closes the worker's channel and re-queues every message
+it holds, so finished work runs again.
 """
 
 from urllib.parse import quote
@@ -13,7 +18,7 @@ POLICY = {
     "pattern": r"^sml\.(model|audit|longvideo|news|reasoning|results|reports|default|maintenance)",
     "apply-to": "queues",
     "priority": 0,
-    "definition": {"dead-letter-exchange": "sml.dlx", "message-ttl": 86_400_000},
+    "definition": {"dead-letter-exchange": "sml.dlx", "message-ttl": 86_400_000, "consumer-timeout": 86_400_000},
 }
 
 

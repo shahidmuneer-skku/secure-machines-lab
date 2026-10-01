@@ -163,6 +163,13 @@ decoded.
 server (`run_fas_analysis.py` looks in `fakedetector/fakedetector/CVPR24-FAS`). Leave the check off
 in Admin → Models until they are copied there.
 
+**Finished tasks run again, or a worker logs `PRECONDITION_FAILED - delivery acknowledgement …
+timed out` and shuts down.** Workers acknowledge a task when it ends, and RabbitMQ's default limit is
+30 minutes; a long detector run (or a long wait for GPU memory) exceeds it, the broker closes the
+channel and re-queues everything that worker held. `manage.py setup_broker` raises the limit to 24 h
+on every `sml.*` queue (run it after recreating RabbitMQ). Workers also skip a delivery whose attempt
+already has a final result.
+
 **Video detectors fail right after starting.** Usually the environment: a conda env copied from
 another machine (`SSL: CERTIFICATE_VERIFY_FAILED`; the worker sets `SSL_CERT_FILE` to the env's
 own bundle), dlib missing `libopenblas.so.0` / `libcublas.so.12` (add the env to `conda_envs` in

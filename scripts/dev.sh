@@ -5,8 +5,8 @@
 # Infrastructure (Postgres, Redis, RabbitMQ, S3) must be up:
 #   docker compose -f deploy/compose/docker-compose.yml --env-file .env up -d
 #
-#   scripts/dev.sh              # API, background worker + beat, model worker (GPU 0), web
-#   GPU=2 scripts/dev.sh        # model worker on another GPU
+#   scripts/dev.sh              # API, background worker + beat, model workers (GPUs 0 and 3), web
+#   GPUS=0 scripts/dev.sh       # model workers on other GPUs (comma-separated; GPU=2 still works)
 #   NO_MODELS=1 scripts/dev.sh  # skip the model worker
 #   NO_STREAM=1 scripts/dev.sh  # skip the long-form stream service
 set -euo pipefail
@@ -36,7 +36,11 @@ start api "$ROOT/apps/api" uv run uvicorn sml.asgi:application --host 127.0.0.1 
 start celery-api "$ROOT/apps/api" uv run celery -A sml worker -B -n api@%h --concurrency 4 --loglevel INFO \
   -Q sml.default,sml.results,sml.reports,sml.maintenance
 if [[ -z "${NO_MODELS:-}" ]]; then
-  start worker "$ROOT/apps/worker" uv run python -m sml_worker --detectors --gpu "${GPU:-0}" --concurrency 4
+  # One detector worker per GPU; they share the queues and each admits work by its own GPU's memory.
+  IFS=',' read -ra gpus <<< "${GPUS:-${GPU:-0,3}}"
+  for gpu in "${gpus[@]}"; do
+    start "worker-gpu$gpu" "$ROOT/apps/worker" uv run python -m sml_worker --detectors --gpu "$gpu" --concurrency 4
+  done
   start agents "$ROOT/apps/worker" uv run python -m sml_worker --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
 fi
 if [[ -z "${NO_STREAM:-}" ]]; then

@@ -88,10 +88,32 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def already_finished(task_id: str, attempt: int) -> bool:
+    """True when this attempt's final result is already kept, i.e. this delivery is a duplicate.
+
+    RabbitMQ delivers at least once: when a channel closes (e.g. a delivery-acknowledgement timeout)
+    every message the worker held goes back to the queue, including ones another pool process is
+    still finishing. Running them again would only repeat the model on the GPU.
+    """
+    try:
+        raw = redis_client().get(RESULT_KEY.format(task_id))
+    except redis.RedisError:
+        return False
+    if not raw:
+        return False
+    with contextlib.suppress(ValueError, TypeError, AttributeError):
+        return int(json.loads(raw).get("attempt", 0)) == int(attempt)
+    return False
+
+
 def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
     if envelope.get("kind") == "explain":
         return run_explain(app, envelope)
     task_id = envelope["task_id"]
+    if already_finished(task_id, envelope.get("attempt", 1)):
+        logger.info("Task %s (attempt %s) already finished; skipping a duplicate delivery", task_id,
+                    envelope.get("attempt", 1))
+        return None
     gpu = os.environ.get("SML_WORKER_GPU", "")
     base = {"task_id": task_id, "attempt": envelope.get("attempt", 1)}
     workdir = config().scratch_root / task_id

@@ -83,6 +83,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Restarting a model worker (deploys, systemctl) lost the tasks it was running or holding: the pool
   processes received the stop signal and Celery acknowledged their messages as failed. Tasks now go
   back to the queue, and the model subprocess is stopped instead of running on without a worker.
+- Long detector runs (over 30 minutes including the wait for GPU memory) made RabbitMQ close the
+  worker's channel, re-queue its tasks and stop the worker; finished detectors then ran again. The
+  broker policy now allows 24 h, and workers skip deliveries of attempts that already finished.
+- Development runs one detector worker per GPU (GPUs 0 and 3 by default; `GPUS=` to change).
 - Canceling (or deleting) a job whose work was still queued did not tell the workers, so they still
   ran every detector for it and new jobs waited behind that backlog. Workers now skip it.
 - Per-frame video scores: per-frame percentages such as `73%` (SKKU/BEYBI) were dropped, so its

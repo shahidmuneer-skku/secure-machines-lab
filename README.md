@@ -61,7 +61,7 @@ uv run python manage.py bootstrap           # roles, prices, packs, plans (idemp
 uv run python manage.py create_superadmin
 
 (cd ../worker && uv sync) && (cd ../web && npm ci)
-cd ../.. && scripts/dev.sh                  # API, background worker, model worker, web
+cd ../.. && scripts/dev.sh                  # API, background worker, model workers (GPUs 0, 3), web
 ```
 
 Open http://localhost:3000. Emails (verification, password reset) are printed to
