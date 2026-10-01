@@ -152,3 +152,14 @@ def test_bare_python_in_model_scripts_resolves_to_the_env(worker_env, ctx_factor
         print("Fake Prob: 0.5")
     """)
     assert adapter().run(image, "image", ctx_factory()).fake_prob == pytest.approx(0.5)
+
+
+def test_relocated_envs_get_their_own_ca_certificates(worker_env, monkeypatch):
+    from sml_worker import procenv
+
+    monkeypatch.delenv("SSL_CERT_FILE", raising=False)
+    assert "SSL_CERT_FILE" not in procenv.model_env("fake")  # env without a bundle: leave OpenSSL's default
+    certs = worker_env["tmp"] / "conda" / "envs" / "fake" / "ssl" / "cacert.pem"
+    certs.parent.mkdir()
+    certs.write_text("-----BEGIN CERTIFICATE-----\n")
+    assert procenv.model_env("fake")["SSL_CERT_FILE"] == str(certs)

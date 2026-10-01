@@ -46,5 +46,10 @@ def model_env(conda_env: str | None = None) -> dict[str, str]:
             if key in SEARCH_PATHS and env.get(key):
                 value = f"{value}{os.pathsep}{env[key]}"
             env[key] = value
+        # A conda env's OpenSSL looks for CA certificates under the prefix it was built at; an env
+        # copied from another machine cannot verify any HTTPS server without this.
+        certs = prefix / "ssl" / "cacert.pem"
+        if "SSL_CERT_FILE" not in env and certs.is_file():
+            env["SSL_CERT_FILE"] = str(certs)
     env.update(gpu_env())
     return env

@@ -44,6 +44,13 @@ def summarize(step: str, data: dict[str, Any]) -> str:
     return "Completed"
 
 
+def _raise_if_fas_unavailable(data: dict[str, Any]) -> None:
+    """The anti-spoofing script exits 0 and labels every face ERROR when its model code is missing."""
+    results = [r for r in data.get("fas_results") or [] if isinstance(r, dict)]
+    if results and all(str(r.get("label", "")).upper() == "ERROR" for r in results):
+        raise AdapterError("CONFIG_ERROR", str(results[0].get("error") or "Anti-spoofing model unavailable")[:300])
+
+
 class AuditAdapter:
     def __init__(self, step: dict[str, Any]):
         self.id = step["id"]
@@ -75,6 +82,8 @@ class AuditAdapter:
                 return ModelResult(extra={"faces": [], "summary": "No face detected"})
             raise AdapterError("RUNTIME_ERROR", (proc.stderr.strip().splitlines() or ["failed"])[-1][:300])
         data = data or {}
+        if self.id == "fas":
+            _raise_if_fas_unavailable(data)
         ctx.log(f"Audit step finished in {time.monotonic() - start:.1f}s")
         return ModelResult(extra={"data": data, "summary": summarize(self.id, data)})
 

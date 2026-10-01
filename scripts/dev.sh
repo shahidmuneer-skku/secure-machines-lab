@@ -31,7 +31,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 export DJANGO_SETTINGS_MODULE=sml.settings.dev
-start api "$ROOT/apps/api" uv run uvicorn sml.asgi:application --host 127.0.0.1 --port 8000 --reload --reload-dir sml
+start api "$ROOT/apps/api" uv run uvicorn sml.asgi:application --host 127.0.0.1 --port 8000 --reload --reload-dir sml \
+  --timeout-graceful-shutdown 5  # live-update (SSE) streams would otherwise block every reload
 start celery-api "$ROOT/apps/api" uv run celery -A sml worker -B -n api@%h --concurrency 4 --loglevel INFO \
   -Q sml.default,sml.results,sml.reports,sml.maintenance
 if [[ -z "${NO_MODELS:-}" ]]; then
