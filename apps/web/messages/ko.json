@@ -580,6 +580,47 @@
         "face_swap": "얼굴 합성(페이스 스왑) 분석",
         "ai_generated": "AI 생성 분석"
       }
+    },
+    "detectors": {
+      "eyebrow": "관리자 전용",
+      "title": "탐지기별 결과",
+      "hint": "이 파일에 대한 각 탐지기의 판정입니다. 이 카드는 관리자만 볼 수 있으며, 사용자에게는 두 가지 분석 결과만 표시됩니다.",
+      "none": "이 파일에 실행된 탐지기가 없습니다.",
+      "analysis": {
+        "face_swap": "얼굴 교체 탐지기",
+        "ai_generated": "AI 생성 탐지기"
+      },
+      "weight": "가중치 {weight}",
+      "fallback": "대체 실행",
+      "probabilityOf": "{name}: 조작 확률",
+      "alsoCounts": {
+        "face_swap": "얼굴 교체 분석에도 반영됨",
+        "ai_generated": "AI 생성 분석에도 반영됨"
+      },
+      "perFrame": "프레임별 조작 확률",
+      "perFrameOf": "{name}: 프레임별 조작 확률",
+      "heatmapOf": "{name} 히트맵",
+      "truth": {
+        "label": "실제 정답",
+        "none": "미지정",
+        "value": {
+          "authentic": "진본",
+          "face_swap": "얼굴 교체",
+          "ai_generated": "AI 생성"
+        },
+        "hint": "이 파일의 실제 정답을 지정하면 각 탐지기의 정확도를 측정합니다.",
+        "by": "{email} 님이 지정",
+        "saved": "정답을 저장했습니다",
+        "failed": "정답을 저장하지 못했습니다."
+      },
+      "accuracy": {
+        "benchmark": "벤치마크",
+        "measured": "측정값",
+        "acc": "정확도 {value}",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {라벨링된 파일 #개} other {라벨링된 파일 #개}} (조작 {fake}개, 진본 {authentic}개) · 정밀도 {precision} · 재현율 {recall}",
+        "notMeasured": "아직 라벨링된 파일이 없습니다"
+      }
     }
   },
   "admin": {
@@ -807,6 +848,27 @@
       "family": {
         "deepfake": "얼굴 합성",
         "ai_generated": "AI 생성"
+      },
+      "accuracy": {
+        "title": "정확도와 가중치",
+        "hint": "직접 입력한 벤치마크 수치와, 결과 페이지에서 실제 정답을 지정한 파일로 측정한 정확도입니다. 사용자에게는 표시되지 않습니다.",
+        "model": "모델",
+        "boost": "진본 판정 ×",
+        "boostFor": "{model}이(가) 진본으로 판정할 때의 가중치 배수",
+        "bothAnalyses": "진본 판정을 두 분석에 반영",
+        "bothAnalysesFor": "{model}의 진본 판정을 다른 분석에도 반영",
+        "benchAccuracy": "벤치마크 정확도",
+        "benchAccuracyFor": "{model}의 벤치마크 정확도(%)",
+        "benchAuc": "벤치마크 AUC",
+        "benchAucFor": "{model}의 벤치마크 AUC",
+        "dataset": "벤치마크 데이터셋",
+        "datasetFor": "{model}의 벤치마크 데이터셋",
+        "datasetPlaceholder": "예: Celeb-DF v2",
+        "measured": "측정값",
+        "measuredValue": "정확도 {accuracy} · AUC {auc}",
+        "measuredDetail": "{files, plural, one {파일 #개} other {파일 #개}} · 정밀도 {precision} · 재현율 {recall}",
+        "notMeasured": "아직 라벨링된 파일이 없습니다",
+        "legend": "진본 판정 ×: 탐지기가 진본으로 판정하면 가중치에 이 값을 곱합니다. ‘진본 판정을 두 분석에 반영’을 켜면 그 판정이 다른 분석에도 반영됩니다. 측정 정확도는 진본 또는 해당 탐지기 분석 유형으로 지정된 파일을 플랫폼의 조작 판정 기준값으로 계산합니다."
       }
     },
     "pricing": {

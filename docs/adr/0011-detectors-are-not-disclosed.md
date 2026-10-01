@@ -39,6 +39,7 @@ The headline verdict is fake when any analysis says fake and shows the highest a
 (owner, 2026-10-01); each analysis combines its detectors with their weights.
 
 **Consequences.** Re-running a job uses the current admin configuration. Per-detector scores,
-heatmap provenance and logs remain available to staff in the admin console. Adding a field to a
+heatmap provenance and logs remain available to staff in the admin console, and on result pages in
+an admin-only *Detector breakdown* card fed by an admin endpoint (owner, 2026-10-01). Adding a field to a
 user payload means adding it to the projection deliberately; `sml/jobs/tests/test_privacy.py`
 asserts that no detector id or name appears in user responses, live events or reports.

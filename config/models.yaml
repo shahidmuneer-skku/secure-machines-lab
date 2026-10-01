@@ -40,6 +40,8 @@ conda_envs:
 # What runs: users never choose. `default_selected: true` means "runs on every job of each media type
 # the model supports" until an admin changes it per media type on Admin → Models (ADR 0011).
 # `show_heatmap: true` means users see that detector's heatmap (one image); the admin can switch it.
+# `authentic_boost: 2.0` multiplies a detector's weight when it says authentic (score below the
+# threshold); with `authentic_counts_in_all: true` that answer also counts in the other analysis.
 
 # Aggregation shown to users as one verdict (weighted mean of fake probability).
 aggregation:
@@ -359,6 +361,10 @@ models:
     xai: gradcam
     default_selected: false
     gpu_mem_mb: 40000
+    # Owner (2026-10-01): SKKU-P2 recognises authentic images best, so when it says authentic it
+    # counts twice, in the face-swap and the AI-generation analysis. Editable in Admin → Models.
+    authentic_boost: 2.0
+    authentic_counts_in_all: true
     media:
       image:
         conda_env: wacv

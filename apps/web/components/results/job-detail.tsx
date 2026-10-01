@@ -19,6 +19,7 @@ import { qk } from "@/lib/api/keys"
 import type { JobDetail as JobDetailT } from "@/lib/api/types"
 import { formatDateTime, formatRelative } from "@/lib/format"
 
+import { DetectorBreakdown } from "./detector-breakdown"
 import { ExplainCard, ReportsCard } from "./explain-reports"
 import { JobActions, useJobMutations } from "./job-actions"
 import { MediaViewer } from "./media-viewer"
@@ -95,6 +96,7 @@ export function JobDetailView({ id }: { id: string }) {
         </div>
         <div className="space-y-5">
           <VerdictPanel job={job} />
+          <DetectorBreakdown job={job} />
           <ProvenanceCard job={job} />
           <ReportsCard job={job} />
           <CreditsCard job={job} />

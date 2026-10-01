@@ -28,7 +28,8 @@ import { useCan } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
-import { formatDuration, formatRelative } from "@/lib/format"
+import type { AdminModel } from "@/lib/api/types"
+import { formatDuration, formatPercent, formatRelative } from "@/lib/format"
 
 import { AdminError, LoadMore, Loading, usePaged } from "./common"
 
@@ -366,8 +367,66 @@ export function AdminModels() {
         </Table>
         <p className="pt-3 text-xs text-muted-foreground">{t("legend")}</p>
       </CardContent></HudCard>
+      <ModelAccuracy models={models ?? []} canEdit={canEdit} onPatch={(body) => patch.mutate(body)} />
       <DetectionSetup />
     </div>
+  )
+}
+
+/** Per-detector weighting when it says authentic, published benchmark figures, and the accuracy
+ *  measured on files labelled on result pages (admin only). */
+function ModelAccuracy({ models, canEdit, onPatch }: {
+  models: AdminModel[]; canEdit: boolean; onPatch: (body: Record<string, unknown>) => void
+}) {
+  const t = useTranslations("admin.models.accuracy")
+  const number = (value: string, scale = 1) => (value.trim() === "" ? null : Number(value) / scale)
+  return (
+    <HudCard>
+      <CardHeader><CardTitle className="text-base">{t("title")}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t("hint")}</p></CardHeader>
+      <CardContent className="overflow-x-auto">
+        <Table>
+          <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("boost")}</TableHead><TableHead>{t("bothAnalyses")}</TableHead>
+            <TableHead>{t("benchAccuracy")}</TableHead><TableHead>{t("benchAuc")}</TableHead><TableHead>{t("dataset")}</TableHead>
+            <TableHead>{t("measured")}</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {models.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id}</span></TableCell>
+                <TableCell><Input type="number" step="0.5" min="1" max="10" defaultValue={m.authentic_boost} disabled={!canEdit} className="h-8 w-20"
+                  aria-label={t("boostFor", { model: m.name })}
+                  onBlur={(e) => Number(e.target.value) !== m.authentic_boost && onPatch({ model_id: m.id, authentic_boost: number(e.target.value) })} /></TableCell>
+                <TableCell><Switch checked={m.authentic_counts_in_all} disabled={!canEdit} aria-label={t("bothAnalysesFor", { model: m.name })}
+                  onCheckedChange={(v) => onPatch({ model_id: m.id, authentic_counts_in_all: v })} /></TableCell>
+                <TableCell><Input type="number" step="0.1" min="0" max="100" placeholder="%" disabled={!canEdit} className="h-8 w-24"
+                  defaultValue={m.benchmark?.accuracy != null ? +(m.benchmark.accuracy * 100).toFixed(2) : ""}
+                  aria-label={t("benchAccuracyFor", { model: m.name })}
+                  onBlur={(e) => number(e.target.value, 100) !== (m.benchmark?.accuracy ?? null)
+                    && onPatch({ model_id: m.id, benchmark_accuracy: number(e.target.value, 100) })} /></TableCell>
+                <TableCell><Input type="number" step="0.001" min="0" max="1" placeholder="0–1" disabled={!canEdit} className="h-8 w-24"
+                  defaultValue={m.benchmark?.auc ?? ""} aria-label={t("benchAucFor", { model: m.name })}
+                  onBlur={(e) => number(e.target.value) !== (m.benchmark?.auc ?? null)
+                    && onPatch({ model_id: m.id, benchmark_auc: number(e.target.value) })} /></TableCell>
+                <TableCell><Input defaultValue={m.benchmark?.dataset ?? ""} maxLength={120} disabled={!canEdit} className="h-8 w-40"
+                  placeholder={t("datasetPlaceholder")} aria-label={t("datasetFor", { model: m.name })}
+                  onBlur={(e) => e.target.value !== (m.benchmark?.dataset ?? "") && onPatch({ model_id: m.id, benchmark_dataset: e.target.value })} /></TableCell>
+                <TableCell className="text-xs">
+                  {m.measured?.files ? (
+                    <>
+                      <span className="tabular-nums">{t("measuredValue", { accuracy: formatPercent(m.measured.accuracy),
+                        auc: m.measured.auc != null ? m.measured.auc.toFixed(3) : "—" })}</span>
+                      <span className="block text-muted-foreground">{t("measuredDetail", { files: m.measured.files,
+                        precision: formatPercent(m.measured.precision), recall: formatPercent(m.measured.recall) })}</span>
+                    </>
+                  ) : <span className="text-muted-foreground">{t("notMeasured")}</span>}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <p className="pt-3 text-xs text-muted-foreground">{t("legend")}</p>
+      </CardContent>
+    </HudCard>
   )
 }
 

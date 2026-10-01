@@ -134,6 +134,25 @@ job runs (face detection, content safety, anti-spoofing; metadata / C2PA always 
 long-form detector, and face cropping for each long-form detector that supports it. Users never see detector names, counts or logs (ADR 0011); per-task results,
 logs and errors are in Admin → Jobs → the job.
 
+**Seeing each detector's answer.** On a result page, administrators (capability `view_all_jobs`)
+get a *Detector breakdown* card under Analysis Result: every detector's verdict and probability,
+the weight it got, its run time and GPU, its heatmap (with `view_all_media`), its per-frame curve
+for videos, and its benchmark and measured accuracy. Users never get the card or its endpoint
+(`/api/v1/admin/jobs/{id}/detectors`).
+
+**Measuring accuracy.** On the same card, *Ground truth* labels what the file really is (authentic,
+face swap, AI-generated; capability `manage_models`). Admin → Models → *Accuracy and weighting* then
+shows, per detector, accuracy, AUC, precision and recall over the labelled files: face-swap
+detectors are measured on files labelled authentic or face swap, AI-generation detectors on files
+labelled authentic or AI-generated, at the platform's fake threshold; files without a face do not
+count. The same card holds the benchmark figures you enter from each detector's paper.
+
+**Trusting a detector's "authentic".** *Authentic ×* multiplies a detector's weight when it says
+authentic (score below the threshold); *Authentic counts in both* adds that answer to the other
+analysis too, but only alongside that analysis's own detectors. SKKU-P2 is set to 2× in both
+(owner, 2026-10-01; `config/models.yaml`). Verdicts and video timelines use the same rule; jobs that
+already finished keep their result.
+
 **AI-generation markers.** A definite marker in the file's metadata (C2PA / IPTC declaration,
 embedded Stable Diffusion / ComfyUI parameters, a generator in the Software tag) labels the file
 "Likely AI-generated" whatever the detectors say; a weak hint (a generator merely mentioned in the

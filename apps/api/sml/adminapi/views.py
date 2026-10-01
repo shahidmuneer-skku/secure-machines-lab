@@ -15,10 +15,11 @@ from allauth.usersessions.models import UserSession
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.db.models import Count, Q, Sum
-from django.http import StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters import rest_framework as filters
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -43,10 +44,11 @@ from sml.core.permissions import admin_permissions, has_capability
 from sml.credits import pricing
 from sml.credits import services as credits
 from sml.credits.models import LedgerEntry, PriceRule
-from sml.jobs import live, streams
-from sml.jobs.models import Job, JobTask
+from sml.jobs import detectors, live, streams
+from sml.jobs.models import Artifact, Job, JobTask
 from sml.jobs.serializers import AdminJobDetailSerializer, AdminJobListSerializer
 from sml.jobs.services import cancel_job
+from sml.media.views import serve_object
 
 from . import system
 from .serializers import (
@@ -345,6 +347,57 @@ class AdminJobDetailView(APIView):
         return Response(AdminJobListSerializer(job, context={"request": request}).data)
 
 
+class AdminJobDetectorsView(APIView):
+    """What each detector said about one file, with its benchmark and measured accuracy (admin only)."""
+
+    permission_classes = admin_permissions("view_all_jobs")
+
+    @extend_schema(tags=TAG, responses=schemas.AdminJobDetectorsSerializer,
+                   summary="Each detector's result for a job, with benchmark and measured accuracy")
+    def get(self, request: Request, pk: str) -> Response:
+        job = get_object_or_404(Job.objects.select_related("media", "truth_by")
+                                .prefetch_related("tasks", "artifacts"), pk=pk)
+        data = detectors.breakdown(job, f"/api/v1/admin/jobs/{job.pk}/artifacts/{{artifact_id}}/content")
+        if not has_capability(request.user, "view_all_media"):  # heatmaps show the media
+            for row in data["detectors"]:
+                row["heatmap_url"] = None
+        return Response(data)
+
+
+class AdminJobTruthView(APIView):
+    """Ground truth of a file, used to measure the detectors' accuracy."""
+
+    permission_classes = admin_permissions("manage_models")
+
+    @extend_schema(tags=TAG, request=schemas.JobTruthUpdateSerializer, responses=schemas.JobTruthSerializer,
+                   summary="Label what a file really is (authentic, face swap, AI-generated)")
+    def put(self, request: Request, pk: str) -> Response:
+        job = get_object_or_404(Job, pk=pk)
+        body = schemas.JobTruthUpdateSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        before = job.truth
+        job.truth = body.validated_data["truth"] or ""
+        job.truth_by = request.user if job.truth else None
+        job.truth_at = timezone.now() if job.truth else None
+        job.save(update_fields=["truth", "truth_by", "truth_at", "updated_at"])
+        audit.record("admin.job_truth_set", request=request, target=job, before={"truth": before},
+                     after={"truth": job.truth})
+        return Response(detectors.truth(job))
+
+
+class AdminArtifactContentView(APIView):
+    """Any artifact of a job (every detector's heatmaps, crops and per-frame scores) for staff."""
+
+    permission_classes = admin_permissions("view_all_jobs", "view_all_media")
+
+    @extend_schema(tags=TAG, responses={(200, "application/octet-stream"): OpenApiTypes.BINARY},
+                   summary="Download any artifact of a job")
+    def get(self, request: Request, pk: str, artifact_id: str) -> HttpResponse:
+        art = get_object_or_404(Artifact, pk=artifact_id, job_id=pk)
+        return serve_object(art.storage_key, content_type=art.content_type,
+                            filename=art.storage_key.rsplit("/", 1)[-1])
+
+
 class AdminTaskLogView(APIView):
     permission_classes = admin_permissions("view_all_jobs")
 
@@ -430,6 +483,7 @@ class ModelAdminView(APIView):
         for w in live.workers():
             for q in w.get("queues", []):
                 consumers[q] = consumers.get(q, 0) + 1
+        bench, measured = detectors.benchmarks(), detectors.measured_accuracy()
         out = []
         for spec in registry().models.values():
             o = overrides.get(spec.id)
@@ -441,6 +495,8 @@ class ModelAdminView(APIView):
                 "consumers": consumers.get(spec.queue, 0), "note": o.note if o else "",
                 "stats_24h": stats.get(spec.id, {"runs": 0, "failed": 0, "waiting": 0}),
                 "conda_envs": sorted({m.get("conda_env", "") for m in spec.media.values()}),
+                "benchmark": bench.get(spec.id), "measured": measured.get(spec.id),
+                "authentic_boost": spec.authentic_boost, "authentic_counts_in_all": spec.authentic_counts_in_all,
             })
         return Response(out)
 
@@ -449,7 +505,15 @@ class ModelAdminView(APIView):
         "run_on_image": {"type": "boolean"}, "run_on_video": {"type": "boolean"}, "trial": {"type": "boolean"},
         "show_heatmap": {"type": "boolean"}, "note": {"type": "string"},
         "family": {"type": "string", "enum": ["", "deepfake", "ai_generated"],
-                   "description": "Result group; empty = models.yaml."}}}},
+                   "description": "Result group; empty = models.yaml."},
+        "benchmark_accuracy": {"type": "number", "nullable": True, "description": "0–1; null clears it."},
+        "benchmark_auc": {"type": "number", "nullable": True, "description": "0–1; null clears it."},
+        "benchmark_dataset": {"type": "string"},
+        "authentic_boost": {"type": "number", "nullable": True,
+                            "description": "Weight multiplier (1–10) when it says authentic; null = models.yaml."},
+        "authentic_counts_in_all": {"type": "boolean", "nullable": True,
+                                    "description": "An authentic answer also counts in the other analysis; "
+                                                   "null = models.yaml."}}}},
         responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:
         model_id = str(request.data.get("model_id", ""))
@@ -461,7 +525,9 @@ class ModelAdminView(APIView):
                 raise ApiError(f"{spec.name('en')} cannot analyse {media}s.")
         o, _ = ModelOverride.objects.get_or_create(model_id=spec.id)
         fields = ("enabled", "run_on_image", "run_on_video", "trial", "show_heatmap")
-        before = {"weight": o.weight, "family": o.family, **{f: getattr(o, f) for f in fields}}
+        bench_fields = ("benchmark_accuracy", "benchmark_auc", "benchmark_dataset", "authentic_boost",
+                        "authentic_counts_in_all")
+        before = {"weight": o.weight, "family": o.family, **{f: getattr(o, f) for f in (*fields, *bench_fields)}}
         for field in fields:
             if field in request.data:
                 setattr(o, field, bool(request.data[field]))
@@ -477,11 +543,35 @@ class ModelAdminView(APIView):
             o.weight = weight
         if "note" in request.data:
             o.note = str(request.data["note"])[:255]
+        for field in ("benchmark_accuracy", "benchmark_auc"):
+            if field in request.data:
+                value = request.data[field]
+                try:
+                    value = None if value in (None, "") else float(value)
+                except (TypeError, ValueError):
+                    raise ApiError(f"{field} must be a number between 0 and 1.") from None
+                if value is not None and not 0 <= value <= 1:
+                    raise ApiError(f"{field} must be between 0 and 1.")
+                setattr(o, field, value)
+        if "authentic_boost" in request.data:
+            boost = request.data["authentic_boost"]
+            try:
+                boost = None if boost in (None, "") else float(boost)
+            except (TypeError, ValueError):
+                raise ApiError("authentic_boost must be a number between 1 and 10.") from None
+            if boost is not None and not 1 <= boost <= 10:
+                raise ApiError("authentic_boost must be between 1 and 10.")
+            o.authentic_boost = boost
+        if "authentic_counts_in_all" in request.data:
+            flag = request.data["authentic_counts_in_all"]
+            o.authentic_counts_in_all = None if flag is None else bool(flag)
+        if "benchmark_dataset" in request.data:
+            o.benchmark_dataset = str(request.data["benchmark_dataset"] or "")[:120]
         o.save()
         invalidate_overrides()
         audit.record("admin.model_updated", request=request, target_type="catalog.model", target_id=spec.id,
                      before=before, after={"weight": o.weight, "family": o.family,
-                                           **{f: getattr(o, f) for f in fields}})
+                                           **{f: getattr(o, f) for f in (*fields, *bench_fields)}})
         return Response({"ok": True})
 
 

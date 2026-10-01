@@ -580,6 +580,47 @@
         "face_swap": "Face-Swap-Analyse",
         "ai_generated": "KI-Generierungs-Analyse"
       }
+    },
+    "detectors": {
+      "eyebrow": "Nur für Admins",
+      "title": "Ergebnisse je Detektor",
+      "hint": "Was jeder Detektor zu dieser Datei sagt. Nur Administratoren sehen diese Karte; Nutzer sehen die beiden Analysen.",
+      "none": "Für diese Datei lief kein Detektor.",
+      "analysis": {
+        "face_swap": "Face-Swap-Detektoren",
+        "ai_generated": "KI-Erkennungsdetektoren"
+      },
+      "weight": "Gewicht {weight}",
+      "fallback": "Ersatz",
+      "probabilityOf": "{name}: Fälschungswahrscheinlichkeit",
+      "alsoCounts": {
+        "face_swap": "Zählt auch in der Face-Swap-Analyse",
+        "ai_generated": "Zählt auch in der KI-Analyse"
+      },
+      "perFrame": "Fälschungswahrscheinlichkeit je Frame",
+      "perFrameOf": "{name}: Fälschungswahrscheinlichkeit je Frame",
+      "heatmapOf": "Heatmap von {name}",
+      "truth": {
+        "label": "Tatsächlicher Befund",
+        "none": "Nicht markiert",
+        "value": {
+          "authentic": "Echt",
+          "face_swap": "Face-Swap",
+          "ai_generated": "KI-generiert"
+        },
+        "hint": "Markieren Sie, was diese Datei wirklich ist, um die Genauigkeit jedes Detektors zu messen.",
+        "by": "Markiert von {email}",
+        "saved": "Markierung gespeichert",
+        "failed": "Die Markierung konnte nicht gespeichert werden."
+      },
+      "accuracy": {
+        "benchmark": "Benchmark",
+        "measured": "Gemessen",
+        "acc": "{value} Genauigkeit",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {# markierte Datei} other {# markierte Dateien}} ({fake} gefälscht, {authentic} echt) · Präzision {precision} · Trefferquote {recall}",
+        "notMeasured": "Noch keine markierten Dateien"
+      }
     }
   },
   "admin": {
@@ -807,6 +848,27 @@
       "family": {
         "deepfake": "Face-Swap",
         "ai_generated": "KI-generiert"
+      },
+      "accuracy": {
+        "title": "Genauigkeit und Gewichtung",
+        "hint": "Benchmark-Werte, die Sie eintragen, und die Genauigkeit, gemessen an Dateien, die auf Ergebnisseiten markiert wurden (tatsächlicher Befund). Nutzer sehen diese nie.",
+        "model": "Modell",
+        "boost": "Echt ×",
+        "boostFor": "Gewichtsfaktor, wenn {model} „echt“ sagt",
+        "bothAnalyses": "Echt zählt in beiden",
+        "bothAnalysesFor": "„Echt“-Antworten von {model} zählen auch in der anderen Analyse",
+        "benchAccuracy": "Benchmark-Genauigkeit",
+        "benchAccuracyFor": "Benchmark-Genauigkeit von {model} in Prozent",
+        "benchAuc": "Benchmark-AUC",
+        "benchAucFor": "Benchmark-AUC von {model}",
+        "dataset": "Benchmark-Datensatz",
+        "datasetFor": "Benchmark-Datensatz von {model}",
+        "datasetPlaceholder": "z. B. Celeb-DF v2",
+        "measured": "Gemessen",
+        "measuredValue": "{accuracy} Genauigkeit · AUC {auc}",
+        "measuredDetail": "{files, plural, one {# Datei} other {# Dateien}} · Präzision {precision} · Trefferquote {recall}",
+        "notMeasured": "Noch keine markierten Dateien",
+        "legend": "Echt ×: Das Gewicht eines Detektors wird damit multipliziert, wenn er „echt“ sagt; mit „Echt zählt in beiden“ zählt diese Antwort auch in der anderen Analyse. Die gemessene Genauigkeit nutzt Dateien, die als echt oder mit der Analyse des Detektors markiert sind, beim Fälschungs-Schwellenwert der Plattform."
       }
     },
     "pricing": {

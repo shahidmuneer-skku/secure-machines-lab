@@ -15,6 +15,7 @@ from pathlib import PurePosixPath
 from typing import Any
 
 from sml.catalog.registry import registry
+from sml.core.models import PlatformSettings
 
 from .models import Artifact, Job, JobTask
 from .timeline import public_data
@@ -193,23 +194,34 @@ def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, Any]]:
     media = job.media
     fps = (media.fps if media and media.fps else None) or 25.0
     duration = (media.duration_seconds if media else None) or 0.0
-    bins: dict[tuple[str, int], list[tuple[float, float]]] = defaultdict(list)
+    threshold = PlatformSettings.load().fake_threshold
+    series: list[tuple[Any, list[tuple[int, float]]]] = []  # (spec, [(second, fake prob)])
     for t in tasks:
         frames = (t.result or {}).get("per_frame") if t.kind == JobTask.Kind.MODEL else None
-        if t.status != JobTask.Status.SUCCEEDED or not frames:
-            continue
         spec = reg.get(t.target)
-        weight = spec.weight if spec else 1.0
-        group = ANALYSIS_IDS.get(spec.family if spec else "", "ai_generated")
+        if t.status != JobTask.Status.SUCCEEDED or not frames or spec is None:
+            continue
+        points_of_task = []
         for idx, f in enumerate(frames):
             try:
                 second = float(f.get("frame")) / fps
             except (TypeError, ValueError, AttributeError):
                 second = duration * idx / max(1, len(frames))
             try:
-                bins[(group, int(second))].append((weight, float(f.get("fake_prob"))))
+                points_of_task.append((int(second), float(f.get("fake_prob"))))
             except (TypeError, ValueError, AttributeError):
                 continue
+        series.append((spec, points_of_task))
+    # Weighted like the verdict (results.group_results): an authentic-boosted detector weighs more on
+    # frames it calls authentic, and those frames may also count in the other analysis's line, but
+    # only where that analysis has frames of its own.
+    own = {(spec.family, second) for spec, pts in series for second, _ in pts}
+    bins: dict[tuple[str, int], list[tuple[float, float]]] = defaultdict(list)
+    for spec, pts in series:
+        for second, prob in pts:
+            for family in ANALYSIS_IDS:
+                if spec.counts_in(family, prob, threshold) and (family, second) in own:
+                    bins[(ANALYSIS_IDS[family], second)].append((spec.vote_weight(prob, threshold), prob))
     points = []
     for (group, second) in sorted(bins, key=lambda k: (k[1], k[0])):
         pairs = bins[(group, second)]

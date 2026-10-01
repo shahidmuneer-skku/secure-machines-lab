@@ -13,6 +13,7 @@ from sml.accounts.serializers import MeSerializer
 from sml.apikeys.serializers import ApiKeyUsageDailySerializer, ApiRequestLogSerializer
 from sml.billing.models import Provider
 from sml.billing.serializers import CreditPackSerializer, PlanSerializer
+from sml.jobs.models import Job, JobTask
 from sml.jobs.serializers import AdminJobDetailSerializer, JobDetailSerializer, JobListSerializer
 
 # --- accounts ------------------------------------------------------------------------
@@ -355,6 +356,25 @@ class ModelStatsSerializer(serializers.Serializer):
     waiting = serializers.IntegerField()
 
 
+class DetectorBenchmarkSerializer(serializers.Serializer):
+    accuracy = serializers.FloatField(allow_null=True, help_text="0–1, entered by an administrator.")
+    auc = serializers.FloatField(allow_null=True)
+    dataset = serializers.CharField(allow_blank=True)
+
+
+class DetectorAccuracySerializer(serializers.Serializer):
+    """Measured on files an administrator labelled: authentic ones and those of the detector's analysis."""
+
+    files = serializers.IntegerField()
+    fake_files = serializers.IntegerField()
+    authentic_files = serializers.IntegerField()
+    accuracy = serializers.FloatField(allow_null=True)
+    precision = serializers.FloatField(allow_null=True)
+    recall = serializers.FloatField(allow_null=True)
+    specificity = serializers.FloatField(allow_null=True)
+    auc = serializers.FloatField(allow_null=True)
+
+
 class AdminModelSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
@@ -372,6 +392,60 @@ class AdminModelSerializer(serializers.Serializer):
     note = serializers.CharField(allow_blank=True)
     stats_24h = ModelStatsSerializer()
     conda_envs = serializers.ListField(child=serializers.CharField())
+    benchmark = DetectorBenchmarkSerializer(allow_null=True)
+    measured = DetectorAccuracySerializer(allow_null=True)
+    authentic_boost = serializers.FloatField(help_text="Weight multiplier when it says authentic.")
+    authentic_counts_in_all = serializers.BooleanField(
+        help_text="An authentic answer also counts in the other analysis.")
+
+
+class FramePointSerializer(serializers.Serializer):
+    second = serializers.FloatField()
+    fake_probability = serializers.FloatField()
+
+
+class JobTruthSerializer(serializers.Serializer):
+    truth = serializers.ChoiceField(choices=Job.Truth.choices, allow_null=True)
+    labeled_by = serializers.EmailField(allow_null=True)
+    labeled_at = serializers.DateTimeField(allow_null=True)
+
+
+class JobTruthUpdateSerializer(serializers.Serializer):
+    truth = serializers.ChoiceField(choices=Job.Truth.choices, allow_null=True,
+                                    help_text="null removes the label.")
+
+
+class AdminJobDetectorSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    task_id = serializers.UUIDField()
+    name = serializers.CharField()
+    analysis = serializers.ChoiceField(choices=["face_swap", "ai_generated"])
+    status = serializers.ChoiceField(choices=JobTask.Status.choices)
+    fake_probability = serializers.FloatField(allow_null=True)
+    verdict = serializers.ChoiceField(choices=Job.Verdict.choices, allow_null=True)
+    weight = serializers.FloatField(allow_null=True,
+                                    help_text="Weight applied to this answer (authentic boost included).")
+    counted_in = serializers.ListField(child=serializers.ChoiceField(choices=["face_swap", "ai_generated"]),
+                                       help_text="Analyses this answer counted in.")
+    duration_ms = serializers.IntegerField(allow_null=True)
+    gpu = serializers.CharField(allow_blank=True)
+    attempt = serializers.IntegerField()
+    fallback_for = serializers.UUIDField(allow_null=True)
+    error_code = serializers.CharField(allow_blank=True)
+    error_message = serializers.CharField(allow_blank=True)
+    heatmap_url = serializers.CharField(allow_null=True)
+    per_frame = FramePointSerializer(many=True)
+    benchmark = DetectorBenchmarkSerializer(allow_null=True)
+    measured = DetectorAccuracySerializer(allow_null=True)
+
+
+class AdminJobDetectorsSerializer(serializers.Serializer):
+    job_id = serializers.UUIDField()
+    media_type = serializers.CharField(allow_blank=True)
+    threshold = serializers.FloatField()
+    duration_seconds = serializers.FloatField(allow_null=True)
+    truth = JobTruthSerializer()
+    detectors = AdminJobDetectorSerializer(many=True)
 
 
 class RefundQuoteSerializer(serializers.Serializer):

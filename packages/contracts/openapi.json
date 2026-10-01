@@ -342,6 +342,110 @@
                 }
             }
         },
+        "/api/v1/admin/jobs/{id}/artifacts/{artifact_id}/content": {
+            "get": {
+                "operationId": "admin_jobs_artifacts_content_retrieve",
+                "description": "Any artifact of a job (every detector's heatmaps, crops and per-frame scores) for staff.",
+                "summary": "Download any artifact of a job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "artifact_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/jobs/{id}/detectors": {
+            "get": {
+                "operationId": "admin_jobs_detectors_retrieve",
+                "description": "What each detector said about one file, with its benchmark and measured accuracy (admin only).",
+                "summary": "Each detector's result for a job, with benchmark and measured accuracy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminJobDetectors"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/jobs/{id}/tasks/{task_id}/log": {
             "get": {
                 "operationId": "admin_jobs_tasks_log_retrieve",
@@ -389,6 +493,73 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/TaskLog"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/jobs/{id}/truth": {
+            "put": {
+                "operationId": "admin_jobs_truth_update",
+                "description": "Ground truth of a file, used to measure the detectors' accuracy.",
+                "summary": "Label what a file really is (authentic, face swap, AI-generated)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobTruthUpdateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobTruthUpdateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobTruthUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JobTruth"
                                 }
                             }
                         },
@@ -477,6 +648,29 @@
                                             "ai_generated"
                                         ],
                                         "description": "Result group; empty = models.yaml."
+                                    },
+                                    "benchmark_accuracy": {
+                                        "type": "number",
+                                        "nullable": true,
+                                        "description": "0–1; null clears it."
+                                    },
+                                    "benchmark_auc": {
+                                        "type": "number",
+                                        "nullable": true,
+                                        "description": "0–1; null clears it."
+                                    },
+                                    "benchmark_dataset": {
+                                        "type": "string"
+                                    },
+                                    "authentic_boost": {
+                                        "type": "number",
+                                        "nullable": true,
+                                        "description": "Weight multiplier (1–10) when it says authentic; null = models.yaml."
+                                    },
+                                    "authentic_counts_in_all": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "description": "An authentic answer also counts in the other analysis; null = models.yaml."
                                     }
                                 }
                             }
@@ -5834,6 +6028,162 @@
                     "status"
                 ]
             },
+            "AdminJobDetector": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "task_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "analysis": {
+                        "$ref": "#/components/schemas/AnalysisEnum"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatusEnum"
+                    },
+                    "fake_probability": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "verdict": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/VerdictEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true,
+                        "description": "Weight applied to this answer (authentic boost included)."
+                    },
+                    "counted_in": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnalysisEnum"
+                        },
+                        "description": "Analyses this answer counted in."
+                    },
+                    "duration_ms": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "gpu": {
+                        "type": "string"
+                    },
+                    "attempt": {
+                        "type": "integer"
+                    },
+                    "fallback_for": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "error_code": {
+                        "type": "string"
+                    },
+                    "error_message": {
+                        "type": "string"
+                    },
+                    "heatmap_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "per_frame": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FramePoint"
+                        }
+                    },
+                    "benchmark": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorBenchmark"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "measured": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorAccuracy"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "analysis",
+                    "attempt",
+                    "benchmark",
+                    "counted_in",
+                    "duration_ms",
+                    "error_code",
+                    "error_message",
+                    "fake_probability",
+                    "fallback_for",
+                    "gpu",
+                    "heatmap_url",
+                    "id",
+                    "measured",
+                    "name",
+                    "per_frame",
+                    "status",
+                    "task_id",
+                    "verdict",
+                    "weight"
+                ]
+            },
+            "AdminJobDetectors": {
+                "type": "object",
+                "properties": {
+                    "job_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "media_type": {
+                        "type": "string"
+                    },
+                    "threshold": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "duration_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "truth": {
+                        "$ref": "#/components/schemas/JobTruth"
+                    },
+                    "detectors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminJobDetector"
+                        }
+                    }
+                },
+                "required": [
+                    "detectors",
+                    "duration_seconds",
+                    "job_id",
+                    "media_type",
+                    "threshold",
+                    "truth"
+                ]
+            },
             "AdminJobEvent": {
                 "type": "object",
                 "properties": {
@@ -6478,15 +6828,44 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "benchmark": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorBenchmark"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "measured": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorAccuracy"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "authentic_boost": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Weight multiplier when it says authentic."
+                    },
+                    "authentic_counts_in_all": {
+                        "type": "boolean",
+                        "description": "An authentic answer also counts in the other analysis."
                     }
                 },
                 "required": [
+                    "authentic_boost",
+                    "authentic_counts_in_all",
+                    "benchmark",
                     "conda_envs",
                     "consumers",
                     "enabled",
                     "family",
                     "gpu_mem_mb",
                     "id",
+                    "measured",
                     "media",
                     "name",
                     "note",
@@ -7953,6 +8332,80 @@
                     "long_video"
                 ]
             },
+            "DetectorAccuracy": {
+                "type": "object",
+                "description": "Measured on files an administrator labelled: authentic ones and those of the detector's analysis.",
+                "properties": {
+                    "files": {
+                        "type": "integer"
+                    },
+                    "fake_files": {
+                        "type": "integer"
+                    },
+                    "authentic_files": {
+                        "type": "integer"
+                    },
+                    "accuracy": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "precision": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "recall": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "specificity": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "auc": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "accuracy",
+                    "auc",
+                    "authentic_files",
+                    "fake_files",
+                    "files",
+                    "precision",
+                    "recall",
+                    "specificity"
+                ]
+            },
+            "DetectorBenchmark": {
+                "type": "object",
+                "properties": {
+                    "accuracy": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true,
+                        "description": "0–1, entered by an administrator."
+                    },
+                    "auc": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "dataset": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "accuracy",
+                    "auc",
+                    "dataset"
+                ]
+            },
             "Evidence": {
                 "type": "object",
                 "properties": {
@@ -8062,6 +8515,23 @@
                 ],
                 "type": "string",
                 "description": "* `deepfake` - deepfake\n* `ai_generated` - ai_generated"
+            },
+            "FramePoint": {
+                "type": "object",
+                "properties": {
+                    "second": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "fake_probability": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "fake_probability",
+                    "second"
+                ]
             },
             "FreeAllowance": {
                 "type": "object",
@@ -8734,6 +9204,57 @@
                 ],
                 "type": "string",
                 "description": "* `queued` - queued\n* `checks` - checks\n* `analysis` - analysis\n* `verification` - verification\n* `results` - results"
+            },
+            "JobTruth": {
+                "type": "object",
+                "properties": {
+                    "truth": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TruthEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "labeled_by": {
+                        "type": "string",
+                        "format": "email",
+                        "nullable": true
+                    },
+                    "labeled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "labeled_at",
+                    "labeled_by",
+                    "truth"
+                ]
+            },
+            "JobTruthUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "truth": {
+                        "nullable": true,
+                        "description": "null removes the label.\n\n* `authentic` - Authentic\n* `face_swap` - Face swap\n* `ai_generated` - AI-generated",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/TruthEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "truth"
+                ]
             },
             "JobsByDay": {
                 "type": "object",
@@ -9815,6 +10336,11 @@
                     "meta",
                     "report_markdown",
                     "status"
+                ]
+            },
+            "NullEnum": {
+                "enum": [
+                    null
                 ]
             },
             "Ok": {
@@ -12290,6 +12816,15 @@
                     "per_day",
                     "remaining"
                 ]
+            },
+            "TruthEnum": {
+                "enum": [
+                    "authentic",
+                    "face_swap",
+                    "ai_generated"
+                ],
+                "type": "string",
+                "description": "* `authentic` - Authentic\n* `face_swap` - Face swap\n* `ai_generated` - AI-generated"
             },
             "TypeEnum": {
                 "enum": [

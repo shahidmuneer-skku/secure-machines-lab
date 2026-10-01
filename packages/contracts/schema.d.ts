@@ -69,6 +69,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jobs/{id}/artifacts/{artifact_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download any artifact of a job
+         * @description Any artifact of a job (every detector's heatmaps, crops and per-frame scores) for staff.
+         */
+        get: operations["admin_jobs_artifacts_content_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jobs/{id}/detectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each detector's result for a job, with benchmark and measured accuracy
+         * @description What each detector said about one file, with its benchmark and measured accuracy (admin only).
+         */
+        get: operations["admin_jobs_detectors_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/jobs/{id}/tasks/{task_id}/log": {
         parameters: {
             query?: never;
@@ -79,6 +119,26 @@ export interface paths {
         /** Live processing log of one task (detector output, GPU admission) */
         get: operations["admin_jobs_tasks_log_retrieve"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jobs/{id}/truth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Label what a file really is (authentic, face swap, AI-generated)
+         * @description Ground truth of a file, used to measure the detectors' accuracy.
+         */
+        put: operations["admin_jobs_truth_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1501,6 +1561,46 @@ export interface components {
             /** Format: date-time */
             finished_at: string | null;
         };
+        AdminJobDetector: {
+            id: string;
+            /** Format: uuid */
+            task_id: string;
+            name: string;
+            analysis: components["schemas"]["AnalysisEnum"];
+            status: components["schemas"]["TaskStatusEnum"];
+            /** Format: double */
+            fake_probability: number | null;
+            verdict: (components["schemas"]["VerdictEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: double
+             * @description Weight applied to this answer (authentic boost included).
+             */
+            weight: number | null;
+            /** @description Analyses this answer counted in. */
+            counted_in: components["schemas"]["AnalysisEnum"][];
+            duration_ms: number | null;
+            gpu: string;
+            attempt: number;
+            /** Format: uuid */
+            fallback_for: string | null;
+            error_code: string;
+            error_message: string;
+            heatmap_url: string | null;
+            per_frame: components["schemas"]["FramePoint"][];
+            benchmark: components["schemas"]["DetectorBenchmark"] | null;
+            measured: components["schemas"]["DetectorAccuracy"] | null;
+        };
+        AdminJobDetectors: {
+            /** Format: uuid */
+            job_id: string;
+            media_type: string;
+            /** Format: double */
+            threshold: number;
+            /** Format: double */
+            duration_seconds: number | null;
+            truth: components["schemas"]["JobTruth"];
+            detectors: components["schemas"]["AdminJobDetector"][];
+        };
         AdminJobEvent: {
             readonly id: number;
             /** Format: date-time */
@@ -1664,6 +1764,15 @@ export interface components {
             note: string;
             stats_24h: components["schemas"]["ModelStats"];
             conda_envs: string[];
+            benchmark: components["schemas"]["DetectorBenchmark"] | null;
+            measured: components["schemas"]["DetectorAccuracy"] | null;
+            /**
+             * Format: double
+             * @description Weight multiplier when it says authentic.
+             */
+            authentic_boost: number;
+            /** @description An authentic answer also counts in the other analysis. */
+            authentic_counts_in_all: boolean;
         };
         AdminOverview: {
             users: {
@@ -2075,6 +2184,32 @@ export interface components {
             checks: components["schemas"]["SetupCheck"][];
             long_video: components["schemas"]["SetupLongVideo"];
         };
+        /** @description Measured on files an administrator labelled: authentic ones and those of the detector's analysis. */
+        DetectorAccuracy: {
+            files: number;
+            fake_files: number;
+            authentic_files: number;
+            /** Format: double */
+            accuracy: number | null;
+            /** Format: double */
+            precision: number | null;
+            /** Format: double */
+            recall: number | null;
+            /** Format: double */
+            specificity: number | null;
+            /** Format: double */
+            auc: number | null;
+        };
+        DetectorBenchmark: {
+            /**
+             * Format: double
+             * @description 0–1, entered by an administrator.
+             */
+            accuracy: number | null;
+            /** Format: double */
+            auc: number | null;
+            dataset: string;
+        };
         Evidence: {
             source: string;
             detail: string;
@@ -2123,6 +2258,12 @@ export interface components {
          * @enum {string}
          */
         FamilyEnum: "deepfake" | "ai_generated";
+        FramePoint: {
+            /** Format: double */
+            second: number;
+            /** Format: double */
+            fake_probability: number;
+        };
         FreeAllowance: {
             guest_trial_images_per_day: number;
             signup_bonus_credits: number;
@@ -2311,6 +2452,23 @@ export interface components {
          * @enum {string}
          */
         JobStepEnum: "queued" | "checks" | "analysis" | "verification" | "results";
+        JobTruth: {
+            truth: (components["schemas"]["TruthEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** Format: email */
+            labeled_by: string | null;
+            /** Format: date-time */
+            labeled_at: string | null;
+        };
+        JobTruthUpdateRequest: {
+            /**
+             * @description null removes the label.
+             *
+             *     * `authentic` - Authentic
+             *     * `face_swap` - Face swap
+             *     * `ai_generated` - AI-generated
+             */
+            truth: (components["schemas"]["TruthEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
         JobsByDay: {
             /** Format: date */
             date: string;
@@ -2610,6 +2768,8 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         Ok: {
             ok: boolean;
         };
@@ -3406,6 +3566,13 @@ export interface components {
             captcha_site_key: string;
         };
         /**
+         * @description * `authentic` - Authentic
+         *     * `face_swap` - Face swap
+         *     * `ai_generated` - AI-generated
+         * @enum {string}
+         */
+        TruthEnum: "authentic" | "face_swap" | "ai_generated";
+        /**
          * @description * `image` - image
          *     * `video` - video
          *     * `long_video` - long_video
@@ -3599,6 +3766,49 @@ export interface operations {
             };
         };
     };
+    admin_jobs_artifacts_content_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artifact_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    admin_jobs_detectors_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminJobDetectors"];
+                };
+            };
+        };
+    };
     admin_jobs_tasks_log_retrieve: {
         parameters: {
             query?: never;
@@ -3617,6 +3827,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskLog"];
+                };
+            };
+        };
+    };
+    admin_jobs_truth_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobTruthUpdateRequest"];
+                "multipart/form-data": components["schemas"]["JobTruthUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["JobTruthUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobTruth"];
                 };
             };
         };
@@ -3663,6 +3900,15 @@ export interface operations {
                      * @enum {string}
                      */
                     family?: "" | "deepfake" | "ai_generated";
+                    /** @description 0–1; null clears it. */
+                    benchmark_accuracy?: number | null;
+                    /** @description 0–1; null clears it. */
+                    benchmark_auc?: number | null;
+                    benchmark_dataset?: string;
+                    /** @description Weight multiplier (1–10) when it says authentic; null = models.yaml. */
+                    authentic_boost?: number | null;
+                    /** @description An authentic answer also counts in the other analysis; null = models.yaml. */
+                    authentic_counts_in_all?: boolean | null;
                 };
             };
         };

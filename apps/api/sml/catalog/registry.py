@@ -18,7 +18,7 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-OVERRIDES_CACHE_KEY = "model-overrides:v4"
+OVERRIDES_CACHE_KEY = "model-overrides:v5"
 
 
 def model_queue(model_id: str) -> str:
@@ -43,12 +43,25 @@ class ModelSpec:
     legacy_ids: list[str] = field(default_factory=list)
     variant_of: str | None = None
     fallbacks: dict[str, Any] = field(default_factory=dict)
+    # A detector that is especially reliable at recognising authentic files counts more when it says
+    # authentic (score below the threshold), and that answer can also count in the other analysis.
+    authentic_boost: float = 1.0
+    authentic_counts_in_all: bool = False
 
     def name(self, lang: str = "en") -> str:
         return self.display_name.get(lang) or self.display_name.get("en") or self.id
 
     def supports(self, media_type: str) -> bool:
         return media_type in self.media
+
+    def vote_weight(self, fake_prob: float, threshold: float) -> float:
+        """This detector's weight for one score: boosted when it says authentic."""
+        return self.weight * (self.authentic_boost if fake_prob < threshold else 1.0)
+
+    def counts_in(self, family: str, fake_prob: float, threshold: float) -> bool:
+        """Whether this score counts in the analysis of `family`: always in its own analysis, and in
+        the other one when it says authentic and `authentic_counts_in_all` is set."""
+        return self.family == family or (self.authentic_counts_in_all and fake_prob < threshold)
 
     @property
     def queue(self) -> str:
@@ -133,6 +146,11 @@ class Registry:
                 legacy_ids=list(m.get("legacy_ids", [])),
                 variant_of=m.get("variant_of"),
                 fallbacks=m.get("fallbacks", {}) or {},
+                authentic_boost=float(ov["authentic_boost"] if ov.get("authentic_boost") is not None
+                                      else m.get("authentic_boost", 1.0)),
+                authentic_counts_in_all=(ov["authentic_counts_in_all"]
+                                         if ov.get("authentic_counts_in_all") is not None
+                                         else bool(m.get("authentic_counts_in_all", False))),
             )
             self.models[spec.id] = spec
             for alias in spec.legacy_ids:
@@ -175,7 +193,8 @@ def _overrides() -> dict[str, dict[str, Any]]:
         data = {
             o.model_id: {"enabled": o.enabled, "weight": o.weight, "run_on_image": o.run_on_image,
                          "run_on_video": o.run_on_video, "trial": o.trial, "show_heatmap": o.show_heatmap,
-                         "family": o.family}
+                         "family": o.family, "authentic_boost": o.authentic_boost,
+                         "authentic_counts_in_all": o.authentic_counts_in_all}
             for o in ModelOverride.objects.all()
         }
         cache.set(OVERRIDES_CACHE_KEY, data, 30)

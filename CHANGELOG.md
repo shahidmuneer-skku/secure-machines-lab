@@ -28,6 +28,12 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- Administrators see each detector's answer on result pages (admin-only *Detector breakdown*:
+  verdict, probability, weight, time, heatmap, per-frame curve), label files with their ground truth,
+  and compare each detector's measured accuracy (accuracy, AUC, precision, recall over labelled files)
+  with benchmark figures they enter on Admin → Models. Users still see only the two analyses.
+- A detector can count more when it says authentic (*Authentic ×*), and that answer can also count in
+  the other analysis. SKKU-P2 counts 2× in both, as it recognises authentic images best.
 - XB-DFD face-swap detector (explanation bottleneck: CLIP + BLIP captions, with a heatmap of forgery
   cues) for images and videos. Videos are scored frame by frame: up to 128 frames spread over the clip,
   with the per-frame timeline and the most suspicious frame's heatmap.

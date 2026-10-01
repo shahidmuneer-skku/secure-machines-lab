@@ -24,3 +24,10 @@ export type Provenance = NonNullable<JobDetail["provenance"]>
 export type TimelinePoint = JobDetail["timeline"][number]
 export type JobArtifact = JobDetail["artifacts"][number]
 export type TimelineEvent = JobDetail["events"][number]
+// Admin only: what each detector said about a file, and how accurate it is.
+export type AdminModel = Schemas["AdminModel"]
+export type AdminJobDetectors = Schemas["AdminJobDetectors"]
+export type AdminJobDetector = AdminJobDetectors["detectors"][number]
+export type DetectorAccuracy = Schemas["DetectorAccuracy"]
+export type DetectorBenchmark = Schemas["DetectorBenchmark"]
+export type JobTruth = NonNullable<Schemas["JobTruth"]["truth"]>

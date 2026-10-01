@@ -21,7 +21,16 @@ class ModelOverride(models.Model):
     trial = models.BooleanField(null=True, blank=True)
     show_heatmap = models.BooleanField(
         null=True, blank=True, help_text="Users see this detector's heatmap (one image). Empty = models.yaml.")
+    authentic_boost = models.FloatField(
+        null=True, blank=True, help_text="Weight multiplier when the detector says authentic. Empty = models.yaml.")
+    authentic_counts_in_all = models.BooleanField(
+        null=True, blank=True, help_text="An authentic answer also counts in the other analysis. Empty = models.yaml.")
     note = models.CharField(max_length=255, blank=True, default="")
+    # Published figures the administrator enters for comparison (Admin → Models); never shown to users.
+    benchmark_accuracy = models.FloatField(null=True, blank=True, help_text="0–1, e.g. from the paper.")
+    benchmark_auc = models.FloatField(null=True, blank=True, help_text="0–1.")
+    benchmark_dataset = models.CharField(max_length=120, blank=True, default="",
+                                         help_text="Where the benchmark figures come from, e.g. Celeb-DF v2.")
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

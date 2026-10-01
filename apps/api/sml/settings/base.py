@@ -332,6 +332,7 @@ SPECTACULAR_SETTINGS = {
         "JobStepEnum": ["queued", "checks", "analysis", "verification", "results"],
         "AnalysisEnum": ["face_swap", "ai_generated"],
         "FamilyEnum": ["deepfake", "ai_generated"],
+        "TruthEnum": "sml.jobs.models.Job.Truth",
         "CheckIdEnum": ["face", "safety", "fas"],
         "ServiceStatusEnum": ["ok", "error"],
         "PaymentModeEnum": ["off", "test", "live"],

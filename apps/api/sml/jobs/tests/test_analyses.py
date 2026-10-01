@@ -7,49 +7,19 @@ combines. The headline is fake when any analysis says fake and shows the highest
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
 
 import pytest
 
 from sml.catalog.registry import registry
-from sml.credits import services as credits
-from sml.credits.models import CreditSource, LedgerKind
-from sml.jobs import services
-from sml.jobs.dispatcher import dispatch_pending
-from sml.jobs.models import Job, JobTask
-from sml.jobs.results import record_task_event
 
 pytestmark = pytest.mark.django_db
 
 
 def detectors(family: str, n: int) -> list[str]:
-    ids = [m.id for m in registry().enabled_for("image") if m.family == family and not m.fallbacks][:n]
+    ids = [m.id for m in registry().enabled_for("image") if m.family == family and not m.fallbacks
+           and m.authentic_boost == 1 and not m.authentic_counts_in_all][:n]
     assert len(ids) == n, f"config/models.yaml needs {n} plain image detectors in {family}"
     return ids
-
-
-@pytest.fixture
-def run_job(user, make_media, use_detectors, platform) -> Callable[..., Job]:  # type: ignore[no-untyped-def]
-    """Runs one image job; `outcomes` maps detector id → fake probability, or "no_face"."""
-    platform.free_max_inflight_tasks = 20
-    platform.save()
-
-    def run(outcomes: dict[str, float | str]) -> Job:
-        use_detectors(list(outcomes))
-        credits.grant(user, 5, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
-        job = services.create_job(user, services.JobRequest(media=make_media(user)))
-        dispatch_pending()
-        for task in job.tasks.all():
-            record_task_event({"event": "started", "task_id": str(task.pk), "attempt": 1})
-            outcome = outcomes.get(task.target)
-            result = ({} if task.kind == JobTask.Kind.AUDIT else
-                      {"no_face": True} if outcome == "no_face" else {"fake_prob": outcome})
-            record_task_event({"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
-                               "result": result})
-        job.refresh_from_db()
-        return job
-
-    return run
 
 
 def test_each_analysis_has_its_own_result_and_any_fake_flags_the_file(api, run_job):

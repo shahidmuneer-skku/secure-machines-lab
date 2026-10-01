@@ -155,6 +155,37 @@ def use_detectors(db) -> Callable[..., list[str]]:  # type: ignore[no-untyped-de
 
 
 @pytest.fixture
+def run_job(user, make_media, use_detectors, platform) -> Callable[..., Any]:  # type: ignore[no-untyped-def]
+    """Runs one image job for `user`; `outcomes` maps detector id → fake probability, or "no_face"."""
+    from sml.credits import services as credits
+    from sml.credits.models import CreditSource, LedgerKind
+    from sml.jobs import services
+    from sml.jobs.dispatcher import dispatch_pending
+    from sml.jobs.models import JobTask
+    from sml.jobs.results import record_task_event
+
+    platform.free_max_inflight_tasks = 20
+    platform.save()
+
+    def run(outcomes: dict[str, float | str]) -> Any:
+        use_detectors(list(outcomes))
+        credits.grant(user, 5, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
+        job = services.create_job(user, services.JobRequest(media=make_media(user)))
+        dispatch_pending()
+        for task in job.tasks.all():
+            record_task_event({"event": "started", "task_id": str(task.pk), "attempt": 1})
+            outcome = outcomes.get(task.target)
+            result = ({} if task.kind == JobTask.Kind.AUDIT else
+                      {"no_face": True} if outcome == "no_face" else {"fake_prob": outcome})
+            record_task_event({"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
+                               "result": result})
+        job.refresh_from_db()
+        return job
+
+    return run
+
+
+@pytest.fixture
 def show_heatmaps(db) -> Callable[..., list[str]]:  # type: ignore[no-untyped-def]
     """Choose whose heatmaps users see, as an admin would on Admin → Models."""
     from sml.catalog.models import ModelOverride

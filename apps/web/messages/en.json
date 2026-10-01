@@ -580,6 +580,47 @@
         "face_swap": "Face-swap analysis",
         "ai_generated": "AI-generation analysis"
       }
+    },
+    "detectors": {
+      "eyebrow": "Admin only",
+      "title": "Detector breakdown",
+      "hint": "What each detector said about this file. Only administrators see this card; users see the two analyses.",
+      "none": "No detector ran on this file.",
+      "analysis": {
+        "face_swap": "Face-swap detectors",
+        "ai_generated": "AI-generation detectors"
+      },
+      "weight": "Weight {weight}",
+      "fallback": "Fallback",
+      "probabilityOf": "{name}: fake probability",
+      "alsoCounts": {
+        "face_swap": "Also counted in the face-swap analysis",
+        "ai_generated": "Also counted in the AI-generation analysis"
+      },
+      "perFrame": "Fake probability per frame",
+      "perFrameOf": "{name}: fake probability per frame",
+      "heatmapOf": "Heatmap of {name}",
+      "truth": {
+        "label": "Ground truth",
+        "none": "Not labelled",
+        "value": {
+          "authentic": "Authentic",
+          "face_swap": "Face swap",
+          "ai_generated": "AI-generated"
+        },
+        "hint": "Label what this file really is to measure each detector's accuracy.",
+        "by": "Labelled by {email}",
+        "saved": "Label saved",
+        "failed": "Could not save the label."
+      },
+      "accuracy": {
+        "benchmark": "Benchmark",
+        "measured": "Measured",
+        "acc": "{value} accuracy",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {# labelled file} other {# labelled files}} ({fake} fake, {authentic} authentic) · precision {precision} · recall {recall}",
+        "notMeasured": "No labelled files yet"
+      }
     }
   },
   "admin": {
@@ -807,6 +848,27 @@
       "family": {
         "deepfake": "Face swap",
         "ai_generated": "AI-generated"
+      },
+      "accuracy": {
+        "title": "Accuracy and weighting",
+        "hint": "Benchmark figures you enter, and accuracy measured on files labelled on result pages (Ground truth). Users never see these.",
+        "model": "Model",
+        "boost": "Authentic ×",
+        "boostFor": "Weight multiplier when {model} says authentic",
+        "bothAnalyses": "Authentic counts in both",
+        "bothAnalysesFor": "{model}'s authentic answers also count in the other analysis",
+        "benchAccuracy": "Benchmark accuracy",
+        "benchAccuracyFor": "Benchmark accuracy of {model} in percent",
+        "benchAuc": "Benchmark AUC",
+        "benchAucFor": "Benchmark AUC of {model}",
+        "dataset": "Benchmark dataset",
+        "datasetFor": "Benchmark dataset of {model}",
+        "datasetPlaceholder": "e.g. Celeb-DF v2",
+        "measured": "Measured",
+        "measuredValue": "{accuracy} accuracy · AUC {auc}",
+        "measuredDetail": "{files, plural, one {# file} other {# files}} · precision {precision} · recall {recall}",
+        "notMeasured": "No labelled files yet",
+        "legend": "Authentic ×: a detector's weight is multiplied by this when it says authentic; with “Authentic counts in both” that answer also counts in the other analysis. Measured accuracy uses the files labelled authentic or with the detector's own analysis, at the platform's fake threshold."
       }
     },
     "pricing": {

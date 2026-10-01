@@ -84,6 +84,8 @@ models:
     show_heatmap: false             # users see this detector's heatmap (one image)
     trial: false                    # used for guest trial checks
     weight: 1.0                     # weight within its result group
+    # authentic_boost: 2.0          # weight × this when it says authentic (score below the threshold)
+    # authentic_counts_in_all: true # that authentic answer also counts in the other result group
     gpu_mem_mb: 6000                # GPU memory reserved before it starts, until its first run measures the real peak
     # variant_of: my-detector       # for separate deepfake / AI-generated weights of one model
     # fallbacks:

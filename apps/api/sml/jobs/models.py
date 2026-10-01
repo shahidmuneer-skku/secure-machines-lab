@@ -41,6 +41,13 @@ class Job(TimeStampedModel):
         NO_FACE = "no_face", "No face detected"
         INCONCLUSIVE = "inconclusive", "Inconclusive"
 
+    class Truth(models.TextChoices):
+        """What the file really is, as labelled by an administrator; measures detector accuracy."""
+
+        AUTHENTIC = "authentic", "Authentic"
+        FACE_SWAP = "face_swap", "Face swap"
+        AI_GENERATED = "ai_generated", "AI-generated"
+
     class Source(models.TextChoices):
         WEB = "web", "Web app"
         API = "api", "API"
@@ -91,6 +98,11 @@ class Job(TimeStampedModel):
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     run_number = models.PositiveIntegerField(default=1)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reruns")
+    # Ground truth for measuring detectors (admin only, never shown to the job's owner).
+    truth = models.CharField(max_length=16, choices=Truth.choices, blank=True, default="", db_index=True)
+    truth_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                 related_name="+")
+    truth_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

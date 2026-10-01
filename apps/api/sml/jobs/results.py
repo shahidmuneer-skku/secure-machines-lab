@@ -243,21 +243,27 @@ def group_results(tasks: list[JobTask], threshold: float, reg: Any = None) -> li
     """One result per detector family (face swap, AI-generated) that ran.
 
     Each group's probability is the weighted mean of its detectors that produced a score; users see
-    the group's verdict and probability, never how many detectors it combines (ADR 0011).
+    the group's verdict and probability, never how many detectors it combines (ADR 0011). A detector
+    with an authentic boost weighs more when it says authentic, and with `authentic_counts_in_all`
+    that answer also counts in the other group (owner, 2026-10-01: SKKU-P2), but only alongside the
+    group's own detectors, never on its own.
     """
     reg = reg or registry()
+    scored = [(t, spec, float(t.result["fake_prob"])) for t in tasks
+              if t.kind == JobTask.Kind.MODEL and (spec := reg.get(t.target)) is not None
+              and t.status == JobTask.Status.SUCCEEDED and not t.result.get("no_face")
+              and t.result.get("fake_prob") is not None]
     out = []
     for family in FAMILIES:
         members = [t for t in tasks if t.kind == JobTask.Kind.MODEL and (spec := reg.get(t.target)) is not None
                    and spec.family == family]
         if not members:
             continue
-        usable = [t for t in members if t.status == JobTask.Status.SUCCEEDED and not t.result.get("no_face")
-                  and t.result.get("fake_prob") is not None]
+        usable = [(spec.vote_weight(p, threshold), p) for t, spec, p in scored if spec.family == family]
         if usable:
-            weights = [reg.get(t.target).weight for t in usable]
-            prob = round(sum(w * t.result["fake_prob"] for w, t in zip(weights, usable, strict=True))
-                         / (sum(weights) or 1), 6)
+            usable += [(spec.vote_weight(p, threshold), p) for t, spec, p in scored
+                       if spec.family != family and spec.counts_in(family, p, threshold)]
+            prob = round(sum(w * p for w, p in usable) / (sum(w for w, _ in usable) or 1), 6)
             out.append({"group": family, "status": "done", "fake_probability": prob,
                         "verdict": Job.Verdict.FAKE if prob >= threshold else Job.Verdict.REAL})
         elif any(t.status == JobTask.Status.SUCCEEDED and t.result.get("no_face") for t in members):
@@ -292,10 +298,13 @@ def finalize_job(job: Job) -> Job:
     per_model = []
     for t in scored:
         spec = reg.get(t.target)
+        prob = t.result.get("fake_prob")
+        weight = (spec.vote_weight(float(prob), threshold) if spec and prob is not None
+                  else spec.weight if spec else 1.0)
         per_model.append({
             "model": t.target, "name": spec.name(job.locale) if spec else t.target, "status": t.status,
             "fake_prob": t.result.get("fake_prob"), "no_face": bool(t.result.get("no_face")),
-            "weight": spec.weight if spec else 1.0, "duration_ms": t.duration_ms,
+            "weight": weight, "duration_ms": t.duration_ms,
             "fallback": t.result.get("fallback"), "error_code": t.error_code,
         })
     audits = {t.target: {"status": t.status, "result": t.result} for t in tasks if t.kind == JobTask.Kind.AUDIT}
