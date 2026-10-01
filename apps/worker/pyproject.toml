@@ -29,6 +29,8 @@ sml_worker = ["agents/assets/**/*"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+# Verbatim copies of the owner's EXIEF analyzer, kept identical to the source for easy updates.
+extend-exclude = ["sml_worker/exief/signals.py", "sml_worker/exief/pipeline.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "BLE", "UP", "S", "SIM", "RUF"]

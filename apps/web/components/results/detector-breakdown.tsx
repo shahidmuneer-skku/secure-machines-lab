@@ -19,7 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCan } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { qk } from "@/lib/api/keys"
-import type { AdminJobDetector, DetectorAccuracy, DetectorBenchmark, JobDetail, JobTruth } from "@/lib/api/types"
+import type {
+  AdminJobDetector, AdminJobDetectors, DetectorAccuracy, DetectorBenchmark, JobDetail, JobTruth,
+} from "@/lib/api/types"
 import { formatDuration, formatPercent, formatTimestamp } from "@/lib/format"
 
 const ANALYSES = ["face_swap", "ai_generated"] as const
@@ -58,7 +60,8 @@ function BreakdownCard({ job }: { job: JobDetail }) {
             <TruthControl jobId={job.id} truth={info.truth.truth ?? null} by={info.truth.labeled_by ?? null} />
             {ANALYSES.map((analysis) => {
               const rows = info.detectors.filter((d) => d.analysis === analysis)
-              if (!rows.length) return null
+              const exief = analysis === "ai_generated" ? info.exief : null
+              if (!rows.length && !exief) return null
               return (
                 <section key={analysis} className="space-y-2" aria-labelledby={`detectors-${analysis}`}>
                   <h3 id={`detectors-${analysis}`} className="hud-eyebrow">{t(`analysis.${analysis}`)}</h3>
@@ -66,6 +69,7 @@ function BreakdownCard({ job }: { job: JobDetail }) {
                     {rows.map((d) => (
                       <DetectorRow key={d.task_id} d={d} threshold={info.threshold} duration={info.duration_seconds ?? null} />
                     ))}
+                    {exief && <ExiefRow exief={exief} />}
                   </ul>
                 </section>
               )
@@ -148,6 +152,44 @@ function DetectorRow({ d, threshold, duration }: { d: AdminJobDetector; threshol
       {d.per_frame.length > 1 && <Sparkline points={d.per_frame} threshold={threshold} color={COLOR[d.analysis]}
         duration={duration} name={d.name} />}
       <Accuracy benchmark={d.benchmark ?? null} measured={d.measured ?? null} />
+    </li>
+  )
+}
+
+/** The EXIEF metadata scorer: what it found, and whether it counted in the AI-generation analysis. */
+function ExiefRow({ exief }: { exief: NonNullable<AdminJobDetectors["exief"]> }) {
+  const t = useTranslations("job.detectors.exief")
+  return (
+    <li className="space-y-2 rounded-lg border bg-background/40 p-3">
+      <div className="min-w-0">
+        <span className="block text-sm font-medium">{t("name")}</span>
+        <span className="block text-xs text-muted-foreground">
+          {[t("score", { score: exief.score ?? 0 }), exief.counted ? t("weight", { weight: exief.weight }) : null,
+            exief.generator].filter(Boolean).join(" · ")}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className={exief.verdict === "unknown" ? "" : "border-fake/50 text-fake"}>{t(`verdict.${exief.verdict}`)}</Badge>
+        <span className="text-xs text-muted-foreground">
+          {exief.counted ? t("counted", { probability: formatPercent(exief.fake_probability) })
+            : exief.untrustworthy.length ? t("notTrusted") : t("notCounted")}
+        </span>
+      </div>
+      {exief.untrustworthy.length > 0 && (
+        <ul className="space-y-0.5 text-xs text-warn">{exief.untrustworthy.map((r) => <li key={r}>{r}</li>)}</ul>
+      )}
+      {exief.signals.length > 0 && (
+        <ul className="space-y-1 text-xs">
+          {exief.signals.map((sig) => (
+            <li key={sig.id}>
+              <span className="font-medium">{sig.label}</span>
+              <span className="text-muted-foreground"> · {t("signalWeight", { tier: sig.tier, weight: sig.weight ?? 0 })}</span>
+              {sig.evidence.length > 0 && <span className="block break-all font-mono text-[10px] text-muted-foreground">{sig.evidence.join(" · ")}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Accuracy benchmark={null} measured={exief.measured ?? null} />
     </li>
   )
 }

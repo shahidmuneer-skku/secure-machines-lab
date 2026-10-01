@@ -92,7 +92,48 @@ def measured_accuracy(threshold: float | None = None) -> dict[str, dict[str, Any
             pairs[spec.id].append((score, False))
         elif truth == POSITIVE_TRUTH.get(spec.family):
             pairs[spec.id].append((score, True))
-    return {model_id: metrics(p, threshold) for model_id, p in pairs.items()}
+    out = {model_id: metrics(p, threshold) for model_id, p in pairs.items()}
+    exief_pairs = _exief_pairs()
+    if exief_pairs:
+        out[EXIEF_ID] = metrics(exief_pairs, threshold)
+    return out
+
+
+def _exief_pairs() -> list[tuple[float, bool]]:
+    """EXIEF on files labelled authentic or AI-generated: its vote when it counted, else 0 (it did
+    not flag the file - no signal, or metadata it could not trust)."""
+    from .results import exief_report, exief_vote
+
+    jobs = (Job.objects.filter(truth__in=[Job.Truth.AUTHENTIC, Job.Truth.AI_GENERATED], deleted_at__isnull=True)
+            .prefetch_related("tasks"))
+    pairs = []
+    for job in jobs:
+        tasks = list(job.tasks.all())
+        if exief_report(tasks) is None:
+            continue  # EXIEF did not run on this file
+        vote = exief_vote(tasks, weight=1.0)
+        pairs.append((vote[1] if vote else 0.0, job.truth == Job.Truth.AI_GENERATED))
+    return pairs
+
+
+EXIEF_ID = "exief"
+
+
+def exief_breakdown(tasks: list[JobTask], measured: dict[str, Any] | None) -> dict[str, Any] | None:
+    """What the EXIEF metadata scorer found in one file and whether it counted (admin only)."""
+    from .results import exief_report, exief_vote
+
+    report = exief_report(tasks)
+    if report is None:
+        return None
+    vote = exief_vote(tasks)
+    weight = PlatformSettings.load().exief_weight
+    return {"verdict": report.get("verdict"), "score": report.get("score"), "generator": report.get("generator"),
+            "signals": [{"id": sig.get("id"), "label": sig.get("label"), "tier": sig.get("tier"),
+                         "weight": sig.get("weight"), "evidence": sig.get("evidence") or []}
+                        for sig in report.get("signals") or []],
+            "untrustworthy": report.get("untrustworthy") or [], "counted": vote is not None,
+            "fake_probability": vote[1] if vote else None, "weight": weight, "measured": measured}
 
 
 def benchmarks() -> dict[str, dict[str, Any]]:
@@ -176,4 +217,5 @@ def breakdown(job: Job, artifact_url: str) -> dict[str, Any]:
                              -float(r["fake_probability"] or 0.0), str(r["name"])))
     return {"job_id": job.pk, "media_type": job.media_type, "threshold": threshold,
             "duration_seconds": job.media.duration_seconds if job.media else None,
-            "truth": truth(job), "detectors": rows}
+            "truth": truth(job), "detectors": rows,
+            "exief": exief_breakdown(list(job.tasks.all()), measured.get(EXIEF_ID))}

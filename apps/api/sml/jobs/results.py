@@ -226,29 +226,43 @@ def _maybe_fallback(job: Job, task: JobTask, code: str) -> None:
 
 # --- aggregation -------------------------------------------------------------------
 
-def _metadata_flags(indicators: dict[str, Any], *, detectors_say_fake: bool) -> bool:
-    """Whether metadata marks the file "likely AI-generated" (owner's rule, 2026-10-01).
-
-    Definite markers (C2PA / IPTC AI declaration, embedded generation parameters, a generator
-    software tag) always do. Weak hints (a generator merely mentioned somewhere in the metadata)
-    only label a file the detectors already judged fake; otherwise the detectors' verdict stands
-    and the hint is shown as evidence.
-    """
-    if indicators.get("ai_generated"):
-        return True
-    return detectors_say_fake and bool(indicators.get("evidence"))
+# EXIEF metadata verdict -> its vote in the AI-generation analysis (owner, 2026-10-01). "unknown"
+# adds nothing: metadata without a signal is never evidence that a file is authentic.
+EXIEF_VOTE = {"confirmed": 1.0, "suspect": 0.8, "weak": 0.6}
 
 
-def group_results(tasks: list[JobTask], threshold: float, reg: Any = None) -> list[dict[str, Any]]:
+def exief_report(tasks: list[JobTask]) -> dict[str, Any] | None:
+    """The EXIEF report of the job's metadata check, when EXIEF ran."""
+    meta = next((t for t in tasks if t.kind == JobTask.Kind.AUDIT and t.target == "metadata"
+                 and t.status == JobTask.Status.SUCCEEDED), None)
+    report = ((meta.result or {}).get("ai_indicators") or {}).get("exief") if meta else None
+    return report if isinstance(report, dict) and report.get("status") == "ok" else None
+
+
+def exief_vote(tasks: list[JobTask], weight: float | None = None) -> tuple[float, float] | None:
+    """(weight, fake probability) of the EXIEF verdict in the AI-generation analysis, or None when it
+    does not count: no signal, metadata that is damaged or altered, or the weight set to 0."""
+    report = exief_report(tasks)
+    if report is None or report.get("untrustworthy"):
+        return None
+    prob = EXIEF_VOTE.get(str(report.get("verdict")))
+    weight = PlatformSettings.load().exief_weight if weight is None else weight
+    return (float(weight), prob) if prob is not None and weight > 0 else None
+
+
+def group_results(tasks: list[JobTask], threshold: float, reg: Any = None,
+                  exief_weight: float | None = None) -> list[dict[str, Any]]:
     """One result per detector family (face swap, AI-generated) that ran.
 
     Each group's probability is the weighted mean of its detectors that produced a score; users see
     the group's verdict and probability, never how many detectors it combines (ADR 0011). A detector
     with an authentic boost weighs more when it says authentic, and with `authentic_counts_in_all`
     that answer also counts in the other group (owner, 2026-10-01: SKKU-P2), but only alongside the
-    group's own detectors, never on its own.
+    group's own detectors, never on its own. The EXIEF metadata verdict is one more vote in the
+    AI-generation group (owner, 2026-10-01); it can form that group on its own.
     """
     reg = reg or registry()
+    vote = exief_vote(tasks, exief_weight)
     scored = [(t, spec, float(t.result["fake_prob"])) for t in tasks
               if t.kind == JobTask.Kind.MODEL and (spec := reg.get(t.target)) is not None
               and t.status == JobTask.Status.SUCCEEDED and not t.result.get("no_face")
@@ -257,12 +271,15 @@ def group_results(tasks: list[JobTask], threshold: float, reg: Any = None) -> li
     for family in FAMILIES:
         members = [t for t in tasks if t.kind == JobTask.Kind.MODEL and (spec := reg.get(t.target)) is not None
                    and spec.family == family]
-        if not members:
+        metadata_vote = [vote] if vote and family == "ai_generated" else []
+        if not members and not metadata_vote:
             continue
         usable = [(spec.vote_weight(p, threshold), p) for t, spec, p in scored if spec.family == family]
-        if usable:
-            usable += [(spec.vote_weight(p, threshold), p) for t, spec, p in scored
-                       if spec.family != family and spec.counts_in(family, p, threshold)]
+        if usable or metadata_vote:
+            if usable:
+                usable += [(spec.vote_weight(p, threshold), p) for t, spec, p in scored
+                           if spec.family != family and spec.counts_in(family, p, threshold)]
+            usable += metadata_vote
             prob = round(sum(w * p for w, p in usable) / (sum(w for w, _ in usable) or 1), 6)
             out.append({"group": family, "status": "done", "fake_probability": prob,
                         "verdict": Job.Verdict.FAKE if prob >= threshold else Job.Verdict.REAL})
@@ -309,6 +326,8 @@ def finalize_job(job: Job) -> Job:
         })
     audits = {t.target: {"status": t.status, "result": t.result} for t in tasks if t.kind == JobTask.Kind.AUDIT}
     groups = group_results(tasks, threshold, reg)
+    scored_groups = [g for g in groups if g["fake_probability"] is not None]
+    vote = exief_vote(tasks)
     job.summary = {"models": per_model, "audit": audits, "ai_indicators": indicators, "groups": groups}
     job.finished_at = timezone.now()
     job.progress = 100.0
@@ -322,10 +341,9 @@ def finalize_job(job: Job) -> Job:
         _release(job, "Job canceled — credits released")
     elif news is not None:
         _finalize_news(job, news, reasons)
-    elif usable:
+    elif usable or scored_groups:
         # Headline (owner, 2026-10-01): fake if any result group says fake; it shows the highest
         # group probability. Each group's own result is kept in the summary.
-        scored_groups = [g for g in groups if g["fake_probability"] is not None]
         if scored_groups:
             job.fake_probability = max(g["fake_probability"] for g in scored_groups)
         else:  # detectors without a known family
@@ -334,9 +352,11 @@ def finalize_job(job: Job) -> Job:
                                          / (sum(weights) or 1), 6)
         job.verdict = Job.Verdict.FAKE if job.fake_probability >= threshold else Job.Verdict.REAL
         reasons.append({"code": "model_consensus", "models": len(usable), "fake_probability": job.fake_probability})
-        if _metadata_flags(indicators, detectors_say_fake=job.verdict == Job.Verdict.FAKE):
-            job.verdict = Job.Verdict.FAKE
-            reasons.append({"code": "metadata_ai_indicator", "strength": indicators.get("confidence"),
+        if vote is not None:  # EXIEF counted in the AI-generation analysis
+            exief_verdict = (exief_report(tasks) or {}).get("verdict")
+            reasons.append({"code": "metadata_ai_indicator",
+                            "strength": "strong" if exief_verdict == "confirmed" else "weak",
+                            "exief_verdict": exief_verdict, "weight": vote[0],
                             "evidence": indicators.get("evidence", [])})
         job.partial = bool(failed)
         job.status = Job.Status.SUCCEEDED
@@ -345,10 +365,6 @@ def finalize_job(job: Job) -> Job:
         job.status = Job.Status.SUCCEEDED
         job.verdict = Job.Verdict.NO_FACE
         reasons.append({"code": "no_face"})
-        if _metadata_flags(indicators, detectors_say_fake=False):
-            job.verdict = Job.Verdict.FAKE
-            reasons.append({"code": "metadata_ai_indicator", "strength": indicators.get("confidence"),
-                            "evidence": indicators.get("evidence", [])})
         _release(job, "No face found — not charged")
     else:
         job.status = Job.Status.FAILED

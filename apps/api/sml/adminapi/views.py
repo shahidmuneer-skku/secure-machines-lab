@@ -602,6 +602,8 @@ class DetectionSetupView(APIView):
                             "face_crop_setting": (cfg.long_video_face_crops or {}).get(m["model_id"])}
                            for m in stream_models],
             },
+            "exief_weight": cfg.exief_weight,
+            "exief_measured": detectors.measured_accuracy().get(detectors.EXIEF_ID),
         }
 
     @staticmethod
@@ -633,7 +635,7 @@ class DetectionSetupView(APIView):
         d = ser.validated_data
         cfg = PlatformSettings.load()
         before = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
-                  "long_video_face_crops": dict(cfg.long_video_face_crops or {})}
+                  "long_video_face_crops": dict(cfg.long_video_face_crops or {}), "exief_weight": cfg.exief_weight}
         if "audit_steps" in d:
             reg = registry()
             unknown = [s for s in d["audit_steps"] if s not in reg.audit_steps]
@@ -648,9 +650,11 @@ class DetectionSetupView(APIView):
             cfg.long_video_model = d["long_video_model"]
         if "long_video_face_crops" in d:
             cfg.long_video_face_crops = self._face_crops(cfg, d["long_video_face_crops"])
+        if "exief_weight" in d:
+            cfg.exief_weight = d["exief_weight"]
         cfg.save()
         after = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
-                 "long_video_face_crops": cfg.long_video_face_crops}
+                 "long_video_face_crops": cfg.long_video_face_crops, "exief_weight": cfg.exief_weight}
         audit.record("admin.detection_setup", request=request, target_type="core.platformsettings", target_id="1",
                      before=before, after=after)
         return Response(self._payload())

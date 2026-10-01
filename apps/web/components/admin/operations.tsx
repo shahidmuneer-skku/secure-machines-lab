@@ -380,6 +380,14 @@ function ModelAccuracy({ models, canEdit, onPatch }: {
 }) {
   const t = useTranslations("admin.models.accuracy")
   const number = (value: string, scale = 1) => (value.trim() === "" ? null : Number(value) / scale)
+  const { data: setup } = useQuery({ queryKey: qk.admin("models", "setup"),
+    queryFn: async () => data(await api.GET("/api/v1/admin/models/setup")) })
+  const measuredCell = (m: AdminModel["measured"] | undefined) => m?.files ? (
+    <>
+      <span className="tabular-nums">{t("measuredValue", { accuracy: formatPercent(m.accuracy), auc: m.auc != null ? m.auc.toFixed(3) : "—" })}</span>
+      <span className="block text-muted-foreground">{t("measuredDetail", { files: m.files, precision: formatPercent(m.precision), recall: formatPercent(m.recall) })}</span>
+    </>
+  ) : <span className="text-muted-foreground">{t("notMeasured")}</span>
   return (
     <HudCard>
       <CardHeader><CardTitle className="text-base">{t("title")}</CardTitle>
@@ -410,18 +418,14 @@ function ModelAccuracy({ models, canEdit, onPatch }: {
                 <TableCell><Input defaultValue={m.benchmark?.dataset ?? ""} maxLength={120} disabled={!canEdit} className="h-8 w-40"
                   placeholder={t("datasetPlaceholder")} aria-label={t("datasetFor", { model: m.name })}
                   onBlur={(e) => e.target.value !== (m.benchmark?.dataset ?? "") && onPatch({ model_id: m.id, benchmark_dataset: e.target.value })} /></TableCell>
-                <TableCell className="text-xs">
-                  {m.measured?.files ? (
-                    <>
-                      <span className="tabular-nums">{t("measuredValue", { accuracy: formatPercent(m.measured.accuracy),
-                        auc: m.measured.auc != null ? m.measured.auc.toFixed(3) : "—" })}</span>
-                      <span className="block text-muted-foreground">{t("measuredDetail", { files: m.measured.files,
-                        precision: formatPercent(m.measured.precision), recall: formatPercent(m.measured.recall) })}</span>
-                    </>
-                  ) : <span className="text-muted-foreground">{t("notMeasured")}</span>}
-                </TableCell>
+                <TableCell className="text-xs">{measuredCell(m.measured)}</TableCell>
               </TableRow>
             ))}
+            <TableRow>
+              <TableCell><span className="font-medium">{t("exief")}</span><span className="block font-mono text-[10px] text-muted-foreground">exief</span></TableCell>
+              <TableCell colSpan={5} className="text-xs text-muted-foreground">{t("exiefNote", { weight: setup?.exief_weight ?? 0 })}</TableCell>
+              <TableCell className="text-xs">{measuredCell(setup?.exief_measured)}</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
         <p className="pt-3 text-xs text-muted-foreground">{t("legend")}</p>
@@ -439,7 +443,7 @@ function DetectionSetup() {
     queryFn: async () => data(await api.GET("/api/v1/admin/models/setup")) })
   const save = useMutation({
     mutationFn: async (body: { audit_steps?: string[]; long_video_model?: string;
-      long_video_face_crops?: Record<string, boolean | null> }) =>
+      long_video_face_crops?: Record<string, boolean | null>; exief_weight?: number }) =>
       data(await api.PATCH("/api/v1/admin/models/setup", { body })),
     onSuccess: (next) => { qc.setQueryData(qk.admin("models", "setup"), next); toast.success(t("saved")) },
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")),
@@ -461,6 +465,15 @@ function DetectionSetup() {
                 onCheckedChange={(on) => save.mutate({ audit_steps: on ? [...enabledChecks, c.id] : enabledChecks.filter((x) => x !== c.id) })} />
             </label>
           ))}
+          <div className="space-y-1.5 rounded-lg border p-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="exief-weight" className="font-medium">{t("exiefWeight")}</Label>
+              <Input id="exief-weight" type="number" step="0.5" min="0" max="10" defaultValue={setup.exief_weight}
+                disabled={!canEdit || save.isPending} className="h-8 w-20"
+                onBlur={(e) => Number(e.target.value) !== setup.exief_weight && save.mutate({ exief_weight: Number(e.target.value) })} />
+            </div>
+            <p className="text-xs text-muted-foreground">{t("exiefWeightHint")}</p>
+          </div>
         </CardContent>
       </HudCard>
       <HudCard>

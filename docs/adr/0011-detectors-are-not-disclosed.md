@@ -4,9 +4,10 @@
 administrator chooses what runs, and that users — in the web app, the public API, reports,
 explanations and the live processing view — learn the verdict and its evidence but never which
 detectors ran, how many, or how the analysis works. Metadata evidence (EXIF / XMP / C2PA) stays
-visible because it describes the user's own file. AI-generation markers in metadata flag a file
-"likely AI-generated": definite markers always, weak hints only when the detectors already judged
-it fake. Long-form scans use one admin-chosen detector.
+visible because it describes the user's own file. AI-generation markers in metadata (scored by EXIEF)
+are a weighted vote in the AI-generation analysis; a fake verdict backed by a confirmed declaration reads
+"likely AI-generated" (owner, 2026-10-01, replacing "definite markers always decide"). Long-form scans
+use one admin-chosen detector.
 
 **Decision.**
 

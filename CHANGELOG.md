@@ -28,6 +28,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- EXIEF metadata signals (the owner's ExifTool-based scorer) in the metadata check: its verdict is a
+  weighted vote in the AI-generation analysis (confirmed 100 % fake, suspect 80 %, weak 60 %; weight 3 by
+  default, set on Admin → Models). Damaged or altered metadata (ExifTool corruption, failed C2PA
+  validation) is not counted. Admins see EXIEF's findings on result pages and its measured accuracy.
 - Results page: cancel several queued or running jobs at once ("Select all running", then "Cancel N
   jobs" with a confirmation); `POST /api/v1/jobs/cancel` does the same for API clients.
 - Administrators see each detector's answer on result pages (admin-only *Detector breakdown*:
@@ -53,8 +57,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   agent use the same split; video timelines show one line per analysis.
 - Heatmaps: the administrator chooses whose heatmap users see (one image per detector; Center by
   default). Face cropping for long-form scans is set per detector.
-- Metadata markers: a definite AI-generation marker labels a file "Likely AI-generated" regardless
-  of the detectors; a weak hint only when the detectors judged it fake.
+- Metadata markers weigh into the AI-generation analysis through EXIEF (see Added); a fake verdict
+  backed by a confirmed generator declaration reads "Likely AI-generated".
 - The detect page is upload → review; the dashboard shows analyses by type.
 - Xception is offered for video only until its image weights are restored.
 
@@ -89,6 +93,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Development runs one detector worker per GPU (GPUs 0 and 3 by default; `GPUS=` to change).
 - Canceling (or deleting) a job whose work was still queued did not tell the workers, so they still
   ran every detector for it and new jobs waited behind that backlog. Workers now skip it.
+- C2PA manifests signed by a certificate outside c2patool's trust list (OpenAI's, among others) were
+  reported as "invalid signature"; only manifests that fail validation are now.
 - Per-frame video scores: per-frame percentages such as `73%` (SKKU/BEYBI) were dropped, so its
   timeline was empty; a total row of frame counts above 100 (`Total result,145,0`) lost the count;
   the `processing` placeholder row counted as a frame scored 0.5; and `Total result,0,0,no_face` read

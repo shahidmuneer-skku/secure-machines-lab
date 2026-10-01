@@ -90,9 +90,10 @@ found → run Center).
 **Verdict and charging** (ADR 0006, 0011). Detectors are grouped by family into two analyses
 (face swap, AI generation); each analysis is the weighted mean of its detectors that
 produced a score, and the headline verdict is fake when any analysis is fake (it shows the highest
-analysis probability). A definite AI-generation marker in the metadata (C2PA / IPTC declaration,
-embedded generation parameters, generator software tag) forces "fake" and labels the file
-"likely AI-generated"; a weak hint only adds that label when the detectors already judged it fake. A job is
+analysis probability). The metadata check scores the file's tags with EXIEF (`sml_worker/exief`) and
+its verdict is one more weighted vote in the AI-generation analysis (confirmed 100 % fake, suspect 80 %,
+weak 60 %, weight `exief_weight`, default 3); no signal, or metadata that is damaged or altered, adds
+nothing. A fake verdict backed by a confirmed declaration reads "likely AI-generated". A job is
 charged its quoted price only if at least one model produced a score. No-face results, failures
 on our side and cancellations release the hold in full.
 

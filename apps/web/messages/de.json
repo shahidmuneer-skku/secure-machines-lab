@@ -628,6 +628,21 @@
         "auc": "AUC {value}",
         "detail": "{files, plural, one {# markierte Datei} other {# markierte Dateien}} ({fake} gefälscht, {authentic} echt) · Präzision {precision} · Trefferquote {recall}",
         "notMeasured": "Noch keine markierten Dateien"
+      },
+      "exief": {
+        "name": "EXIEF-Metadatensignale",
+        "score": "Wert {score}",
+        "weight": "Gewicht {weight}",
+        "verdict": {
+          "confirmed": "Bestätigt",
+          "suspect": "Verdächtig",
+          "weak": "Schwach",
+          "unknown": "Kein Signal"
+        },
+        "counted": "In der KI-Analyse als {probability} gefälscht gezählt",
+        "notCounted": "Kein Signal — nicht gezählt",
+        "notTrusted": "Nicht gezählt: Die Metadaten wirken beschädigt oder verändert",
+        "signalWeight": "Stufe {tier}, +{weight}"
       }
     }
   },
@@ -845,7 +860,9 @@
         "faceCropHint": "Pro Detektor festgelegt; gilt, sobald dieser Detektor verwendet wird.",
         "faceCropFor": "Gesichtszuschnitt für {model}",
         "faceCropAlways": "Schneidet immer auf Gesichter zu",
-        "faceCropNone": "Nicht unterstützt"
+        "faceCropNone": "Nicht unterstützt",
+        "exiefWeight": "Gewicht der Metadaten (EXIEF)",
+        "exiefWeightHint": "Wie stark das Metadaten-Urteil in der KI-Analyse zählt, relativ zu einem Detektor mit Gewicht 1. Bestätigt zählt als 100 % gefälscht, verdächtig 80 %, schwach 60 %; ohne Signal zählt es nicht. 0 schaltet es ab."
       },
       "heatmap": "Heatmap",
       "heatmapFor": "Heatmap von {model} für Nutzer anzeigen",
@@ -876,7 +893,9 @@
         "measuredValue": "{accuracy} Genauigkeit · AUC {auc}",
         "measuredDetail": "{files, plural, one {# Datei} other {# Dateien}} · Präzision {precision} · Trefferquote {recall}",
         "notMeasured": "Noch keine markierten Dateien",
-        "legend": "Echt ×: Das Gewicht eines Detektors wird damit multipliziert, wenn er „echt“ sagt; mit „Echt zählt in beiden“ zählt diese Antwort auch in der anderen Analyse. Die gemessene Genauigkeit nutzt Dateien, die als echt oder mit der Analyse des Detektors markiert sind, beim Fälschungs-Schwellenwert der Plattform."
+        "legend": "Echt ×: Das Gewicht eines Detektors wird damit multipliziert, wenn er „echt“ sagt; mit „Echt zählt in beiden“ zählt diese Antwort auch in der anderen Analyse. Die gemessene Genauigkeit nutzt Dateien, die als echt oder mit der Analyse des Detektors markiert sind, beim Fälschungs-Schwellenwert der Plattform.",
+        "exief": "EXIEF-Metadaten",
+        "exiefNote": "Metadatensignale, Gewicht {weight} in der KI-Analyse (einstellbar unter Prüfungen bei jedem Auftrag). Gemessen an Dateien, die als echt oder KI-generiert markiert sind."
       }
     },
     "pricing": {

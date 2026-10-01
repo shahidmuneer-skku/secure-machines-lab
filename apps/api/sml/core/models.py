@@ -58,6 +58,11 @@ class PlatformSettings(models.Model):
         help_text="Per long-form detector: crop to faces before scoring ({model_id: true|false}). "
                   "Missing = the detector's default.",
     )
+    exief_weight = models.FloatField(
+        default=3.0,
+        help_text="Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one "
+                  "detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off).",
+    )
 
     # Free credits
     signup_bonus_credits = models.PositiveIntegerField(default=50)

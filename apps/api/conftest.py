@@ -156,7 +156,8 @@ def use_detectors(db) -> Callable[..., list[str]]:  # type: ignore[no-untyped-de
 
 @pytest.fixture
 def run_job(user, make_media, use_detectors, platform) -> Callable[..., Any]:  # type: ignore[no-untyped-def]
-    """Runs one image job for `user`; `outcomes` maps detector id → fake probability, or "no_face"."""
+    """Runs one image job for `user`; `outcomes` maps detector id → fake probability, or "no_face", and
+    optionally "metadata" → the metadata check's `ai_indicators`."""
     from sml.credits import services as credits
     from sml.credits.models import CreditSource, LedgerKind
     from sml.jobs import services
@@ -168,15 +169,17 @@ def run_job(user, make_media, use_detectors, platform) -> Callable[..., Any]:  #
     platform.save()
 
     def run(outcomes: dict[str, float | str]) -> Any:
-        use_detectors(list(outcomes))
+        use_detectors([k for k in outcomes if k != "metadata"])
         credits.grant(user, 5, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
         job = services.create_job(user, services.JobRequest(media=make_media(user)))
         dispatch_pending()
         for task in job.tasks.all():
             record_task_event({"event": "started", "task_id": str(task.pk), "attempt": 1})
             outcome = outcomes.get(task.target)
-            result = ({} if task.kind == JobTask.Kind.AUDIT else
-                      {"no_face": True} if outcome == "no_face" else {"fake_prob": outcome})
+            if task.kind == JobTask.Kind.AUDIT:
+                result = {"ai_indicators": outcome} if isinstance(outcome, dict) else {}
+            else:
+                result = {"no_face": True} if outcome == "no_face" else {"fake_prob": outcome}
             record_task_event({"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
                                "result": result})
         job.refresh_from_db()

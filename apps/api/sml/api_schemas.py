@@ -439,6 +439,29 @@ class AdminJobDetectorSerializer(serializers.Serializer):
     measured = DetectorAccuracySerializer(allow_null=True)
 
 
+class ExiefSignalSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    label = serializers.CharField()
+    tier = serializers.IntegerField()
+    weight = serializers.IntegerField(allow_null=True)
+    evidence = serializers.ListField(child=serializers.CharField())
+
+
+class ExiefBreakdownSerializer(serializers.Serializer):
+    """The EXIEF metadata scorer's result for one file (admin only)."""
+
+    verdict = serializers.ChoiceField(choices=["confirmed", "suspect", "weak", "unknown"])
+    score = serializers.IntegerField(allow_null=True)
+    generator = serializers.CharField(allow_null=True)
+    signals = ExiefSignalSerializer(many=True)
+    untrustworthy = serializers.ListField(child=serializers.CharField(),
+                                          help_text="Why the metadata was not counted (damaged or altered).")
+    counted = serializers.BooleanField(help_text="Whether it counted in the AI-generation analysis.")
+    fake_probability = serializers.FloatField(allow_null=True, help_text="Its vote when counted.")
+    weight = serializers.FloatField()
+    measured = DetectorAccuracySerializer(allow_null=True)
+
+
 class AdminJobDetectorsSerializer(serializers.Serializer):
     job_id = serializers.UUIDField()
     media_type = serializers.CharField(allow_blank=True)
@@ -446,6 +469,7 @@ class AdminJobDetectorsSerializer(serializers.Serializer):
     duration_seconds = serializers.FloatField(allow_null=True)
     truth = JobTruthSerializer()
     detectors = AdminJobDetectorSerializer(many=True)
+    exief = ExiefBreakdownSerializer(allow_null=True)
 
 
 class RefundQuoteSerializer(serializers.Serializer):
@@ -526,6 +550,8 @@ class SetupLongVideoSerializer(serializers.Serializer):
 class DetectionSetupSerializer(serializers.Serializer):
     checks = SetupCheckSerializer(many=True)
     long_video = SetupLongVideoSerializer()
+    exief_weight = serializers.FloatField(help_text="Weight of the EXIEF metadata verdict (0 = off).")
+    exief_measured = DetectorAccuracySerializer(allow_null=True)
 
 
 class DetectionSetupUpdateSerializer(serializers.Serializer):
@@ -534,6 +560,7 @@ class DetectionSetupUpdateSerializer(serializers.Serializer):
     long_video_face_crops = serializers.DictField(
         child=serializers.BooleanField(allow_null=True), required=False,
         help_text="{model_id: true|false|null}; null returns the detector to its default.")
+    exief_weight = serializers.FloatField(min_value=0, max_value=10, required=False)
 
 
 class JobBulkCancelSerializer(serializers.Serializer):

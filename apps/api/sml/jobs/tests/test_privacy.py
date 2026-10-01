@@ -26,9 +26,11 @@ from sml.reports.services import build_data
 pytestmark = pytest.mark.django_db
 
 STRONG = {"ai_generated": True, "confidence": "strong",
-          "evidence": [{"source": "C2PA", "strength": "strong", "detail": "Content Credentials declare AI"}]}
+          "evidence": [{"source": "C2PA", "strength": "strong", "detail": "Content Credentials declare AI"}],
+          "exief": {"status": "ok", "verdict": "confirmed", "score": 108, "untrustworthy": [], "signals": []}}
 WEAK = {"ai_generated": False, "confidence": "weak",
-        "evidence": [{"source": "Metadata text", "strength": "weak", "detail": "Mentions Midjourney"}]}
+        "evidence": [{"source": "Metadata text", "strength": "weak", "detail": "Mentions Midjourney"}],
+        "exief": {"status": "ok", "verdict": "weak", "score": 27, "untrustworthy": [], "signals": []}}
 
 
 def plain_image_detectors(n: int = 2) -> list[str]:
@@ -202,22 +204,18 @@ def test_no_configured_detector_gives_a_generic_error(user, make_media, use_dete
         services.create_job(user, services.JobRequest(media=make_media(user)))
 
 
-# --- metadata markers (owner's rule, 2026-10-01) ---------------------------------------------
+# --- metadata markers (EXIEF weighs into the AI-generation analysis; test_exief_vote.py) ---------
 
-@pytest.mark.parametrize(("prob", "indicators", "verdict", "flagged"), [
-    (0.1, STRONG, "fake", True),    # a definite marker overrides the detectors
-    (0.9, WEAK, "fake", True),      # a hint labels a file the detectors judged fake
-    (0.1, WEAK, "real", False),     # a hint alone never overrides the detectors
-    (0.9, {}, "fake", False),
-])
-def test_ai_generation_markers(api, finished_job, prob, indicators, verdict, flagged):
-    job = finished_job(prob=prob, indicators=indicators)
+@pytest.mark.parametrize(("indicators", "flagged"), [(STRONG, True), (WEAK, False), ({}, False)])
+def test_metadata_evidence_is_shown_and_only_a_declaration_reads_ai_generated(api, finished_job, indicators,
+                                                                               flagged):
+    job = finished_job(prob=0.9, indicators=indicators)
     detail = api.get(f"/api/v1/jobs/{job.pk}").json()
-    assert (detail["verdict"], detail["ai_generated"]) == (verdict, flagged)
+    assert (detail["verdict"], detail["ai_generated"]) == ("fake", flagged)
     assert (detail["verdict_label"] == "Likely AI-generated") is flagged
-    assert detail["fake_probability"] == pytest.approx(prob)  # the detectors' result is always shown
     if indicators:
         assert detail["provenance"]["evidence"][0]["detail"] == indicators["evidence"][0]["detail"]
+    assert "exief" not in json.dumps(detail).lower()  # the tool behind the evidence is not named
 
 
 def test_the_admin_chooses_whose_heatmaps_users_see(api, user, make_media, use_detectors, show_heatmaps, platform):

@@ -111,19 +111,18 @@ def test_real_verdict_below_threshold(user, job_for, worker):
     assert job.verdict == Job.Verdict.REAL
 
 
-def test_metadata_ai_indicator_overrides_the_models(user, job_for, worker):
+def test_a_generator_declaration_in_the_metadata_outweighs_low_scores(user, job_for, worker):
     fund(user)
-    a, b = image_models()
 
     def outcome(task: JobTask) -> dict:
         if task.kind == JobTask.Kind.AUDIT:
-            return {"ai_indicators": {"ai_generated": True, "evidence": [{"source": "c2pa", "value": "DALL·E"}]}}
+            return {"ai_indicators": {"ai_generated": True, "evidence": [{"source": "c2pa", "value": "DALL·E"}],
+                                      "exief": {"status": "ok", "verdict": "confirmed", "untrustworthy": []}}}
         return {"fake_prob": 0.05}
 
     job = run(job_for(user), worker, outcome)
     assert job.verdict == Job.Verdict.FAKE
     assert {r["code"] for r in job.verdict_reasons} == {"model_consensus", "metadata_ai_indicator"}
-    del a, b
 
 
 def test_no_face_everywhere_is_not_charged(user, job_for, worker):

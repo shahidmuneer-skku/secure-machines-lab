@@ -628,6 +628,21 @@
         "auc": "AUC {value}",
         "detail": "{files, plural, one {라벨링된 파일 #개} other {라벨링된 파일 #개}} (조작 {fake}개, 진본 {authentic}개) · 정밀도 {precision} · 재현율 {recall}",
         "notMeasured": "아직 라벨링된 파일이 없습니다"
+      },
+      "exief": {
+        "name": "EXIEF 메타데이터 신호",
+        "score": "점수 {score}",
+        "weight": "가중치 {weight}",
+        "verdict": {
+          "confirmed": "확정",
+          "suspect": "의심",
+          "weak": "약함",
+          "unknown": "신호 없음"
+        },
+        "counted": "AI 생성 분석에 조작 확률 {probability}로 반영됨",
+        "notCounted": "신호 없음 — 반영되지 않음",
+        "notTrusted": "반영되지 않음: 메타데이터가 손상되었거나 변조된 것으로 보입니다",
+        "signalWeight": "등급 {tier}, +{weight}"
       }
     }
   },
@@ -845,7 +860,9 @@
         "faceCropHint": "탐지 모델별로 설정하며, 해당 모델을 사용할 때 적용됩니다.",
         "faceCropFor": "{model} 얼굴 자르기",
         "faceCropAlways": "항상 얼굴로 자름",
-        "faceCropNone": "지원 안 함"
+        "faceCropNone": "지원 안 함",
+        "exiefWeight": "메타데이터(EXIEF) 가중치",
+        "exiefWeightHint": "AI 생성 분석에서 메타데이터 판정이 차지하는 비중입니다(가중치 1인 탐지기 기준). 확정은 조작 100%, 의심 80%, 약함 60%로 계산되며 신호가 없으면 반영되지 않습니다. 0이면 끕니다."
       },
       "heatmap": "히트맵",
       "heatmapFor": "사용자에게 {model}의 히트맵 표시",
@@ -876,7 +893,9 @@
         "measuredValue": "정확도 {accuracy} · AUC {auc}",
         "measuredDetail": "{files, plural, one {파일 #개} other {파일 #개}} · 정밀도 {precision} · 재현율 {recall}",
         "notMeasured": "아직 라벨링된 파일이 없습니다",
-        "legend": "진본 판정 ×: 탐지기가 진본으로 판정하면 가중치에 이 값을 곱합니다. ‘진본 판정을 두 분석에 반영’을 켜면 그 판정이 다른 분석에도 반영됩니다. 측정 정확도는 진본 또는 해당 탐지기 분석 유형으로 지정된 파일을 플랫폼의 조작 판정 기준값으로 계산합니다."
+        "legend": "진본 판정 ×: 탐지기가 진본으로 판정하면 가중치에 이 값을 곱합니다. ‘진본 판정을 두 분석에 반영’을 켜면 그 판정이 다른 분석에도 반영됩니다. 측정 정확도는 진본 또는 해당 탐지기 분석 유형으로 지정된 파일을 플랫폼의 조작 판정 기준값으로 계산합니다.",
+        "exief": "EXIEF 메타데이터",
+        "exiefNote": "메타데이터 신호, AI 생성 분석 가중치 {weight}(‘모든 작업에 실행할 검사’에서 설정). 진본 또는 AI 생성으로 지정된 파일로 측정합니다."
       }
     },
     "pricing": {

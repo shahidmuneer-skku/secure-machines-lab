@@ -6229,11 +6229,20 @@
                         "items": {
                             "$ref": "#/components/schemas/AdminJobDetector"
                         }
+                    },
+                    "exief": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ExiefBreakdown"
+                            }
+                        ],
+                        "nullable": true
                     }
                 },
                 "required": [
                     "detectors",
                     "duration_seconds",
+                    "exief",
                     "job_id",
                     "media_type",
                     "threshold",
@@ -8381,10 +8390,25 @@
                     },
                     "long_video": {
                         "$ref": "#/components/schemas/SetupLongVideo"
+                    },
+                    "exief_weight": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Weight of the EXIEF metadata verdict (0 = off)."
+                    },
+                    "exief_measured": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorAccuracy"
+                            }
+                        ],
+                        "nullable": true
                     }
                 },
                 "required": [
                     "checks",
+                    "exief_measured",
+                    "exief_weight",
                     "long_video"
                 ]
             },
@@ -8489,6 +8513,110 @@
                 ],
                 "type": "string",
                 "description": "* `heatmap` - heatmap\n* `face` - face\n* `video` - video"
+            },
+            "ExiefBreakdown": {
+                "type": "object",
+                "description": "The EXIEF metadata scorer's result for one file (admin only).",
+                "properties": {
+                    "verdict": {
+                        "$ref": "#/components/schemas/ExiefBreakdownVerdictEnum"
+                    },
+                    "score": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "generator": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "signals": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ExiefSignal"
+                        }
+                    },
+                    "untrustworthy": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Why the metadata was not counted (damaged or altered)."
+                    },
+                    "counted": {
+                        "type": "boolean",
+                        "description": "Whether it counted in the AI-generation analysis."
+                    },
+                    "fake_probability": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true,
+                        "description": "Its vote when counted."
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "measured": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DetectorAccuracy"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "counted",
+                    "fake_probability",
+                    "generator",
+                    "measured",
+                    "score",
+                    "signals",
+                    "untrustworthy",
+                    "verdict",
+                    "weight"
+                ]
+            },
+            "ExiefBreakdownVerdictEnum": {
+                "enum": [
+                    "confirmed",
+                    "suspect",
+                    "weak",
+                    "unknown"
+                ],
+                "type": "string",
+                "description": "* `confirmed` - confirmed\n* `suspect` - suspect\n* `weak` - weak\n* `unknown` - unknown"
+            },
+            "ExiefSignal": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "tier": {
+                        "type": "integer"
+                    },
+                    "weight": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "evidence": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "evidence",
+                    "id",
+                    "label",
+                    "tier",
+                    "weight"
+                ]
             },
             "Explanation": {
                 "type": "object",
@@ -10862,6 +10990,12 @@
                             "nullable": true
                         },
                         "description": "{model_id: true|false|null}; null returns the detector to its default."
+                    },
+                    "exief_weight": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 10,
+                        "minimum": 0
                     }
                 }
             },
@@ -10962,6 +11096,11 @@
                     },
                     "guest_trial_models": {
                         "description": "Model variant ids used for guest trials. Empty = the default image set."
+                    },
+                    "exief_weight": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off)."
                     },
                     "signup_bonus_credits": {
                         "type": "integer",
@@ -11558,6 +11697,11 @@
                     "guest_trial_models": {
                         "description": "Model variant ids used for guest trials. Empty = the default image set."
                     },
+                    "exief_weight": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off)."
+                    },
                     "signup_bonus_credits": {
                         "type": "integer",
                         "maximum": 2147483647,
@@ -11630,6 +11774,7 @@
                     "announcement",
                     "api_access_requires_plan",
                     "daily_free_credits",
+                    "exief_weight",
                     "fake_threshold",
                     "free_max_inflight_tasks",
                     "free_retention_days",

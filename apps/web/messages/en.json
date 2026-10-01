@@ -628,6 +628,21 @@
         "auc": "AUC {value}",
         "detail": "{files, plural, one {# labelled file} other {# labelled files}} ({fake} fake, {authentic} authentic) · precision {precision} · recall {recall}",
         "notMeasured": "No labelled files yet"
+      },
+      "exief": {
+        "name": "EXIEF metadata signals",
+        "score": "Score {score}",
+        "weight": "Weight {weight}",
+        "verdict": {
+          "confirmed": "Confirmed",
+          "suspect": "Suspect",
+          "weak": "Weak",
+          "unknown": "No signal"
+        },
+        "counted": "Counted as {probability} fake in the AI-generation analysis",
+        "notCounted": "No signal — not counted",
+        "notTrusted": "Not counted: the metadata looks damaged or altered",
+        "signalWeight": "tier {tier}, +{weight}"
       }
     }
   },
@@ -845,7 +860,9 @@
         "faceCropHint": "Set per detector; it applies whenever that detector is the one in use.",
         "faceCropFor": "Face cropping for {model}",
         "faceCropAlways": "Always crops to faces",
-        "faceCropNone": "Not supported"
+        "faceCropNone": "Not supported",
+        "exiefWeight": "Metadata (EXIEF) weight",
+        "exiefWeightHint": "How much the metadata verdict counts in the AI-generation analysis, relative to one detector of weight 1. Confirmed counts as 100% fake, suspect 80%, weak 60%; no signal adds nothing. 0 turns it off."
       },
       "heatmap": "Heatmap",
       "heatmapFor": "Show {model}'s heatmap to users",
@@ -876,7 +893,9 @@
         "measuredValue": "{accuracy} accuracy · AUC {auc}",
         "measuredDetail": "{files, plural, one {# file} other {# files}} · precision {precision} · recall {recall}",
         "notMeasured": "No labelled files yet",
-        "legend": "Authentic ×: a detector's weight is multiplied by this when it says authentic; with “Authentic counts in both” that answer also counts in the other analysis. Measured accuracy uses the files labelled authentic or with the detector's own analysis, at the platform's fake threshold."
+        "legend": "Authentic ×: a detector's weight is multiplied by this when it says authentic; with “Authentic counts in both” that answer also counts in the other analysis. Measured accuracy uses the files labelled authentic or with the detector's own analysis, at the platform's fake threshold.",
+        "exief": "EXIEF metadata",
+        "exiefNote": "Metadata signals, weight {weight} in the AI-generation analysis (set under Checks on every job). Measured on files labelled authentic or AI-generated."
       }
     },
     "pricing": {

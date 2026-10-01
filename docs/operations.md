@@ -153,11 +153,17 @@ analysis too, but only alongside that analysis's own detectors. SKKU-P2 is set t
 (owner, 2026-10-01; `config/models.yaml`). Verdicts and video timelines use the same rule; jobs that
 already finished keep their result.
 
-**AI-generation markers.** A definite marker in the file's metadata (C2PA / IPTC declaration,
-embedded Stable Diffusion / ComfyUI parameters, a generator in the Software tag) labels the file
-"Likely AI-generated" whatever the detectors say; a weak hint (a generator merely mentioned in the
-metadata) does so only when the detectors judged the file fake. Invisible pixel watermarks are not
-decoded.
+**AI-generation markers (EXIEF).** The metadata check runs ExifTool (from the `meta_data` conda env,
+or `EXIFTOOL_PATH`) and scores every tag with EXIEF, the owner's signal set copied into
+`apps/worker/sml_worker/exief` (to update it, copy `signals.py` and `pipeline.py` from
+`~/exief_signals/aigc-studio/server/analyzer` over the copies unchanged and restart the workers). Its
+verdict is a weighted vote in the AI-generation analysis: confirmed counts as 100 % fake, suspect 80 %,
+weak 60 %, and "no signal" adds nothing, because stripped metadata proves nothing. The weight (default 3,
+relative to one detector of weight 1; 0 turns it off) is under Admin → Models → *Checks on every job*. It
+is not counted when the metadata is damaged or altered: an ExifTool error or corruption warning, or a C2PA
+manifest whose `validation_state` is Invalid (a signer that is merely not on c2patool's trust list, like
+OpenAI's, is still valid). Admins see what EXIEF found on the result page and its measured accuracy on
+Admin → Models. Invisible pixel watermarks are not decoded.
 
 **Anti-spoofing check fails with CONFIG_ERROR.** The `CVPR24-FAS` code and weights are not on this
 server (`run_fas_analysis.py` looks in `fakedetector/fakedetector/CVPR24-FAS`). Leave the check off

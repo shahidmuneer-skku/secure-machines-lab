@@ -111,9 +111,11 @@ def reasons(job: Job) -> list[dict[str, Any]]:
 
 
 def ai_generated(job: Job) -> bool:
-    """Flagged "likely AI-generated" by metadata markers (see results._metadata_flags)."""
+    """A fake verdict backed by a confirmed generator declaration in the metadata (EXIEF). Jobs
+    finished before EXIEF counted any metadata reason they carry."""
     return job.verdict == Job.Verdict.FAKE and any(
-        r.get("code") == "metadata_ai_indicator" for r in job.verdict_reasons or [])
+        r.get("code") == "metadata_ai_indicator" and (r.get("strength") == "strong" or "exief_verdict" not in r)
+        for r in job.verdict_reasons or [])
 
 
 # Detector family → the name of the result users see.

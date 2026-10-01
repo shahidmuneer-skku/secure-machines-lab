@@ -1620,6 +1620,7 @@ export interface components {
             duration_seconds: number | null;
             truth: components["schemas"]["JobTruth"];
             detectors: components["schemas"]["AdminJobDetector"][];
+            exief: components["schemas"]["ExiefBreakdown"] | null;
         };
         AdminJobEvent: {
             readonly id: number;
@@ -2203,6 +2204,12 @@ export interface components {
         DetectionSetup: {
             checks: components["schemas"]["SetupCheck"][];
             long_video: components["schemas"]["SetupLongVideo"];
+            /**
+             * Format: double
+             * @description Weight of the EXIEF metadata verdict (0 = off).
+             */
+            exief_weight: number;
+            exief_measured: components["schemas"]["DetectorAccuracy"] | null;
         };
         /** @description Measured on files an administrator labelled: authentic ones and those of the detector's analysis. */
         DetectorAccuracy: {
@@ -2242,6 +2249,40 @@ export interface components {
          * @enum {string}
          */
         EvidenceKindEnum: "heatmap" | "face" | "video";
+        /** @description The EXIEF metadata scorer's result for one file (admin only). */
+        ExiefBreakdown: {
+            verdict: components["schemas"]["ExiefBreakdownVerdictEnum"];
+            score: number | null;
+            generator: string | null;
+            signals: components["schemas"]["ExiefSignal"][];
+            /** @description Why the metadata was not counted (damaged or altered). */
+            untrustworthy: string[];
+            /** @description Whether it counted in the AI-generation analysis. */
+            counted: boolean;
+            /**
+             * Format: double
+             * @description Its vote when counted.
+             */
+            fake_probability: number | null;
+            /** Format: double */
+            weight: number;
+            measured: components["schemas"]["DetectorAccuracy"] | null;
+        };
+        /**
+         * @description * `confirmed` - confirmed
+         *     * `suspect` - suspect
+         *     * `weak` - weak
+         *     * `unknown` - unknown
+         * @enum {string}
+         */
+        ExiefBreakdownVerdictEnum: "confirmed" | "suspect" | "weak" | "unknown";
+        ExiefSignal: {
+            id: string;
+            label: string;
+            tier: number;
+            weight: number | null;
+            evidence: string[];
+        };
         Explanation: {
             /** Format: uuid */
             readonly id: string;
@@ -2960,6 +3001,8 @@ export interface components {
             long_video_face_crops?: {
                 [key: string]: boolean | null;
             };
+            /** Format: double */
+            exief_weight?: number;
         };
         PatchedMeRequest: {
             display_name?: string;
@@ -2989,6 +3032,11 @@ export interface components {
             guest_trial_images_per_day?: number;
             /** @description Model variant ids used for guest trials. Empty = the default image set. */
             guest_trial_models?: unknown;
+            /**
+             * Format: double
+             * @description Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off).
+             */
+            exief_weight?: number;
             signup_bonus_credits?: number;
             signup_bonus_expiry_days?: number;
             daily_free_credits?: number;
@@ -3146,6 +3194,11 @@ export interface components {
             guest_trial_images_per_day: number;
             /** @description Model variant ids used for guest trials. Empty = the default image set. */
             guest_trial_models: unknown;
+            /**
+             * Format: double
+             * @description Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off).
+             */
+            exief_weight: number;
             signup_bonus_credits: number;
             signup_bonus_expiry_days: number;
             daily_free_credits: number;
