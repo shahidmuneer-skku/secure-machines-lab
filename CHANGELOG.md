@@ -68,6 +68,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Video jobs could stay "running": a worker's result was lost when the API failed to record it (a
   migration ran before the API worker restarted). Recording now retries, and workers keep each final
   result in Redis for the stale-task sweep to replay.
+- Restarting a model worker (deploys, systemctl) lost the tasks it was running or holding: the pool
+  processes received the stop signal and Celery acknowledged their messages as failed. Tasks now go
+  back to the queue, and the model subprocess is stopped instead of running on without a worker.
 - SKKU (BEYBI) video: dlib loaded CUDA 12.9 cuSOLVER against PyTorch's cuBLAS 12.1; the env now puts
   PyTorch's CUDA libraries first.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors

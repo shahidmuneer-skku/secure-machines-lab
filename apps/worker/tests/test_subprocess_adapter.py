@@ -163,3 +163,46 @@ def test_relocated_envs_get_their_own_ca_certificates(worker_env, monkeypatch):
     certs.parent.mkdir()
     certs.write_text("-----BEGIN CERTIFICATE-----\n")
     assert procenv.model_env("fake")["SSL_CERT_FILE"] == str(certs)
+
+
+def test_a_worker_shutdown_stops_the_model_and_requeues_the_task(worker_env, ctx_factory, image, monkeypatch, tmp_path):
+    """A restart signals the pool processes: the model must not keep running (and holding the GPU)
+    on its own, and the task must go back to the queue instead of being acknowledged as failed."""
+    import time as real_time
+
+    from celery.exceptions import Reject
+
+    from sml_worker import app as worker_app
+    from sml_worker.adapters import subprocess_cli
+
+    pidfile = tmp_path / "model.pid"
+    write_script(worker_env["models"], f"import os, time\nopen({str(pidfile)!r}, 'w').write(str(os.getpid()))\n"
+                                       "time.sleep(60)\n")
+    original_sleep = real_time.sleep
+
+    def sleep(seconds):  # type: ignore[no-untyped-def]
+        if pidfile.exists():  # the worker receives SIGTERM while the model runs
+            raise SystemExit(-15)
+        original_sleep(seconds)
+
+    monkeypatch.setattr(subprocess_cli.time, "sleep", sleep)
+    with pytest.raises(SystemExit):
+        adapter(timeout=30).run(image, "image", ctx_factory())
+    pid = int(pidfile.read_text())
+
+    def stopped() -> bool:  # gone, or a zombie waiting to be reaped (it holds no GPU memory)
+        status = Path(f"/proc/{pid}/status")
+        return not status.exists() or "State:\tZ" in status.read_text()
+
+    deadline = real_time.monotonic() + 5
+    while not stopped() and real_time.monotonic() < deadline:
+        original_sleep(0.1)
+    assert stopped(), "the model process outlived the worker"
+
+    def shutdown(app, envelope):  # type: ignore[no-untyped-def]
+        raise SystemExit(-15)
+
+    monkeypatch.setattr("sml_worker.runner.run_envelope", shutdown)
+    with pytest.raises(Reject) as rejected:
+        worker_app.run_task.run({"task_id": "t-1", "kind": "model"})
+    assert rejected.value.requeue is True

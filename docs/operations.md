@@ -158,6 +158,9 @@ message (for example a migration ran while the old API Celery worker was still u
 retries for about an hour, and every minute `requeue_stale` replays the copy the worker keeps in
 Redis (`sml:task-result:<task id>`, 24 h) once it is a minute old, so the job completes on its own.
 Deploy order: migrate, then restart `sml-celery` and the workers straight away (`deploy/release.sh`).
+Restarting a model worker is safe at any time: the tasks it was running or waiting to start go back
+to the queue (they restart from the beginning on the next worker) and their model processes are
+stopped.
 
 **A video model waits for "20 GB free".** Admission reserves a model's highest observed GPU memory
 for that media type (×1.25, capped at the card): Xception once used 19 GB on a long video, so its

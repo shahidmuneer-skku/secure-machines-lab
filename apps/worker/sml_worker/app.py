@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from celery import Celery
+from celery.exceptions import Reject
 from celery.signals import worker_process_init, worker_shutdown
 from kombu import Exchange, Queue
 
@@ -38,7 +39,13 @@ app.conf.task_queues = [Queue(n, Exchange(n, type="direct"), routing_key=n, queu
 def run_task(self: Any, envelope: dict[str, Any]) -> None:
     from .runner import run_envelope
 
-    run_envelope(app, envelope)
+    try:
+        run_envelope(app, envelope)
+    except (SystemExit, KeyboardInterrupt) as exc:
+        # A restart (deploy, systemctl) signals the pool processes too; Celery would record that as a
+        # failed task and acknowledge the message, losing it. Hand it back to the queue instead.
+        logger.warning("Worker shutting down; requeueing task %s", envelope.get("task_id"))
+        raise Reject(exc, requeue=True) from exc
 
 
 @worker_process_init.connect

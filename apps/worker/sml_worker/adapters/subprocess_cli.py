@@ -165,7 +165,9 @@ class SubprocessAdapter:
                     # Time-based estimate so the bar keeps moving for image models.
                     ctx.progress(min(90.0, 5 + 85 * (1 - 1 / (1 + elapsed / 20))), "Running inference")
                 time.sleep(1.0)
-        except Canceled:
+        except (Canceled, SystemExit, KeyboardInterrupt):
+            # Canceled by the user, or the worker is shutting down: the model runs in its own session,
+            # so stop it explicitly or it keeps the GPU busy after we are gone.
             self._kill(proc)
             raise
         for t in threads:
