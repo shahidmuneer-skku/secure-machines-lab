@@ -12,7 +12,7 @@ import binascii
 
 from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiTypes, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import serializers, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -145,10 +145,12 @@ class MediaContentView(APIView):
     permission_classes = [IsAuthenticated, require_scope("jobs:read")]
 
     @extend_schema(tags=["uploads"], responses={(200, "application/octet-stream"): OpenApiTypes.BINARY},
+                   parameters=[OpenApiParameter("download", bool, description="Save as a file instead of showing it")],
                    summary="Download the original file")
     def get(self, request: Request, pk: str) -> HttpResponse:
         media = get_object_or_404(visible_media(request), pk=pk, status=MediaObject.Status.READY)
-        return serve_object(media.storage_key, content_type=media.content_type, filename=media.original_name)
+        return serve_object(media.storage_key, content_type=media.content_type, filename=media.original_name,
+                            inline=request.query_params.get("download") not in ("1", "true"))
 
 
 class MediaThumbnailView(APIView):

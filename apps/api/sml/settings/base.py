@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "sml.jobs",
     "sml.reports",
     "sml.news",
+    "sml.studio",
     "sml.trial",
     "sml.dashboard",
     "sml.adminapi",
@@ -333,6 +334,7 @@ SPECTACULAR_SETTINGS = {
         "AnalysisEnum": ["face_swap", "ai_generated"],
         "FamilyEnum": ["deepfake", "ai_generated"],
         "TruthEnum": "sml.jobs.models.Job.Truth",
+        "StudioModeEnum": "sml.studio.registry.MODES",
         "CheckIdEnum": ["face", "safety", "fas"],
         "ServiceStatusEnum": ["ok", "error"],
         "PaymentModeEnum": ["off", "test", "live"],
@@ -408,6 +410,7 @@ RABBITMQ_VHOST = env("RABBITMQ_VHOST", default="sml")
 # --- Model registry / workers --------------------------------------------------
 MODELS_CONFIG_PATH = Path(env("MODELS_CONFIG_PATH", default=str(REPO_ROOT / "config" / "models.yaml")))
 ROLES_CONFIG_PATH = Path(env("ROLES_CONFIG_PATH", default=str(REPO_ROOT / "config" / "roles.yaml")))
+STUDIO_CONFIG_PATH = Path(env("STUDIO_CONFIG_PATH", default=str(REPO_ROOT / "config" / "studio.yaml")))
 
 # --- Secrets for derived material --------------------------------------------
 API_KEY_PEPPER = env("API_KEY_PEPPER", default="")

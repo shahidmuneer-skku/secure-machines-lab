@@ -159,3 +159,21 @@ billing.
 and anti-spoofing checks that run alongside the models) use the same `conda_env` / `cwd` /
 `argv` fields; see the existing entries at the end of `config/models.yaml`. The `metadata` audit
 (EXIF / XMP / C2PA) is built in and always runs.
+
+## Image studio models (generation and editing)
+
+Studio models are diffusers pipelines listed in `config/studio.yaml` (ADR 0012), not scripts. To add
+one: download it into the Hugging Face cache of the service user (`hf download <repo>`), make sure the
+`imagegen` env's diffusers has its pipeline class, and add an entry with `repo`, `pipeline`, `modes`,
+`license` / `commercial`, `work_gb` (GPU memory on top of the weights while generating; the server logs
+the peak after each request) and:
+
+- `call`: which pipeline argument each studio control maps to (`steps`, `guidance`, `negative_prompt`,
+  `images`; `size: true` to pass width/height, `generate` for generation only) and `fixed` arguments
+  passed on every call. The server refuses to start a request whose arguments the pipeline lacks.
+- `capabilities`: what users are offered — `max_references`, `aspect_ratios` (`"3:2": [w, h]`),
+  `steps` / `guidance` ranges with defaults, `negative_prompt`, `transparent`, `max_outputs`. The API
+  validates against these and the studio page renders exactly these controls.
+
+Restart the resident service, then try the model from the studio page as an administrator (the model
+picker loads it on demand) before choosing it for users on Admin → Studio.

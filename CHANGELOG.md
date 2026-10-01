@@ -5,6 +5,15 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 ## [Unreleased] — first release candidate
 
 ### Added
+- Image studio (`/app/studio`): generate images from a prompt or edit up to 3–10 of your images by
+  instruction, with formats, image count, steps, guidance, seed, negative prompt and transparent
+  backgrounds offered according to the model the administrator chose for each mode (Admin → Studio:
+  Qwen-Image-2512, Qwen-Image-Edit-2511, Qwen-Image-2.1, FLUX.2 [klein] 4B). The admin's model stays
+  loaded on the studio GPU. 3 credits per generated and 2 per edited image, charged only for images
+  delivered. Prompts with sexual or violent content and NSFW images are refused; editing a photo of a
+  person needs the user's confirmation that they have consent, recorded with the job. Results can be
+  downloaded, edited again or analysed by the detectors; history, live progress and cancellation as for
+  detection.
 - Detection of images and videos combined into one weighted verdict; EXIF / XMP / C2PA
   AI-generation markers; heatmaps and face maps; face, safety and anti-spoofing checks.
 - Long-form video scanning, news verification agent, on-demand "Explain why".

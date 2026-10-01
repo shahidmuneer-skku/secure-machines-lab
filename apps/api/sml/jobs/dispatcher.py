@@ -68,7 +68,23 @@ def envelope(task: JobTask) -> dict[str, Any]:
         "dispatched_at": timezone.now().isoformat(),
         "forensics": _forensics(job) if task.kind == JobTask.Kind.NEWS else None,
         "news_case": _news_case(job) if task.kind == JobTask.Kind.NEWS else None,
+        "studio": _studio(job) if task.kind == JobTask.Kind.STUDIO else None,
     }
+
+
+def _studio(job: Job) -> dict[str, Any]:
+    """The studio request: the validated parameters, the reference files and the prompt-check model."""
+    from sml.core.models import PlatformSettings
+    from sml.media.models import MediaObject
+
+    params = dict(job.options.get("studio") or {})
+    ids = params.pop("references", [])
+    found = {str(m.pk): m for m in MediaObject.objects.filter(pk__in=ids)}
+    params["references"] = [{"storage_key": found[i].storage_key, "extension": found[i].extension}
+                            for i in ids if i in found]
+    params["consent"] = bool((job.options.get("consent") or {}).get("confirmed"))
+    params["safety_model"] = PlatformSettings.load().reasoning_model
+    return params
 
 
 def _news_case(job: Job) -> dict[str, Any] | None:

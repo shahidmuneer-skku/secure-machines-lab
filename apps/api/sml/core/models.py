@@ -58,6 +58,13 @@ class PlatformSettings(models.Model):
         help_text="Per long-form detector: crop to faces before scoring ({model_id: true|false}). "
                   "Missing = the detector's default.",
     )
+    # Image studio (owner, 2026-10-01): the model users get for each mode (config/studio.yaml). It stays
+    # loaded on the studio GPU; users never choose it.
+    studio_enabled = models.BooleanField(default=True)
+    studio_generate_model = models.CharField(max_length=64, blank=True, default="qwen-image-2512",
+                                             help_text="Studio model for text-to-image. Empty = generation off.")
+    studio_edit_model = models.CharField(max_length=64, blank=True, default="qwen-image-edit-2511",
+                                         help_text="Studio model for editing reference images. Empty = editing off.")
     exief_weight = models.FloatField(
         default=3.0,
         help_text="Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one "

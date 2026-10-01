@@ -19,6 +19,7 @@ CAPABILITIES: list[tuple[str, str]] = [
     ("run_long_video", "Run long-form video scans"),
     ("run_news_verification", "Run multimedia news verification"),
     ("use_reasoning", "Request AI reasoning (Explain why)"),
+    ("use_studio", "Generate and edit images in the image studio"),
     ("manage_own_api_keys", "Create and manage own API keys"),
     ("purchase_credits", "Buy credit packs and subscriptions"),
     # staff
@@ -147,7 +148,7 @@ class AccessPolicy(models.Model):
     the intersection of role capabilities and this policy.
     """
 
-    MODULES = ["detect", "long_video", "news"]
+    MODULES = ["detect", "long_video", "news", "studio"]
     AUDIT_STEPS = ["face", "safety", "fas", "metadata"]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="access_policy")

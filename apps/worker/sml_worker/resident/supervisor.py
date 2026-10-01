@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 HOOK_DIR = Path(__file__).resolve().parent / "hook"
 SERVER_PY = Path(__file__).resolve().parent / "server.py"
+STUDIO_SERVER_PY = Path(__file__).resolve().parents[1] / "studio" / "server.py"
 STATUS_KEY = "sml:resident:{}"
 STATUS_TTL = 30
 WARMUP_STEM = "sml-resident-warmup"
@@ -53,6 +54,7 @@ class ServerSpec:
     env: dict[str, str] = field(default_factory=dict)
     torch_load_cache: bool = False
     max_run_seconds: int = 0
+    kind: str = "detector"  # detector (server.py for a model script) | studio (studio/server.py)
 
     @property
     def socket(self) -> str:
@@ -88,7 +90,20 @@ def servers() -> list[ServerSpec]:
                     "timeout_seconds", raw_registry().get("defaults", {}).get("timeout_seconds", 300)))
                     for m in media if m in model.get("media", {})),
             ))
-    return out
+    return out + studio_servers()
+
+
+def studio_servers() -> list[ServerSpec]:
+    """The image studio's server (config/studio.yaml), when its conda env is installed."""
+    from .. import studio
+
+    srv = studio.studio_config().get("server") or {}
+    env_name = srv.get("conda_env", "")
+    if not srv or srv.get("enabled") is False or not config().conda_python(env_name).exists():
+        return []
+    return [ServerSpec(id=studio.SERVER_ID, model_id=studio.SERVER_ID, media=[], script=str(STUDIO_SERVER_PY),
+                       conda_env=env_name, gpu=str(srv.get("gpu", "0")), kind="studio",
+                       env={"HF_HUB_OFFLINE": "1"})]
 
 
 # --- what detector workers use --------------------------------------------------------------------
@@ -128,6 +143,8 @@ class Running:
     ready_at: float | None = None
     restarts: int = 0
     next_start: float = 0.0
+    sent_keep: list[str] | None = None  # studio: the admin's models last handed to the server
+    detail: dict[str, Any] | None = None  # studio: the server's own status
 
 
 def _start(run: Running) -> None:
@@ -137,19 +154,27 @@ def _start(run: Running) -> None:
     if not (images / "warmup.png").exists() and (c.models_root / "iu.png").exists():
         (images / "warmup.png").symlink_to(c.models_root / "iu.png")
     cfg_path = resident_dir() / f"{spec.id}.json"
-    cfg_path.write_text(json.dumps({
-        "socket": spec.socket, "script": spec.script, "mode": spec.mode, "cache": spec.cache,
-        "cwd": os.path.dirname(spec.script), "torch_load_cache": spec.torch_load_cache,
-        "max_run_seconds": spec.max_run_seconds,
-        "warmup": [{"argv": argv, "cwd": str(c.models_root)} for argv in spec.warmup],
-    }))
+    if spec.kind == "studio":
+        from .. import studio
+
+        run.sent_keep = studio_keep()
+        cfg_path.write_text(json.dumps(studio.server_config(spec.socket, run.sent_keep)))
+        server_py = STUDIO_SERVER_PY
+    else:
+        cfg_path.write_text(json.dumps({
+            "socket": spec.socket, "script": spec.script, "mode": spec.mode, "cache": spec.cache,
+            "cwd": os.path.dirname(spec.script), "torch_load_cache": spec.torch_load_cache,
+            "max_run_seconds": spec.max_run_seconds,
+            "warmup": [{"argv": argv, "cwd": str(c.models_root)} for argv in spec.warmup],
+        }))
+        server_py = SERVER_PY
     env = model_env(spec.conda_env)
     env.update({"CUDA_DEVICE_ORDER": "PCI_BUS_ID", "CUDA_VISIBLE_DEVICES": spec.gpu, **spec.env})
     log_path = REPO_ROOT / "var" / "log" / f"resident-{spec.id}.log"
     with contextlib.suppress(FileNotFoundError):
         os.unlink(spec.socket)
     log_file = log_path.open("ab")
-    run.proc = subprocess.Popen([str(c.conda_python(spec.conda_env)), str(SERVER_PY), "--config", str(cfg_path)],
+    run.proc = subprocess.Popen([str(c.conda_python(spec.conda_env)), str(server_py), "--config", str(cfg_path)],
                                 cwd=os.path.dirname(spec.script), env=env, stdout=log_file, stderr=log_file,
                                 start_new_session=True)
     log_file.close()
@@ -165,10 +190,36 @@ def _cleanup_warmup_outputs() -> None:
                 path.unlink()
 
 
+def studio_keep() -> list[str]:
+    from .. import studio
+
+    try:
+        return studio.parse_keep(redis_client().get(studio.KEEP_KEY))
+    except redis.RedisError:
+        return []
+
+
+def _tend_studio(run: Running) -> None:
+    """Hand the admin's current models to the studio server and read its status."""
+    from ..studio import client
+
+    keep = studio_keep()
+    try:
+        if keep != run.sent_keep:
+            client.call({"op": "keep", "models": keep}, timeout=5, path=run.spec.socket)
+            run.sent_keep = keep
+            logger.info("Studio keeps %s loaded", keep or "nothing")
+        run.detail = client.call({"op": "status"}, timeout=5, path=run.spec.socket).get("status")
+    except (OSError, ValueError, client.StudioUnavailable):
+        logger.debug("Studio server not answering", exc_info=True)
+
+
 def _publish(run: Running, state: str) -> None:
     status = {"state": state, "model": run.spec.model_id, "media": run.spec.media, "gpu": run.spec.gpu,
               "pid": run.proc.pid if run.proc else None, "started_at": run.started, "ready_at": run.ready_at,
-              "restarts": run.restarts, "script": run.spec.script}
+              "restarts": run.restarts, "script": run.spec.script, "kind": run.spec.kind}
+    if run.detail is not None:
+        status["studio"] = run.detail
     with contextlib.suppress(redis.RedisError):
         redis_client().set(STATUS_KEY.format(run.spec.id), json.dumps(status), ex=STATUS_TTL)
 
@@ -197,6 +248,7 @@ def supervise(only: list[str] | None = None) -> None:
                         run.restarts += 1
                         run.next_start = now + min(300, 10 * 2 ** min(run.restarts, 5))
                         run.proc = None
+                        run.detail = None
                     if now >= run.next_start:
                         _start(run)
                     _publish(run, "down" if run.proc is None else "loading")
@@ -205,6 +257,8 @@ def supervise(only: list[str] | None = None) -> None:
                     run.ready_at = now
                     _cleanup_warmup_outputs()
                     logger.info("Resident server %s ready after %.0fs", run.spec.id, now - run.started)
+                if run.spec.kind == "studio" and run.ready_at:
+                    _tend_studio(run)
                 _publish(run, "ready" if run.ready_at else "loading")
             time.sleep(5)
     finally:

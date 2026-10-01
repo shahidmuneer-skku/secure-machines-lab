@@ -156,11 +156,12 @@
                                 "enum": [
                                     "detect",
                                     "long_video",
-                                    "news"
+                                    "news",
+                                    "studio"
                                 ]
                             }
                         },
-                        "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification",
+                        "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification\n* `studio` - Image studio",
                         "explode": true,
                         "style": "form"
                     },
@@ -1814,6 +1815,95 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/PlatformSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/studio": {
+            "get": {
+                "operationId": "admin_studio_retrieve",
+                "description": "Admin → Studio: which model users get per mode, and the studio server's state.",
+                "summary": "Image studio models and server",
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudioAdmin"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin_studio_partial_update",
+                "description": "Admin → Studio: which model users get per mode, and the studio server's state.",
+                "summary": "Choose the studio's model per mode (it stays loaded on the studio GPU)",
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStudioAdminUpdateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStudioAdminUpdateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedStudioAdminUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudioAdmin"
                                 }
                             }
                         },
@@ -3967,11 +4057,12 @@
                                 "enum": [
                                     "detect",
                                     "long_video",
-                                    "news"
+                                    "news",
+                                    "studio"
                                 ]
                             }
                         },
-                        "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification",
+                        "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification\n* `studio` - Image studio",
                         "explode": true,
                         "style": "form"
                     },
@@ -5054,6 +5145,14 @@
                 "summary": "Download the original file",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "download",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Save as a file instead of showing it"
+                    },
+                    {
                         "in": "path",
                         "name": "id",
                         "schema": {
@@ -5383,6 +5482,205 @@
                                 "schema": {
                                     "type": "string",
                                     "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/studio/config": {
+            "get": {
+                "operationId": "studio_config_retrieve",
+                "summary": "What the image studio offers right now (controls per mode, prices)",
+                "tags": [
+                    "studio"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudioConfig"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/studio/jobs": {
+            "get": {
+                "operationId": "studio_jobs_list",
+                "summary": "My image studio history (newest first)",
+                "parameters": [
+                    {
+                        "name": "cursor",
+                        "required": false,
+                        "in": "query",
+                        "description": "The pagination cursor value.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "studio"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStudioJobList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "studio_jobs_create",
+                "summary": "Generate or edit images. Charged per delivered image; follow progress via SSE.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "studio"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StudioJobCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StudioJobCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StudioJobCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudioJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/studio/jobs/{id}": {
+            "get": {
+                "operationId": "studio_jobs_retrieve",
+                "summary": "One studio job with its images",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "studio"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudioJob"
                                 }
                             }
                         },
@@ -9236,10 +9534,11 @@
                 "enum": [
                     "detect",
                     "long_video",
-                    "news"
+                    "news",
+                    "studio"
                 ],
                 "type": "string",
-                "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification"
+                "description": "* `detect` - Detection\n* `long_video` - Long-form video\n* `news` - News verification\n* `studio` - Image studio"
             },
             "JobList": {
                 "type": "object",
@@ -10096,10 +10395,11 @@
                 "enum": [
                     "detect",
                     "long_video",
-                    "news"
+                    "news",
+                    "studio"
                 ],
                 "type": "string",
-                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news"
+                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news\n* `studio` - studio"
             },
             "ModuleInfo": {
                 "type": "object",
@@ -10819,6 +11119,34 @@
                     }
                 }
             },
+            "PaginatedStudioJobList": {
+                "type": "object",
+                "required": [
+                    "next",
+                    "previous",
+                    "results"
+                ],
+                "properties": {
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cD00ODY%3D\""
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cj0xJnA9NDg3"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioJob"
+                        }
+                    }
+                }
+            },
             "PaginatedWebhookEventList": {
                 "type": "object",
                 "required": [
@@ -11105,6 +11433,19 @@
                     "guest_trial_models": {
                         "description": "Model variant ids used for guest trials. Empty = the default image set."
                     },
+                    "studio_enabled": {
+                        "type": "boolean"
+                    },
+                    "studio_generate_model": {
+                        "type": "string",
+                        "description": "Studio model for text-to-image. Empty = generation off.",
+                        "maxLength": 64
+                    },
+                    "studio_edit_model": {
+                        "type": "string",
+                        "description": "Studio model for editing reference images. Empty = editing off.",
+                        "maxLength": 64
+                    },
                     "exief_weight": {
                         "type": "number",
                         "format": "double",
@@ -11173,6 +11514,22 @@
                     },
                     "signups_enabled": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "PatchedStudioAdminUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "generate_model": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "edit_model": {
+                        "type": "string",
+                        "maxLength": 64
                     }
                 }
             },
@@ -11705,6 +12062,19 @@
                     "guest_trial_models": {
                         "description": "Model variant ids used for guest trials. Empty = the default image set."
                     },
+                    "studio_enabled": {
+                        "type": "boolean"
+                    },
+                    "studio_generate_model": {
+                        "type": "string",
+                        "description": "Studio model for text-to-image. Empty = generation off.",
+                        "maxLength": 64
+                    },
+                    "studio_edit_model": {
+                        "type": "string",
+                        "description": "Studio model for editing reference images. Empty = editing off.",
+                        "maxLength": 64
+                    },
                     "exief_weight": {
                         "type": "number",
                         "format": "double",
@@ -11798,6 +12168,9 @@
                     "signup_bonus_credits",
                     "signup_bonus_expiry_days",
                     "signups_enabled",
+                    "studio_edit_model",
+                    "studio_enabled",
+                    "studio_generate_model",
                     "updated_at"
                 ]
             },
@@ -12433,10 +12806,11 @@
                     "jobs:write",
                     "reports:read",
                     "credits:read",
-                    "news:write"
+                    "news:write",
+                    "studio:write"
                 ],
                 "type": "string",
-                "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases"
+                "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases\n* `studio:write` - Generate and edit images in the image studio"
             },
             "ServiceStatusEnum": {
                 "enum": [
@@ -12694,6 +13068,737 @@
                     "file_size"
                 ]
             },
+            "StudioActive": {
+                "type": "object",
+                "properties": {
+                    "generate": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "edit": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "edit",
+                    "generate"
+                ]
+            },
+            "StudioAdmin": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "generate_model": {
+                        "type": "string"
+                    },
+                    "edit_model": {
+                        "type": "string"
+                    },
+                    "prices": {
+                        "$ref": "#/components/schemas/StudioPrices"
+                    },
+                    "server": {
+                        "$ref": "#/components/schemas/StudioServer"
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioModelInfo"
+                        }
+                    }
+                },
+                "required": [
+                    "edit_model",
+                    "enabled",
+                    "generate_model",
+                    "models",
+                    "prices",
+                    "server"
+                ]
+            },
+            "StudioAspectRatio": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "width": {
+                        "type": "integer"
+                    },
+                    "height": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "height",
+                    "id",
+                    "width"
+                ]
+            },
+            "StudioConfig": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "online": {
+                        "type": "boolean"
+                    },
+                    "modes": {
+                        "$ref": "#/components/schemas/StudioModes"
+                    },
+                    "consent_statement": {
+                        "type": "string"
+                    },
+                    "consent_version": {
+                        "type": "string"
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioModelInfo"
+                        },
+                        "description": "Administrators only."
+                    },
+                    "active": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioActive"
+                            }
+                        ],
+                        "description": "Administrators only."
+                    }
+                },
+                "required": [
+                    "active",
+                    "consent_statement",
+                    "consent_version",
+                    "enabled",
+                    "models",
+                    "modes",
+                    "online"
+                ]
+            },
+            "StudioControls": {
+                "type": "object",
+                "properties": {
+                    "references": {
+                        "$ref": "#/components/schemas/StudioReferenceLimit"
+                    },
+                    "aspect_ratios": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioAspectRatio"
+                        }
+                    },
+                    "match_input": {
+                        "type": "boolean"
+                    },
+                    "negative_prompt": {
+                        "type": "boolean"
+                    },
+                    "transparent": {
+                        "type": "boolean"
+                    },
+                    "steps": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioRange"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "guidance": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioRange"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "max_outputs": {
+                        "type": "integer"
+                    },
+                    "prompt_max_chars": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "aspect_ratios",
+                    "guidance",
+                    "match_input",
+                    "max_outputs",
+                    "negative_prompt",
+                    "prompt_max_chars",
+                    "references",
+                    "steps",
+                    "transparent"
+                ]
+            },
+            "StudioError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "message"
+                ]
+            },
+            "StudioImage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "download_url": {
+                        "type": "string"
+                    },
+                    "thumbnail_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "width": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "height": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "seed": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "download_url",
+                    "height",
+                    "id",
+                    "name",
+                    "seed",
+                    "thumbnail_url",
+                    "url",
+                    "width"
+                ]
+            },
+            "StudioJob": {
+                "type": "object",
+                "description": "A studio job as its owner sees it: request, live progress, the images and the cost.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/JobStatusEnum"
+                    },
+                    "mode": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioModeEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "File name or case title.",
+                        "maxLength": 255
+                    },
+                    "params": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioParams"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "references": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioImage"
+                        },
+                        "readOnly": true
+                    },
+                    "outputs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioImage"
+                        },
+                        "readOnly": true
+                    },
+                    "blocked": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "live": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioLive"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "queue": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicQueue"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "credits_quoted": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "credits_charged": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "error": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioError"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "model": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioModelRef"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "blocked",
+                    "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error",
+                    "finished_at",
+                    "id",
+                    "live",
+                    "mode",
+                    "model",
+                    "outputs",
+                    "params",
+                    "progress",
+                    "queue",
+                    "references",
+                    "started_at",
+                    "status",
+                    "title"
+                ]
+            },
+            "StudioJobCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "$ref": "#/components/schemas/StudioModeEnum"
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 10000
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 10000
+                    },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 16
+                    },
+                    "steps": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "guidance": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "seed": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "count": {
+                        "type": "integer",
+                        "maximum": 8,
+                        "minimum": 1,
+                        "default": 1
+                    },
+                    "transparent": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "reference_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 16
+                    },
+                    "consent": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "The user confirms having the consent of the people shown."
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Administrators only: try another studio model.",
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "mode",
+                    "prompt"
+                ]
+            },
+            "StudioLive": {
+                "type": "object",
+                "properties": {
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "message",
+                    "progress"
+                ]
+            },
+            "StudioMode": {
+                "type": "object",
+                "properties": {
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "price": {
+                        "type": "integer",
+                        "description": "Credits per delivered image."
+                    },
+                    "controls": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StudioControls"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "available",
+                    "controls",
+                    "price"
+                ]
+            },
+            "StudioModeEnum": {
+                "enum": [
+                    "generate",
+                    "edit"
+                ],
+                "type": "string",
+                "description": "* `generate` - generate\n* `edit` - edit"
+            },
+            "StudioModelInfo": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "vendor": {
+                        "type": "string"
+                    },
+                    "license": {
+                        "type": "string"
+                    },
+                    "commercial": {
+                        "type": "boolean"
+                    },
+                    "modes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StudioModeEnum"
+                        }
+                    },
+                    "installed": {
+                        "type": "boolean"
+                    },
+                    "loaded": {
+                        "type": "boolean"
+                    },
+                    "controls": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/StudioControls"
+                        }
+                    },
+                    "weights_gb": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "commercial",
+                    "controls",
+                    "id",
+                    "installed",
+                    "license",
+                    "loaded",
+                    "modes",
+                    "name",
+                    "vendor",
+                    "weights_gb"
+                ]
+            },
+            "StudioModelRef": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "StudioModes": {
+                "type": "object",
+                "properties": {
+                    "generate": {
+                        "$ref": "#/components/schemas/StudioMode"
+                    },
+                    "edit": {
+                        "$ref": "#/components/schemas/StudioMode"
+                    }
+                },
+                "required": [
+                    "edit",
+                    "generate"
+                ]
+            },
+            "StudioParams": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string"
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "width": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "height": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "steps": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "guidance": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "seed": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "count": {
+                        "type": "integer"
+                    },
+                    "transparent": {
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "aspect_ratio",
+                    "count",
+                    "guidance",
+                    "height",
+                    "negative_prompt",
+                    "prompt",
+                    "seed",
+                    "steps",
+                    "transparent",
+                    "width"
+                ]
+            },
+            "StudioPrices": {
+                "type": "object",
+                "properties": {
+                    "generate": {
+                        "type": "integer"
+                    },
+                    "edit": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "edit",
+                    "generate"
+                ]
+            },
+            "StudioRange": {
+                "type": "object",
+                "properties": {
+                    "default": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "min": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "max": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "step": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "default",
+                    "max",
+                    "min",
+                    "step"
+                ]
+            },
+            "StudioReferenceLimit": {
+                "type": "object",
+                "properties": {
+                    "min": {
+                        "type": "integer"
+                    },
+                    "max": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "max",
+                    "min"
+                ]
+            },
+            "StudioServer": {
+                "type": "object",
+                "properties": {
+                    "state": {
+                        "type": "string"
+                    },
+                    "gpu": {
+                        "type": "string"
+                    },
+                    "loaded": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "loading": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "busy": {
+                        "type": "boolean"
+                    },
+                    "waiting": {
+                        "type": "integer"
+                    },
+                    "device_free_gb": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "budget_gb": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "budget_gb",
+                    "busy",
+                    "device_free_gb",
+                    "gpu",
+                    "loaded",
+                    "loading",
+                    "state",
+                    "waiting"
+                ]
+            },
             "Subscription": {
                 "type": "object",
                 "properties": {
@@ -12936,10 +14041,11 @@
                     "model",
                     "audit",
                     "long_video",
-                    "news"
+                    "news",
+                    "studio"
                 ],
                 "type": "string",
-                "description": "* `model` - Model\n* `audit` - Audit step\n* `long_video` - Long-form video scan\n* `news` - News verification"
+                "description": "* `model` - Model\n* `audit` - Audit step\n* `long_video` - Long-form video scan\n* `news` - News verification\n* `studio` - Image generation / editing"
             },
             "TaskLog": {
                 "type": "object",

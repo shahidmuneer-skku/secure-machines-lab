@@ -18,6 +18,7 @@ MODULE_CAPABILITY = {
     "detect": "run_detection",
     "long_video": "run_long_video",
     "news": "run_news_verification",
+    "studio": "use_studio",
 }
 
 

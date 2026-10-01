@@ -19,6 +19,7 @@ REPORTS = "sml.reports"
 MAINTENANCE = "sml.maintenance"
 NEWS = "sml.news"
 REASONING = "sml.reasoning"
+STUDIO = "sml.studio"  # image studio jobs (run on the studio server, config/studio.yaml)
 AUDIT_PREFIX = "sml.audit."
 MODEL_PREFIX = "sml.model."
 LONG_VIDEO_PREFIX = "sml.longvideo."
@@ -37,7 +38,7 @@ def _q(name: str) -> Queue:
 
 
 def all_queue_names(raw_registry: dict[str, Any]) -> list[str]:
-    names = [DEFAULT, RESULTS, REPORTS, MAINTENANCE, NEWS, REASONING]
+    names = [DEFAULT, RESULTS, REPORTS, MAINTENANCE, NEWS, REASONING, STUDIO]
     names += [MODEL_PREFIX + m["id"] for m in raw_registry.get("models", [])]
     names += [AUDIT_PREFIX + s["id"] for s in raw_registry.get("audit_steps", [])]
     names += [LONG_VIDEO_PREFIX + m["id"] for m in raw_registry.get("long_video_models", [])]

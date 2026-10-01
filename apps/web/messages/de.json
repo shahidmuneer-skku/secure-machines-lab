@@ -85,7 +85,9 @@
     "pricing": "Preise",
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
-    "openApp": "App öffnen"
+    "openApp": "App öffnen",
+    "studio": "Bildstudio",
+    "adminStudio": "Bildstudio"
   },
   "status": {
     "queued": "In Warteschlange",
@@ -1134,6 +1136,63 @@
           "live": "Live"
         }
       }
+    },
+    "studio": {
+      "eyebrow": "Generierung",
+      "title": "Bildstudio",
+      "subtitle": "Wählen Sie das Modell, das Nutzer zum Erzeugen und Bearbeiten von Bildern erhalten. Es bleibt auf der Studio-GPU geladen; Nutzer sehen nie, welches Modell es ist.",
+      "saved": "Studio-Einstellungen gespeichert",
+      "failed": "Speichern fehlgeschlagen",
+      "modelsTitle": "Modelle für Nutzer",
+      "modelsHint": "Die Optionen jedes Modus (Formate, Vorlagen, Schritte…) richten sich nach dem hier gewählten Modell.",
+      "on": "An",
+      "off": "Aus",
+      "swapHint": "Diese beiden Modelle brauchen zusammen etwa {gb} GB und können nicht beide geladen bleiben: Beim Wechsel zwischen Erzeugen und Bearbeiten wird zuerst das andere Modell geladen (etwa 30 Sekunden).",
+      "prices": "Erzeugtes Bild: {generate} Credits · bearbeitetes Bild: {edit} Credits, pro geliefertem Bild.",
+      "editPrices": "Preise ändern",
+      "serverTitle": "Studio-Server",
+      "serverHint": "Führt die Modelle auf seiner GPU aus; startet mit den residenten Modellen (python -m sml_worker --resident).",
+      "state": "Status",
+      "states": {
+        "ready": "Bereit",
+        "loading": "Startet",
+        "down": "Läuft nicht",
+        "unknown": "Unbekannt"
+      },
+      "gpu": "GPU",
+      "loaded": "Geladen",
+      "loading": "lädt {name}",
+      "activity": "Aktivität",
+      "busy": "Erzeugt ({waiting} wartend)",
+      "idle": "Untätig",
+      "memory": "GPU-Speicher",
+      "memoryValue": "{free} GB frei · Budget {budget} GB",
+      "installedTitle": "Installierte Modelle",
+      "installedHint": "Aus config/studio.yaml. Modelle werden bei Bedarf geladen, wenn ein Administrator sie ausprobiert.",
+      "model": "Modell",
+      "modes": "Modi",
+      "license": "Lizenz",
+      "abilities": "Fähigkeiten",
+      "size": "Gewichte",
+      "status": "Status",
+      "mode": {
+        "generate": "Erzeugen",
+        "edit": "Bearbeiten"
+      },
+      "nonCommercial": "nicht kommerziell",
+      "refs": "bis zu {n} Vorlagen",
+      "transparent": "Transparenz",
+      "formats": "{n} Formate",
+      "stepsDefault": "{n} Schritte",
+      "notInstalled": "Nicht installiert",
+      "loadedBadge": "Geladen",
+      "onDemand": "Bei Bedarf",
+      "modeLabel": {
+        "generate": "Bilder erzeugen",
+        "edit": "Bilder bearbeiten"
+      },
+      "modeOff": "Aus",
+      "licenseWarning": "{license}: Vor der kostenpflichtigen Nutzung im Produktivbetrieb ist eine kommerzielle Lizenz nötig."
     }
   },
   "billing": {
@@ -1695,5 +1754,120 @@
       "retry": "Erneut versuchen",
       "reference": "Referenz: {digest}"
     }
+  },
+  "studio": {
+    "eyebrow": "Erstellen",
+    "title": "Bildstudio",
+    "subtitle": "Erzeugen Sie Bilder aus einer Beschreibung oder bearbeiten Sie eigene Bilder, indem Sie sagen, was sich ändern soll.",
+    "warmingUp": "Studio startet",
+    "unavailableTitle": "Das Bildstudio ist nicht verfügbar",
+    "unavailableHint": "Es ist ausgeschaltet oder für Ihr Konto derzeit nicht verfügbar.",
+    "modes": {
+      "generate": "Erzeugen",
+      "edit": "Bearbeiten"
+    },
+    "modeHint": {
+      "generate": "Beschreiben Sie das gewünschte Bild – Motiv, Stil, Licht und Bildaufbau so genau wie möglich.",
+      "edit": "Fügen Sie ein oder mehrere Bilder hinzu und beschreiben Sie die Änderung. Bezeichnen Sie sie als Bild 1, Bild 2…"
+    },
+    "adminModel": "Modell (nur Administratoren)",
+    "adminModelActive": "Modell der Nutzer ({name})",
+    "adminModelHint": "Nutzer erhalten immer das unter Admin → Studio gewählte Modell. Andere werden bei Bedarf geladen (bis zu einer Minute).",
+    "nonCommercial": "nicht kommerziell",
+    "loaded": "geladen",
+    "notInstalled": "nicht installiert",
+    "references": "Zu bearbeitende Bilder",
+    "referencesHint": "Bis zu {max} Bilder (PNG, JPEG, WebP). Einfügen, ablegen oder auswählen.",
+    "consentTitle": "Personen auf diesen Bildern",
+    "consentText": "Ich bestätige, dass ich die Einwilligung jeder abgebildeten Person zur Bearbeitung ihres Abbilds habe und das Ergebnis nicht zur Täuschung, Verleumdung oder Belästigung nutze. Erforderlich, wenn ein Bild ein Gesicht zeigt; Ihre Bestätigung wird mit dem Auftrag gespeichert.",
+    "promptLabel": {
+      "generate": "Prompt",
+      "edit": "Anweisung"
+    },
+    "placeholder": {
+      "generate": "Ein gemütliches Café in Seoul bei Regen, Neonschild mit \"OPEN\", filmisches Foto…",
+      "edit": "Ersetze den Hintergrund von Bild 1 durch einen sonnigen Strand, die Person bleibt unverändert…"
+    },
+    "examples": {
+      "generate": [
+        "Produktfoto einer Keramiktasse auf einem Marmortisch, weiches Tageslicht",
+        "Aquarell-Illustration eines Fuchses im verschneiten Wald",
+        "Minimalistisches Plakat mit dem Text \"SECURE MACHINES LAB\", kräftige Typografie",
+        "Isometrisches 3D-Symbol eines Schilds mit Vorhängeschloss, Pastellfarben"
+      ],
+      "edit": [
+        "Ändere den Hintergrund in einen Strand bei Sonnenuntergang",
+        "Verwandle Bild 1 in ein Aquarell",
+        "Setze den Gegenstand aus Bild 2 in die Szene von Bild 1",
+        "Entferne die Personen im Hintergrund"
+      ]
+    },
+    "format": "Format",
+    "matchInput": "Wie Vorlage",
+    "count": "Bilder",
+    "transparent": "Transparenter Hintergrund",
+    "advanced": "Erweitert",
+    "negative": "Vermeiden",
+    "negativePlaceholder": "unscharf, verformte Hände, Wasserzeichen…",
+    "steps": "Schritte",
+    "stepsHint": "Mehr Schritte bringen mehr Details, dauern aber länger.",
+    "guidance": "Prompt-Stärke",
+    "guidanceHint": "Höher folgt dem Prompt wörtlicher.",
+    "seed": "Seed",
+    "seedRandom": "Zufällig",
+    "seedRoll": "Neuer zufälliger Seed",
+    "seedClear": "Seed löschen",
+    "seedHint": "Gleicher Seed und gleiche Einstellungen ergeben dasselbe Bild.",
+    "cost": "{count, plural, one {# Bild} other {# Bilder}} × {price}",
+    "creditsN": "{count, plural, one {# Credit} other {# Credits}}",
+    "notEnough": "Nicht genug Credits für diese Anfrage.",
+    "buyCredits": "Credits kaufen",
+    "submit": {
+      "generate": "Erzeugen",
+      "edit": "Bearbeitung anwenden"
+    },
+    "chargeHint": "Credits werden jetzt reserviert und nur für die Bilder berechnet, die Sie erhalten. Abgelehnte Anfragen sind kostenlos.",
+    "queued": "In der Warteschlange",
+    "queuedHint": "{credits, plural, one {# Credit} other {# Credits}} reserviert. Ihre Bilder erscheinen hier.",
+    "insufficient": "Nicht genug Credits",
+    "submitFailed": "Konnte nicht starten",
+    "detectFailed": "Analyse konnte nicht gestartet werden",
+    "canceled": "Abgebrochen",
+    "history": "Ihre Bilder",
+    "more": "Mehr laden",
+    "historyEmpty": "Noch nichts: Ihre Bilder erscheinen hier.",
+    "reset": "Zurücksetzen",
+    "referenceN": "Vorlage {n}",
+    "imageN": "Bild {n}",
+    "removeReference": "Bild {n} entfernen",
+    "emptyTitle": "Ihre Leinwand ist leer",
+    "emptyHint": "Schreiben Sie links einen Prompt oder wechseln Sie zu Bearbeiten, um ein eigenes Bild zu ändern.",
+    "reuse": "Einstellungen übernehmen",
+    "cancel": "Abbrechen",
+    "from": "Aus",
+    "waiting": "Warten auf das Studio…",
+    "working": "In Arbeit…",
+    "failedTitle": "Es wurde kein Bild erstellt",
+    "consentRetry": "Ich habe ihre Einwilligung: erneut versuchen",
+    "blocked": "{count, plural, one {# Bild wurde} other {# Bilder wurden}} vom Inhaltsfilter zurückgehalten und nicht berechnet.",
+    "charged": "{count, plural, =0 {Nicht berechnet} one {# Credit berechnet} other {# Credits berechnet}}",
+    "errors": {
+      "PROMPT_BLOCKED": "Der Inhaltsfilter hat diese Anfrage abgelehnt (sexuelle oder gewalttätige Inhalte). Es wurde nichts berechnet.",
+      "INPUT_BLOCKED": "Ein hinzugefügtes Bild wurde vom Inhaltsfilter abgelehnt. Es wurde nichts berechnet.",
+      "CONSENT_REQUIRED": "Ein Bild zeigt eine Person. Bestätigen Sie die Einwilligung und versuchen Sie es erneut. Es wurde nichts berechnet.",
+      "OUTPUT_BLOCKED": "Das Ergebnis wurde vom Inhaltsfilter zurückgehalten. Es wurde nichts berechnet.",
+      "SAFETY_UNAVAILABLE": "Der Inhaltsfilter ist gerade nicht verfügbar, daher wurde nichts erstellt. Es wurde nichts berechnet.",
+      "STUDIO_UNAVAILABLE": "Das Studio ist gerade nicht verfügbar. Es wurde nichts berechnet.",
+      "MODEL_UNAVAILABLE": "Das Bildmodell ist gerade nicht verfügbar. Es wurde nichts berechnet.",
+      "GPU_OOM": "Dem Studio ging der Speicher aus. Versuchen Sie weniger Bilder oder ein kleineres Format. Es wurde nichts berechnet.",
+      "TIMEOUT": "Das hat zu lange gedauert und wurde abgebrochen. Es wurde nichts berechnet."
+    },
+    "open": "Ansehen",
+    "outputAlt": "Erzeugtes Bild",
+    "seedN": "Seed {seed}",
+    "download": "Herunterladen",
+    "editAgain": "Dieses Bild bearbeiten",
+    "detect": "Auf Manipulation prüfen",
+    "viewer": "Bildansicht"
   }
 }

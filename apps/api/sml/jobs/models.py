@@ -4,7 +4,7 @@ State machine (Job.status):
     queued → running → succeeded | failed | canceled
     any terminal job → expired (media and artifacts purged by retention)
 A job fans out into tasks: one per selected model, one per audit step
-(metadata always runs), or one long-video / news task.
+(metadata always runs), or one long-video / news / image studio task.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ class Job(TimeStampedModel):
         DETECT = "detect", "Detection"
         LONG_VIDEO = "long_video", "Long-form video"
         NEWS = "news", "News verification"
+        STUDIO = "studio", "Image studio"
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
@@ -125,6 +126,7 @@ class JobTask(TimeStampedModel):
         AUDIT = "audit", "Audit step"
         LONG_VIDEO = "long_video", "Long-form video scan"
         NEWS = "news", "News verification"
+        STUDIO = "studio", "Image generation / editing"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Waiting for a slot"

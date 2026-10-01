@@ -1,5 +1,5 @@
 [Unit]
-Description=SML resident detector models (kept loaded on their GPUs; config/models.yaml `resident`)
+Description=SML resident models (detectors kept loaded on their GPUs, config/models.yaml `resident`; the image studio server, config/studio.yaml)
 After=network-online.target docker.service
 PartOf=sml.target
 

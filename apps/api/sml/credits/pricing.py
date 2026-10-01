@@ -82,6 +82,18 @@ def quote_explain() -> Quote:
     return q
 
 
+def studio_unit_price(mode: str) -> int:
+    """Credits per delivered image in the image studio (generate or edit)."""
+    return price(Key.STUDIO_EDIT if mode == "edit" else Key.STUDIO_GENERATE)
+
+
+def quote_studio(mode: str, count: int) -> Quote:
+    q = Quote()
+    label = "Edited image" if mode == "edit" else "Generated image"
+    q.add(f"{label} × {count}", studio_unit_price(mode) * count)
+    return q
+
+
 def quote_report(fmt: str) -> Quote:
     q = Quote()
     key = {"pdf": Key.REPORT_PDF, "hwp": Key.REPORT_HWP, "csv": Key.REPORT_CSV}[fmt]

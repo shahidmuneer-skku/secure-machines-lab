@@ -49,4 +49,5 @@ app.conf.beat_schedule = {
     "prune-logs": {"task": "sml.maintenance.prune_logs", "schedule": crontab(minute=40, hour=3)},
     "audit-ledgers": {"task": "sml.maintenance.audit_ledgers", "schedule": crontab(minute=10, hour=4)},
     "expire-streams": {"task": "sml.maintenance.expire_streams", "schedule": 60.0},
+    "studio-keep": {"task": "sml.maintenance.studio_keep", "schedule": 60.0},
 }

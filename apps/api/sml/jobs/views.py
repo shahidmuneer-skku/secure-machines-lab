@@ -99,7 +99,11 @@ class JobListCreateView(generics.ListAPIView):
         return super().get_throttles()
 
     def get_queryset(self):  # type: ignore[no-untyped-def]
-        return user_jobs(self.request)
+        qs = user_jobs(self.request)
+        # Image studio jobs have their own history (/studio/jobs) unless asked for by kind.
+        if Job.Kind.STUDIO not in self.request.query_params.getlist("kind"):
+            qs = qs.exclude(kind=Job.Kind.STUDIO)
+        return qs
 
     @extend_schema(tags=["jobs"], summary="List my jobs (newest first, cursor-paginated)")
     def get(self, request: Request, *args, **kwargs) -> Response:  # type: ignore[no-untyped-def]

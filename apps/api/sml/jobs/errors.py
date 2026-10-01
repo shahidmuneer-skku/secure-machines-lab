@@ -19,6 +19,14 @@ USER_MESSAGES: dict[str, str] = {
     "INFRA_ERROR": "A temporary system error occurred.",
     "AGENT_ERROR": "The AI agent could not complete the task.",
     "INVALID_MEDIA": "The file could not be read by this model.",
+    # Image studio
+    "PROMPT_BLOCKED": "This request was refused by the content filter (sexual or violent content).",
+    "INPUT_BLOCKED": "A reference image was refused by the content filter.",
+    "CONSENT_REQUIRED": "A reference image shows a person. Confirm that you have their consent and try again.",
+    "OUTPUT_BLOCKED": "The result was withheld by the content filter.",
+    "SAFETY_UNAVAILABLE": "The content filter is unavailable right now, so the request was not run.",
+    "STUDIO_UNAVAILABLE": "The image studio is not available right now.",
+    "MODEL_UNAVAILABLE": "The image model is not available right now.",
 }
 DEFAULT_MESSAGE = "The model could not analyze this file."
 

@@ -28,6 +28,7 @@ def audit_spec(step_id: str) -> dict[str, Any] | None:
 
 
 AGENT_QUEUES = ["sml.news", "sml.reasoning"]
+STUDIO_QUEUES = ["sml.studio"]
 
 
 def detector_queues() -> list[str]:
@@ -40,4 +41,4 @@ def detector_queues() -> list[str]:
 
 
 def queue_names() -> list[str]:
-    return [*detector_queues(), *AGENT_QUEUES]
+    return [*detector_queues(), *AGENT_QUEUES, *STUDIO_QUEUES]

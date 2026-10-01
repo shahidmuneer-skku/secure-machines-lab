@@ -134,6 +134,10 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
                                      "gpu": gpu, "at": _now()})
             if envelope["kind"] == "news":
                 result = _run_news(envelope, ctx)
+            elif envelope["kind"] == "studio":
+                from .studio.task import run_studio
+
+                result = run_studio(envelope, ctx)
             else:
                 media = envelope.get("media") or {}
                 local = download(media["storage_key"], workdir / f"source.{media.get('extension', 'bin')}")
@@ -182,7 +186,7 @@ def _gpu_need(envelope: dict[str, Any]) -> int:
     elif kind == "long_video":
         spec = long_video_spec(target) or {}
     else:
-        return 0  # metadata runs on CPU; agents are admitted by agents/ollama.py
+        return 0  # metadata runs on CPU; agents are admitted by agents/ollama.py; the studio server by itself
     declared = spec.get("gpu_mem_mb") or raw_registry().get("defaults", {}).get("gpu_mem_mb", 6000)
     try:
         total, _ = gpu_admission.memory(gpu_admission.gpu_index())

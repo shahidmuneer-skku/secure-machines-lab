@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query"
 import {
   Activity, BookOpen, Coins, FileText, FilmIcon, Gauge, KeyRound, LayoutDashboard, ListChecks, LogOut, Newspaper,
   ScanSearch, Settings, ShieldCheck, Users, Cpu, Receipt, SlidersHorizontal, ScrollText, BarChart3, BadgeCheck,
+  Palette, Sparkles,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -41,6 +42,7 @@ const APP_NAV: { group: string; items: NavItem[] }[] = [
       { href: "/app/detect", key: "detect", icon: ScanSearch, capability: "run_detection" },
       { href: "/app/long-video", key: "longVideo", icon: FilmIcon, capability: "run_long_video" },
       { href: "/app/news", key: "news", icon: Newspaper, capability: "run_news_verification" },
+      { href: "/app/studio", key: "studio", icon: Sparkles, capability: "use_studio" },
       { href: "/app/results", key: "results", icon: ListChecks },
       { href: "/app/reports", key: "reports", icon: FileText },
     ],
@@ -63,6 +65,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/jobs", key: "adminJobs", icon: Activity, capability: "view_all_jobs" },
   { href: "/admin/queues", key: "adminQueues", icon: Cpu, capability: "view_queues" },
   { href: "/admin/models", key: "adminModels", icon: ShieldCheck, capability: "view_queues" },
+  { href: "/admin/studio", key: "adminStudio", icon: Palette, capability: "view_queues" },
   { href: "/admin/pricing", key: "adminPricing", icon: SlidersHorizontal, capability: "view_billing" },
   { href: "/admin/billing", key: "adminBilling", icon: Receipt, capability: "view_billing" },
   { href: "/admin/api-usage", key: "adminApiUsage", icon: BarChart3, capability: "view_api_usage" },

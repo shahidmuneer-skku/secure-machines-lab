@@ -188,6 +188,32 @@ per task until it is back. A server runs one task at a time; a run that exceeds 
 `var/log/resident.log` and `var/log/resident-<server>.log`. After changing a model's code or weights, restart
 the resident service.
 
+**Image studio (ADR 0012).** Two processes: the studio server (started by the resident supervisor
+above, log `var/log/resident-studio.log`) and the studio worker (`python -m sml_worker --studio
+--concurrency 2`, `sml-studio.service`, log `var/log/studio.log`). The server needs the `imagegen`
+conda env and the model weights in the Hugging Face cache of the service user:
+
+```bash
+conda create -y -n imagegen python=3.12
+~/anaconda3/envs/imagegen/bin/python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch torchvision
+~/anaconda3/envs/imagegen/bin/python -m pip install "git+https://github.com/huggingface/diffusers" "transformers>=5.17" \
+    accelerate safetensors sentencepiece protobuf pillow timm insightface onnxruntime
+for repo in Qwen/Qwen-Image-2512 Qwen/Qwen-Image-Edit-2511 Qwen/Qwen-Image-2.1 black-forest-labs/FLUX.2-klein-4B; do
+  hf download "$repo"; done   # ~155 GB in total
+```
+
+Diffusers comes from source until a release includes `QwenImage21Pipeline`. Admin → Studio picks the
+model per mode, shows what is loaded, free GPU memory and which models are installed; prices are on
+Admin → Pricing (`studio_generate`, `studio_edit`). Models, controls, the GPU, the memory budget and the
+safety thresholds are in `config/studio.yaml` (restart the resident service after editing it). Failure
+codes users see: `PROMPT_BLOCKED`, `INPUT_BLOCKED` and `OUTPUT_BLOCKED` (content filter),
+`CONSENT_REQUIRED` (a reference shows a face and consent was not confirmed), `SAFETY_UNAVAILABLE` (Ollama
+did not answer the prompt check: the studio fails closed), `STUDIO_UNAVAILABLE` (server not running),
+`MODEL_UNAVAILABLE` (weights missing), `GPU_OOM`. None is charged. If GPU 1 is short of memory, check
+`nvidia-smi` for other processes (Ollama keeps its model loaded) before lowering `memory_budget_gb`.
+Qwen-Image-2.1 is licensed for research only: buy a commercial license or switch models before charging
+real customers for it.
+
 **Finished tasks run again, or a worker logs `PRECONDITION_FAILED - delivery acknowledgement …
 timed out` and shuts down.** Workers acknowledge a task when it ends, and RabbitMQ's default limit is
 30 minutes; a long detector run (or a long wait for GPU memory) exceeds it, the broker closes the

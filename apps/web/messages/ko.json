@@ -85,7 +85,9 @@
     "pricing": "요금제",
     "signIn": "로그인",
     "getStarted": "시작하기",
-    "openApp": "앱 열기"
+    "openApp": "앱 열기",
+    "studio": "이미지 스튜디오",
+    "adminStudio": "이미지 스튜디오"
   },
   "status": {
     "queued": "대기 중",
@@ -1134,6 +1136,63 @@
           "live": "라이브"
         }
       }
+    },
+    "studio": {
+      "eyebrow": "생성",
+      "title": "이미지 스튜디오",
+      "subtitle": "사용자가 이미지 생성과 편집에 사용할 모델을 선택하세요. 선택한 모델은 스튜디오 GPU에 계속 로드되며, 사용자에게는 모델이 표시되지 않습니다.",
+      "saved": "스튜디오 설정을 저장했습니다",
+      "failed": "저장하지 못했습니다",
+      "modelsTitle": "사용자 모델",
+      "modelsHint": "각 모드의 옵션(비율, 참조 이미지, 스텝 등)은 여기서 선택한 모델을 따릅니다.",
+      "on": "켜짐",
+      "off": "꺼짐",
+      "swapHint": "두 모델을 합치면 약 {gb} GB가 필요해 동시에 로드할 수 없습니다. 생성과 편집을 오갈 때 다른 모델을 먼저 불러옵니다(약 30초).",
+      "prices": "생성 이미지: 크레딧 {generate}개 · 편집 이미지: 크레딧 {edit}개, 받은 이미지당 차감.",
+      "editPrices": "가격 변경",
+      "serverTitle": "스튜디오 서버",
+      "serverHint": "GPU에서 모델을 실행합니다. 상주 모델과 함께 시작됩니다(python -m sml_worker --resident).",
+      "state": "상태",
+      "states": {
+        "ready": "준비됨",
+        "loading": "시작 중",
+        "down": "실행 안 됨",
+        "unknown": "알 수 없음"
+      },
+      "gpu": "GPU",
+      "loaded": "로드됨",
+      "loading": "{name} 로드 중",
+      "activity": "활동",
+      "busy": "생성 중 (대기 {waiting})",
+      "idle": "유휴",
+      "memory": "GPU 메모리",
+      "memoryValue": "{free} GB 여유 · 예산 {budget} GB",
+      "installedTitle": "설치된 모델",
+      "installedHint": "config/studio.yaml 기준. 관리자가 시도하면 필요할 때 로드됩니다.",
+      "model": "모델",
+      "modes": "모드",
+      "license": "라이선스",
+      "abilities": "기능",
+      "size": "가중치",
+      "status": "상태",
+      "mode": {
+        "generate": "생성",
+        "edit": "편집"
+      },
+      "nonCommercial": "비상업용",
+      "refs": "참조 이미지 최대 {n}장",
+      "transparent": "투명 배경",
+      "formats": "비율 {n}종",
+      "stepsDefault": "{n} 스텝",
+      "notInstalled": "미설치",
+      "loadedBadge": "로드됨",
+      "onDemand": "필요 시 로드",
+      "modeLabel": {
+        "generate": "이미지 생성",
+        "edit": "이미지 편집"
+      },
+      "modeOff": "끄기",
+      "licenseWarning": "{license}: 실서비스에서 유료로 제공하려면 상업용 라이선스가 필요합니다."
     }
   },
   "billing": {
@@ -1695,5 +1754,120 @@
       "retry": "다시 시도",
       "reference": "참조 번호: {digest}"
     }
+  },
+  "studio": {
+    "eyebrow": "만들기",
+    "title": "이미지 스튜디오",
+    "subtitle": "설명으로 이미지를 생성하거나, 바꾸고 싶은 내용을 말해 내 이미지를 편집하세요.",
+    "warmingUp": "스튜디오 시작 중",
+    "unavailableTitle": "이미지 스튜디오를 사용할 수 없습니다",
+    "unavailableHint": "현재 꺼져 있거나 이 계정에서 사용할 수 없습니다.",
+    "modes": {
+      "generate": "생성",
+      "edit": "편집"
+    },
+    "modeHint": {
+      "generate": "원하는 이미지를 설명하세요. 피사체, 스타일, 조명, 구도를 구체적으로 적을수록 좋습니다.",
+      "edit": "이미지를 하나 이상 추가하고 바꿀 내용을 적으세요. 이미지 1, 이미지 2…로 지칭할 수 있습니다."
+    },
+    "adminModel": "모델 (관리자 전용)",
+    "adminModelActive": "사용자 모델 ({name})",
+    "adminModelHint": "사용자는 항상 관리자 → 스튜디오에서 선택한 모델을 사용합니다. 다른 모델은 필요할 때 불러옵니다(최대 1분).",
+    "nonCommercial": "비상업용",
+    "loaded": "로드됨",
+    "notInstalled": "미설치",
+    "references": "편집할 이미지",
+    "referencesHint": "최대 {max}장 (PNG, JPEG, WebP). 붙여넣기, 끌어놓기 또는 찾아보기.",
+    "consentTitle": "이미지 속 인물",
+    "consentText": "이미지에 나오는 모든 사람으로부터 초상 편집에 대한 동의를 받았으며, 결과물을 기만·명예훼손·괴롭힘에 사용하지 않을 것을 확인합니다. 얼굴이 있는 이미지에는 필수이며, 확인 내용은 작업과 함께 기록됩니다.",
+    "promptLabel": {
+      "generate": "프롬프트",
+      "edit": "지시문"
+    },
+    "placeholder": {
+      "generate": "비 오는 밤 서울의 아늑한 카페, \"OPEN\"이라고 적힌 네온사인, 영화 같은 사진…",
+      "edit": "이미지 1의 배경을 햇살 가득한 해변으로 바꾸고 인물은 그대로 유지…"
+    },
+    "examples": {
+      "generate": [
+        "대리석 테이블 위 도자기 머그잔 제품 사진, 부드러운 자연광",
+        "눈 덮인 숲 속 여우 수채화 일러스트",
+        "\"SECURE MACHINES LAB\" 문구가 들어간 미니멀 포스터, 굵은 타이포그래피",
+        "자물쇠가 달린 방패 아이소메트릭 3D 아이콘, 파스텔 색상"
+      ],
+      "edit": [
+        "배경을 노을 진 해변으로 바꿔줘",
+        "이미지 1을 수채화로 바꿔줘",
+        "이미지 2의 물건을 이미지 1의 장면에 넣어줘",
+        "뒤쪽의 사람들을 지워줘"
+      ]
+    },
+    "format": "비율",
+    "matchInput": "원본과 동일",
+    "count": "장수",
+    "transparent": "투명 배경",
+    "advanced": "고급 설정",
+    "negative": "피할 요소",
+    "negativePlaceholder": "흐릿함, 일그러진 손, 워터마크…",
+    "steps": "스텝",
+    "stepsHint": "스텝이 많을수록 디테일이 늘지만 시간이 더 걸립니다.",
+    "guidance": "프롬프트 강도",
+    "guidanceHint": "높을수록 프롬프트를 더 그대로 따릅니다.",
+    "seed": "시드",
+    "seedRandom": "무작위",
+    "seedRoll": "새 무작위 시드",
+    "seedClear": "시드 지우기",
+    "seedHint": "같은 시드와 설정이면 같은 이미지가 나옵니다.",
+    "cost": "{count, plural, one {#장} other {#장}} × {price}",
+    "creditsN": "{count, plural, one {크레딧 #개} other {크레딧 #개}}",
+    "notEnough": "이 요청에 필요한 크레딧이 부족합니다.",
+    "buyCredits": "크레딧 구매",
+    "submit": {
+      "generate": "생성",
+      "edit": "편집 적용"
+    },
+    "chargeHint": "크레딧은 지금 예약되고 실제로 받은 이미지만큼만 차감됩니다. 거절된 요청은 무료입니다.",
+    "queued": "대기열에 추가됨",
+    "queuedHint": "{credits, plural, one {크레딧 #개} other {크레딧 #개}} 예약됨. 이미지가 여기에 표시됩니다.",
+    "insufficient": "크레딧 부족",
+    "submitFailed": "시작할 수 없습니다",
+    "detectFailed": "분석을 시작할 수 없습니다",
+    "canceled": "취소됨",
+    "history": "내 이미지",
+    "more": "더 보기",
+    "historyEmpty": "아직 없습니다. 만든 이미지가 여기에 표시됩니다.",
+    "reset": "초기화",
+    "referenceN": "참조 이미지 {n}",
+    "imageN": "이미지 {n}",
+    "removeReference": "이미지 {n} 제거",
+    "emptyTitle": "캔버스가 비어 있습니다",
+    "emptyHint": "왼쪽에 프롬프트를 쓰거나, 편집으로 바꿔 내 이미지를 수정해 보세요.",
+    "reuse": "설정 다시 사용",
+    "cancel": "취소",
+    "from": "원본",
+    "waiting": "스튜디오 대기 중…",
+    "working": "작업 중…",
+    "failedTitle": "이미지를 만들지 못했습니다",
+    "consentRetry": "동의를 받았습니다: 다시 시도",
+    "blocked": "{count, plural, one {#장이} other {#장이}} 콘텐츠 필터에 의해 보류되어 차감되지 않았습니다.",
+    "charged": "{count, plural, =0 {차감 없음} one {크레딧 #개 차감} other {크레딧 #개 차감}}",
+    "errors": {
+      "PROMPT_BLOCKED": "콘텐츠 필터가 이 요청을 거절했습니다(성적·폭력적 내용). 차감되지 않았습니다.",
+      "INPUT_BLOCKED": "추가한 이미지가 콘텐츠 필터에 의해 거절되었습니다. 차감되지 않았습니다.",
+      "CONSENT_REQUIRED": "이미지에 사람이 있습니다. 동의를 받았음을 확인한 뒤 다시 시도하세요. 차감되지 않았습니다.",
+      "OUTPUT_BLOCKED": "결과가 콘텐츠 필터에 의해 보류되었습니다. 차감되지 않았습니다.",
+      "SAFETY_UNAVAILABLE": "지금은 콘텐츠 필터를 사용할 수 없어 아무것도 만들지 않았습니다. 차감되지 않았습니다.",
+      "STUDIO_UNAVAILABLE": "지금은 스튜디오를 사용할 수 없습니다. 차감되지 않았습니다.",
+      "MODEL_UNAVAILABLE": "지금은 이미지 모델을 사용할 수 없습니다. 차감되지 않았습니다.",
+      "GPU_OOM": "스튜디오 메모리가 부족합니다. 장수를 줄이거나 더 작은 비율을 사용하세요. 차감되지 않았습니다.",
+      "TIMEOUT": "시간이 너무 오래 걸려 중단되었습니다. 차감되지 않았습니다."
+    },
+    "open": "보기",
+    "outputAlt": "생성된 이미지",
+    "seedN": "시드 {seed}",
+    "download": "다운로드",
+    "editAgain": "이 이미지 편집",
+    "detect": "조작 여부 분석",
+    "viewer": "이미지 보기"
   }
 }

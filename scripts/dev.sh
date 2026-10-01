@@ -9,7 +9,7 @@
 #   GPUS=0 scripts/dev.sh       # model workers on other GPUs (comma-separated; GPU=2 still works)
 #   NO_MODELS=1 scripts/dev.sh  # skip the model worker
 #   NO_STREAM=1 scripts/dev.sh  # skip the long-form stream service
-#   NO_RESIDENT=1 scripts/dev.sh  # do not keep models loaded (each task loads its model)
+#   NO_RESIDENT=1 scripts/dev.sh  # do not keep models loaded (each task loads its model; no image studio)
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -33,7 +33,8 @@ trap cleanup EXIT INT TERM
 
 export DJANGO_SETTINGS_MODULE=sml.settings.dev
 # Apply pending migrations first: the API would otherwise answer 500 to anything touching a new column.
-(cd "$ROOT/apps/api" && uv run python manage.py migrate --noinput)
+# bootstrap is idempotent: it adds new roles' capabilities and new price rules without touching edits.
+(cd "$ROOT/apps/api" && uv run python manage.py migrate --noinput && uv run python manage.py bootstrap)
 start api "$ROOT/apps/api" uv run uvicorn sml.asgi:application --host 127.0.0.1 --port 8000 --reload --reload-dir sml \
   --timeout-graceful-shutdown 5  # live-update (SSE) streams would otherwise block every reload
 start celery-api "$ROOT/apps/api" uv run celery -A sml worker -B -n api@%h --concurrency 4 --loglevel INFO \
@@ -45,7 +46,10 @@ if [[ -z "${NO_MODELS:-}" ]]; then
     start "worker-gpu$gpu" "$ROOT/apps/worker" uv run python -m sml_worker --detectors --gpu "$gpu" --concurrency 4
   done
   start agents "$ROOT/apps/worker" uv run python -m sml_worker --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
-  # Keeps the models with a `resident` block loaded on their GPUs (NO_RESIDENT=1 to load per task).
+  # Image studio jobs; they run on the studio server, which the resident supervisor below starts.
+  start studio "$ROOT/apps/worker" uv run python -m sml_worker --studio --concurrency 2
+  # Keeps the models with a `resident` block loaded on their GPUs (NO_RESIDENT=1 to load per task),
+  # and the image studio's server (config/studio.yaml) with the admin's models.
   if [[ -z "${NO_RESIDENT:-}" ]]; then
     start resident "$ROOT/apps/worker" uv run python -m sml_worker --resident
   fi

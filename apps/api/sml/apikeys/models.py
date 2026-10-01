@@ -22,6 +22,7 @@ class Scope(models.TextChoices):
     REPORTS_READ = "reports:read", "Generate and download reports"
     CREDITS_READ = "credits:read", "Read credit balance and ledger"
     NEWS_WRITE = "news:write", "Submit news verification cases"
+    STUDIO_WRITE = "studio:write", "Generate and edit images in the image studio"
 
 
 DEFAULT_SCOPES = [Scope.DETECT_WRITE, Scope.JOBS_READ, Scope.REPORTS_READ, Scope.CREDITS_READ]

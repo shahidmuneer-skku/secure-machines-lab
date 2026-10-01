@@ -85,7 +85,9 @@
     "pricing": "Pricing",
     "signIn": "Sign in",
     "getStarted": "Get started",
-    "openApp": "Open app"
+    "openApp": "Open app",
+    "studio": "Image studio",
+    "adminStudio": "Image studio"
   },
   "status": {
     "queued": "Queued",
@@ -1134,6 +1136,63 @@
           "live": "Live"
         }
       }
+    },
+    "studio": {
+      "eyebrow": "Generation",
+      "title": "Image studio",
+      "subtitle": "Choose the model users get for generating and for editing images. It stays loaded on the studio GPU; users never see which model it is.",
+      "saved": "Studio settings saved",
+      "failed": "Could not save",
+      "modelsTitle": "Models users get",
+      "modelsHint": "Each mode's controls (formats, reference images, steps…) follow the model chosen here.",
+      "on": "On",
+      "off": "Off",
+      "swapHint": "These two models need about {gb} GB together and cannot both stay loaded: switching between generating and editing loads the other model first (about 30 seconds).",
+      "prices": "Generated image: {generate} credits · edited image: {edit} credits, charged per delivered image.",
+      "editPrices": "Change prices",
+      "serverTitle": "Studio server",
+      "serverHint": "Runs the models on its GPU; started with the resident models (python -m sml_worker --resident).",
+      "state": "State",
+      "states": {
+        "ready": "Ready",
+        "loading": "Starting",
+        "down": "Not running",
+        "unknown": "Unknown"
+      },
+      "gpu": "GPU",
+      "loaded": "Loaded",
+      "loading": "loading {name}",
+      "activity": "Activity",
+      "busy": "Generating ({waiting} waiting)",
+      "idle": "Idle",
+      "memory": "GPU memory",
+      "memoryValue": "{free} GB free · budget {budget} GB",
+      "installedTitle": "Installed models",
+      "installedHint": "From config/studio.yaml. Models load on demand when an administrator tries them.",
+      "model": "Model",
+      "modes": "Modes",
+      "license": "License",
+      "abilities": "Abilities",
+      "size": "Weights",
+      "status": "Status",
+      "mode": {
+        "generate": "Generate",
+        "edit": "Edit"
+      },
+      "nonCommercial": "non-commercial",
+      "refs": "up to {n} reference images",
+      "transparent": "transparency",
+      "formats": "{n} formats",
+      "stepsDefault": "{n} steps",
+      "notInstalled": "Not installed",
+      "loadedBadge": "Loaded",
+      "onDemand": "On demand",
+      "modeLabel": {
+        "generate": "Generating images",
+        "edit": "Editing images"
+      },
+      "modeOff": "Off",
+      "licenseWarning": "{license}: a commercial license is needed before charging users in production."
     }
   },
   "billing": {
@@ -1695,5 +1754,120 @@
       "retry": "Try again",
       "reference": "Reference: {digest}"
     }
+  },
+  "studio": {
+    "eyebrow": "Create",
+    "title": "Image studio",
+    "subtitle": "Generate images from a description, or edit your own images by telling the studio what to change.",
+    "warmingUp": "Studio is starting",
+    "unavailableTitle": "The image studio is not available",
+    "unavailableHint": "It is switched off or not available for your account right now.",
+    "modes": {
+      "generate": "Generate",
+      "edit": "Edit"
+    },
+    "modeHint": {
+      "generate": "Describe the image you want. Be specific about subject, style, light and composition.",
+      "edit": "Add one or more images, then describe the change. Refer to them as image 1, image 2…"
+    },
+    "adminModel": "Model (administrators only)",
+    "adminModelActive": "Users' model ({name})",
+    "adminModelHint": "Users always get the model chosen on Admin → Studio. Others load on demand (up to a minute).",
+    "nonCommercial": "non-commercial",
+    "loaded": "loaded",
+    "notInstalled": "not installed",
+    "references": "Images to edit",
+    "referencesHint": "Up to {max} images (PNG, JPEG, WebP). Paste, drop or browse.",
+    "consentTitle": "People in these images",
+    "consentText": "I confirm that I have the consent of every person shown to edit their likeness, and that I will not use the result to deceive, defame or harass anyone. Required when an image shows a face; your confirmation is recorded with the job.",
+    "promptLabel": {
+      "generate": "Prompt",
+      "edit": "Instruction"
+    },
+    "placeholder": {
+      "generate": "A cozy café on a rainy night in Seoul, neon sign reading \"OPEN\", cinematic photo…",
+      "edit": "Replace the background of image 1 with a sunny beach and keep the person unchanged…"
+    },
+    "examples": {
+      "generate": [
+        "Product photo of a ceramic mug on a marble table, soft daylight",
+        "Watercolour illustration of a fox in a snowy forest",
+        "Minimal poster with the words \"SECURE MACHINES LAB\", bold typography",
+        "Isometric 3D icon of a shield with a padlock, pastel colours"
+      ],
+      "edit": [
+        "Change the background to a sunset beach",
+        "Turn image 1 into a watercolour painting",
+        "Put the object from image 2 into the scene of image 1",
+        "Remove the people in the background"
+      ]
+    },
+    "format": "Format",
+    "matchInput": "Match input",
+    "count": "Images",
+    "transparent": "Transparent background",
+    "advanced": "Advanced",
+    "negative": "Avoid",
+    "negativePlaceholder": "blurry, distorted hands, watermark…",
+    "steps": "Steps",
+    "stepsHint": "More steps add detail but take longer.",
+    "guidance": "Prompt strength",
+    "guidanceHint": "Higher follows the prompt more literally.",
+    "seed": "Seed",
+    "seedRandom": "Random",
+    "seedRoll": "New random seed",
+    "seedClear": "Clear seed",
+    "seedHint": "The same seed and settings give the same image.",
+    "cost": "{count, plural, one {# image} other {# images}} × {price}",
+    "creditsN": "{count, plural, one {# credit} other {# credits}}",
+    "notEnough": "Not enough credits for this request.",
+    "buyCredits": "Buy credits",
+    "submit": {
+      "generate": "Generate",
+      "edit": "Apply edit"
+    },
+    "chargeHint": "Credits are reserved now and charged only for the images you receive. Refused requests are free.",
+    "queued": "Queued",
+    "queuedHint": "{credits, plural, one {# credit} other {# credits}} reserved. Your images appear here.",
+    "insufficient": "Not enough credits",
+    "submitFailed": "Could not start",
+    "detectFailed": "Could not start the analysis",
+    "canceled": "Canceled",
+    "history": "Your images",
+    "more": "Load more",
+    "historyEmpty": "Nothing yet: your images will appear here.",
+    "reset": "Reset",
+    "referenceN": "Reference image {n}",
+    "imageN": "Image {n}",
+    "removeReference": "Remove image {n}",
+    "emptyTitle": "Your canvas is empty",
+    "emptyHint": "Write a prompt on the left, or switch to Edit to change an image of yours.",
+    "reuse": "Reuse settings",
+    "cancel": "Cancel",
+    "from": "From",
+    "waiting": "Waiting for the studio…",
+    "working": "Working…",
+    "failedTitle": "No image was made",
+    "consentRetry": "I have their consent: try again",
+    "blocked": "{count, plural, one {# image was} other {# images were}} withheld by the content filter and not charged.",
+    "charged": "{count, plural, =0 {Not charged} one {# credit charged} other {# credits charged}}",
+    "errors": {
+      "PROMPT_BLOCKED": "The content filter refused this request (sexual or violent content). You were not charged.",
+      "INPUT_BLOCKED": "An image you added was refused by the content filter. You were not charged.",
+      "CONSENT_REQUIRED": "An image shows a person. Confirm that you have their consent, then try again. You were not charged.",
+      "OUTPUT_BLOCKED": "The result was withheld by the content filter. You were not charged.",
+      "SAFETY_UNAVAILABLE": "The content filter is unavailable right now, so nothing was made. You were not charged.",
+      "STUDIO_UNAVAILABLE": "The studio is not available right now. You were not charged.",
+      "MODEL_UNAVAILABLE": "The image model is not available right now. You were not charged.",
+      "GPU_OOM": "The studio ran out of memory. Try fewer images or a smaller format. You were not charged.",
+      "TIMEOUT": "This took too long and was stopped. You were not charged."
+    },
+    "open": "View",
+    "outputAlt": "Generated image",
+    "seedN": "seed {seed}",
+    "download": "Download",
+    "editAgain": "Edit this image",
+    "detect": "Analyse for manipulation",
+    "viewer": "Image viewer"
   }
 }

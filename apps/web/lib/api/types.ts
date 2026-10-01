@@ -31,3 +31,11 @@ export type AdminJobDetector = AdminJobDetectors["detectors"][number]
 export type DetectorAccuracy = Schemas["DetectorAccuracy"]
 export type DetectorBenchmark = Schemas["DetectorBenchmark"]
 export type JobTruth = NonNullable<Schemas["JobTruth"]["truth"]>
+// Image studio: the controls adapt to the admin's model for each mode (users never see the model).
+export type StudioConfig = Schemas["StudioConfig"]
+export type StudioMode = Schemas["StudioModeEnum"]
+export type StudioControls = Schemas["StudioControls"]
+export type StudioJob = Schemas["StudioJob"]
+export type StudioImage = Schemas["StudioImage"]
+export type StudioModelInfo = Schemas["StudioModelInfo"]
+export type StudioAdmin = Schemas["StudioAdmin"]

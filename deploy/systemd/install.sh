@@ -44,6 +44,6 @@ workers=()
 for gpu in $GPUS; do workers+=("sml-worker@$gpu.service"); done
 systemctl enable sml.target sml-api.service sml-celery.service sml-beat.service sml-web.service sml-stream.service \
   sml-resident.service \
-  sml-agents.service \
+  sml-agents.service sml-studio.service \
   "${workers[@]}"
 echo "Installed. Start everything with: sudo systemctl start sml.target ${workers[*]}"

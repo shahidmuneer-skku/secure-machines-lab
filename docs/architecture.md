@@ -115,6 +115,18 @@ unlabelled evidence images. Reports and the AI prompts use it too; `Admin*` seri
 the admin API only. Queue position and ETA
 come from queue depth, consumers and recent task durations (`sml/jobs/eta.py`).
 
+## Image studio (ADR 0012)
+
+`/app/studio` generates images from a prompt or edits reference images by instruction. Its controls
+come from `GET /studio/config`: per mode, the controls of the model the admin chose (Admin → Studio) as
+described in `config/studio.yaml`; users never see the model. `POST /studio/jobs` validates the request
+against those controls, reserves images × price and creates a `Job(kind=studio)` with one task on
+`sml.studio`. The studio worker checks the prompt (local LLM, fails closed), has the studio server check
+the references (NSFW, faces → consent) and generate, then stores the delivered images as the user's
+media; `finalize_studio` charges for them only. The studio server (`sml_worker/studio/server.py`, conda
+env `imagegen`, GPU 1, supervised with the resident models) keeps the admin's models loaded and swaps
+others in on demand.
+
 ## Long-form streaming (ADR 0010)
 
 Long videos are not uploaded to storage. `apps/stream` (FastAPI, legacy `safe` conda env, GPU 2)

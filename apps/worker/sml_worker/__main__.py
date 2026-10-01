@@ -3,7 +3,9 @@
     python -m sml_worker --detectors --gpu 0 --concurrency 4   # detectors on one GPU
     python -m sml_worker --agents --concurrency 2               # news / explain-why agents (Ollama)
     python -m sml_worker --models skku-p2 --gpu 3               # a worker dedicated to one model
-    python -m sml_worker --resident                              # keep resident models loaded (models.yaml)
+    python -m sml_worker --resident                              # keep resident models (models.yaml) and the
+                                                                 # image studio server (studio.yaml) loaded
+    python -m sml_worker --studio --concurrency 2                # image studio jobs (run on the studio server)
 
 Detector tasks start only when their GPU memory fits (sml_worker/gpu.py), so concurrency is an
 upper bound, not a promise: tasks that do not fit wait while the others run. Agent runs share one
@@ -16,7 +18,7 @@ import argparse
 import logging
 import os
 
-from .registry import AGENT_QUEUES, detector_queues, queue_names
+from .registry import AGENT_QUEUES, STUDIO_QUEUES, detector_queues, queue_names
 
 
 def main() -> None:
@@ -26,6 +28,7 @@ def main() -> None:
     parser.add_argument("--all", action="store_true", help="Consume every model/audit/agent queue")
     parser.add_argument("--detectors", action="store_true", help="Consume every model/audit/long-video queue")
     parser.add_argument("--agents", action="store_true", help="Consume the news and explain-why agent queues")
+    parser.add_argument("--studio", action="store_true", help="Consume the image studio queue")
     parser.add_argument("--resident", action="store_true",
                         help="Start and watch the resident model servers (`resident` blocks in models.yaml); "
                              "--models limits it to those models")
@@ -50,8 +53,10 @@ def main() -> None:
             queues += detector_queues()
         if args.agents:
             queues += AGENT_QUEUES
+        if args.studio:
+            queues += STUDIO_QUEUES
     if not queues:
-        parser.error("Choose --detectors, --agents, --queues, --models or --all")
+        parser.error("Choose --detectors, --agents, --studio, --queues, --models or --all")
     if args.gpu != "":
         os.environ["SML_WORKER_GPU"] = args.gpu
     logging.basicConfig(level=args.loglevel, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -61,7 +66,8 @@ def main() -> None:
 
     beat = Heartbeat(queues, args.gpu)
     beat.start()
-    role = "agents" if args.agents and not args.detectors else f"gpu{args.gpu or 'x'}"
+    role = ("agents" if args.agents and not args.detectors else "studio" if args.studio and not args.detectors
+            else f"gpu{args.gpu or 'x'}")
     name = args.name or f"sml-worker-{role}-{os.getpid()}@%h"
     try:
         app.worker_main([

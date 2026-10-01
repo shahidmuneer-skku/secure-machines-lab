@@ -7,6 +7,7 @@ user_capabilities: &user_caps
   - run_long_video
   - run_news_verification
   - use_reasoning
+  - use_studio
   - manage_own_api_keys
   - purchase_credits
 

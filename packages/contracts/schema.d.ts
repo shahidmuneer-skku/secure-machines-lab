@@ -381,6 +381,30 @@ export interface paths {
         patch: operations["admin_settings_partial_update"];
         trace?: never;
     };
+    "/api/v1/admin/studio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Image studio models and server
+         * @description Admin → Studio: which model users get per mode, and the studio server's state.
+         */
+        get: operations["admin_studio_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Choose the studio's model per mode (it stays loaded on the studio GPU)
+         * @description Admin → Studio: which model users get per mode, and the studio server's state.
+         */
+        patch: operations["admin_studio_partial_update"];
+        trace?: never;
+    };
     "/api/v1/admin/system": {
         parameters: {
             query?: never;
@@ -1368,6 +1392,58 @@ export interface paths {
         };
         /** Download a generated report */
         get: operations["reports_download_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studio/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the image studio offers right now (controls per mode, prices) */
+        get: operations["studio_config_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studio/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My image studio history (newest first) */
+        get: operations["studio_jobs_list"];
+        put?: never;
+        /** Generate or edit images. Charged per delivered image; follow progress via SSE. */
+        post: operations["studio_jobs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studio/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One studio job with its images */
+        get: operations["studio_jobs_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2451,9 +2527,10 @@ export interface components {
          * @description * `detect` - Detection
          *     * `long_video` - Long-form video
          *     * `news` - News verification
+         *     * `studio` - Image studio
          * @enum {string}
          */
-        JobKindEnum: "detect" | "long_video" | "news";
+        JobKindEnum: "detect" | "long_video" | "news" | "studio";
         JobList: {
             /** Format: uuid */
             readonly id: string;
@@ -2723,9 +2800,10 @@ export interface components {
          * @description * `detect` - detect
          *     * `long_video` - long_video
          *     * `news` - news
+         *     * `studio` - studio
          * @enum {string}
          */
-        ModuleEnum: "detect" | "long_video" | "news";
+        ModuleEnum: "detect" | "long_video" | "news" | "studio";
         ModuleInfo: {
             id: components["schemas"]["ModuleEnum"];
             allowed: boolean;
@@ -2949,6 +3027,19 @@ export interface components {
             previous: string | null;
             results: components["schemas"]["Report"][];
         };
+        PaginatedStudioJobList: {
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
+             */
+            next: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+             */
+            previous: string | null;
+            results: components["schemas"]["StudioJob"][];
+        };
         PaginatedWebhookEventList: {
             /**
              * Format: uri
@@ -3034,6 +3125,11 @@ export interface components {
             guest_trial_images_per_day?: number;
             /** @description Model variant ids used for guest trials. Empty = the default image set. */
             guest_trial_models?: unknown;
+            studio_enabled?: boolean;
+            /** @description Studio model for text-to-image. Empty = generation off. */
+            studio_generate_model?: string;
+            /** @description Studio model for editing reference images. Empty = editing off. */
+            studio_edit_model?: string;
             /**
              * Format: double
              * @description Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off).
@@ -3057,6 +3153,11 @@ export interface components {
             maintenance_mode?: boolean;
             announcement?: string;
             signups_enabled?: boolean;
+        };
+        PatchedStudioAdminUpdateRequest: {
+            enabled?: boolean;
+            generate_model?: string;
+            edit_model?: string;
         };
         Payment: {
             /** Format: uuid */
@@ -3196,6 +3297,11 @@ export interface components {
             guest_trial_images_per_day: number;
             /** @description Model variant ids used for guest trials. Empty = the default image set. */
             guest_trial_models: unknown;
+            studio_enabled: boolean;
+            /** @description Studio model for text-to-image. Empty = generation off. */
+            studio_generate_model: string;
+            /** @description Studio model for editing reference images. Empty = editing off. */
+            studio_edit_model: string;
             /**
              * Format: double
              * @description Weight of the EXIEF metadata verdict in the AI-generation analysis, relative to one detector of weight 1 (confirmed counts as 100% fake, suspect 80%, weak 60%; 0 = off).
@@ -3432,9 +3538,10 @@ export interface components {
          *     * `reports:read` - Generate and download reports
          *     * `credits:read` - Read credit balance and ledger
          *     * `news:write` - Submit news verification cases
+         *     * `studio:write` - Generate and edit images in the image studio
          * @enum {string}
          */
-        ScopesEnum: "detect:write" | "jobs:read" | "jobs:write" | "reports:read" | "credits:read" | "news:write";
+        ScopesEnum: "detect:write" | "jobs:read" | "jobs:write" | "reports:read" | "credits:read" | "news:write" | "studio:write";
         /**
          * @description * `ok` - ok
          *     * `error` - error
@@ -3534,6 +3641,197 @@ export interface components {
             whole_video: boolean;
             locale?: components["schemas"]["LocaleEnum"];
         };
+        StudioActive: {
+            generate: string | null;
+            edit: string | null;
+        };
+        StudioAdmin: {
+            enabled: boolean;
+            generate_model: string;
+            edit_model: string;
+            prices: components["schemas"]["StudioPrices"];
+            server: components["schemas"]["StudioServer"];
+            models: components["schemas"]["StudioModelInfo"][];
+        };
+        StudioAspectRatio: {
+            id: string;
+            width: number;
+            height: number;
+        };
+        StudioConfig: {
+            enabled: boolean;
+            online: boolean;
+            modes: components["schemas"]["StudioModes"];
+            consent_statement: string;
+            consent_version: string;
+            /** @description Administrators only. */
+            models: components["schemas"]["StudioModelInfo"][];
+            /** @description Administrators only. */
+            active: components["schemas"]["StudioActive"];
+        };
+        StudioControls: {
+            references: components["schemas"]["StudioReferenceLimit"];
+            aspect_ratios: components["schemas"]["StudioAspectRatio"][];
+            match_input: boolean;
+            negative_prompt: boolean;
+            transparent: boolean;
+            steps: components["schemas"]["StudioRange"] | null;
+            guidance: components["schemas"]["StudioRange"] | null;
+            max_outputs: number;
+            prompt_max_chars: number;
+        };
+        StudioError: {
+            code: string;
+            message: string;
+        };
+        StudioImage: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            download_url: string;
+            thumbnail_url: string | null;
+            width: number | null;
+            height: number | null;
+            seed: number | null;
+            name: string;
+        };
+        /** @description A studio job as its owner sees it: request, live progress, the images and the cost. */
+        StudioJob: {
+            /** Format: uuid */
+            readonly id: string;
+            status: components["schemas"]["JobStatusEnum"];
+            readonly mode: components["schemas"]["StudioModeEnum"];
+            /** @description File name or case title. */
+            title: string;
+            readonly params: components["schemas"]["StudioParams"];
+            readonly references: components["schemas"]["StudioImage"][];
+            readonly outputs: components["schemas"]["StudioImage"][];
+            readonly blocked: number;
+            /** Format: double */
+            progress: number;
+            readonly live: components["schemas"]["StudioLive"] | null;
+            readonly queue: components["schemas"]["PublicQueue"] | null;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly error: components["schemas"]["StudioError"] | null;
+            readonly model: components["schemas"]["StudioModelRef"] | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        StudioJobCreateRequest: {
+            mode: components["schemas"]["StudioModeEnum"];
+            prompt: string;
+            /** @default  */
+            negative_prompt: string;
+            /** @default  */
+            aspect_ratio: string;
+            steps?: number | null;
+            /** Format: double */
+            guidance?: number | null;
+            seed?: number | null;
+            /** @default 1 */
+            count: number;
+            /** @default false */
+            transparent: boolean;
+            reference_ids?: string[];
+            /**
+             * @description The user confirms having the consent of the people shown.
+             * @default false
+             */
+            consent: boolean;
+            /**
+             * @description Administrators only: try another studio model.
+             * @default
+             */
+            model: string;
+        };
+        StudioLive: {
+            /** Format: double */
+            progress: number;
+            message: string;
+        };
+        StudioMode: {
+            available: boolean;
+            /** @description Credits per delivered image. */
+            price: number;
+            controls: components["schemas"]["StudioControls"] | null;
+        };
+        /**
+         * @description * `generate` - generate
+         *     * `edit` - edit
+         * @enum {string}
+         */
+        StudioModeEnum: "generate" | "edit";
+        StudioModelInfo: {
+            id: string;
+            name: string;
+            vendor: string;
+            license: string;
+            commercial: boolean;
+            modes: components["schemas"]["StudioModeEnum"][];
+            installed: boolean;
+            loaded: boolean;
+            controls: {
+                [key: string]: components["schemas"]["StudioControls"];
+            };
+            /** Format: double */
+            weights_gb: number | null;
+        };
+        StudioModelRef: {
+            id: string;
+            name: string;
+        };
+        StudioModes: {
+            generate: components["schemas"]["StudioMode"];
+            edit: components["schemas"]["StudioMode"];
+        };
+        StudioParams: {
+            prompt: string;
+            negative_prompt: string | null;
+            aspect_ratio: string | null;
+            width: number | null;
+            height: number | null;
+            steps: number | null;
+            /** Format: double */
+            guidance: number | null;
+            seed: number | null;
+            count: number;
+            transparent: boolean | null;
+        };
+        StudioPrices: {
+            generate: number;
+            edit: number;
+        };
+        StudioRange: {
+            /** Format: double */
+            default: number;
+            /** Format: double */
+            min: number;
+            /** Format: double */
+            max: number;
+            /** Format: double */
+            step: number;
+        };
+        StudioReferenceLimit: {
+            min: number;
+            max: number;
+        };
+        StudioServer: {
+            state: string;
+            gpu: string;
+            loaded: string[];
+            loading: string | null;
+            busy: boolean;
+            waiting: number;
+            /** Format: double */
+            device_free_gb: number | null;
+            /** Format: double */
+            budget_gb: number | null;
+        };
         Subscription: {
             /** Format: uuid */
             readonly id: string;
@@ -3607,9 +3905,10 @@ export interface components {
          *     * `audit` - Audit step
          *     * `long_video` - Long-form video scan
          *     * `news` - News verification
+         *     * `studio` - Image generation / editing
          * @enum {string}
          */
-        TaskKindEnum: "model" | "audit" | "long_video" | "news";
+        TaskKindEnum: "model" | "audit" | "long_video" | "news" | "studio";
         TaskLog: {
             /** Format: uuid */
             task_id: string;
@@ -3783,8 +4082,9 @@ export interface operations {
                  * @description * `detect` - Detection
                  *     * `long_video` - Long-form video
                  *     * `news` - News verification
+                 *     * `studio` - Image studio
                  */
-                kind?: ("detect" | "long_video" | "news")[];
+                kind?: ("detect" | "long_video" | "news" | "studio")[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 q?: string;
@@ -4551,6 +4851,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformSettings"];
+                };
+            };
+        };
+    };
+    admin_studio_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioAdmin"];
+                };
+            };
+        };
+    };
+    admin_studio_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedStudioAdminUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedStudioAdminUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedStudioAdminUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioAdmin"];
                 };
             };
         };
@@ -5539,8 +5883,9 @@ export interface operations {
                  * @description * `detect` - Detection
                  *     * `long_video` - Long-form video
                  *     * `news` - News verification
+                 *     * `studio` - Image studio
                  */
-                kind?: ("detect" | "long_video" | "news")[];
+                kind?: ("detect" | "long_video" | "news" | "studio")[];
                 /** @description Number of results to return per page. */
                 limit?: number;
                 /**
@@ -6041,7 +6386,10 @@ export interface operations {
     };
     media_content_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Save as a file instead of showing it */
+                download?: boolean;
+            };
             header?: never;
             path: {
                 id: string;
@@ -6189,6 +6537,97 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    studio_config_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioConfig"];
+                };
+            };
+        };
+    };
+    studio_jobs_list: {
+        parameters: {
+            query?: {
+                /** @description The pagination cursor value. */
+                cursor?: string;
+                /** @description Number of results to return per page. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStudioJobList"];
+                };
+            };
+        };
+    };
+    studio_jobs_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudioJobCreateRequest"];
+                "multipart/form-data": components["schemas"]["StudioJobCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StudioJobCreateRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioJob"];
+                };
+            };
+        };
+    };
+    studio_jobs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudioJob"];
                 };
             };
         };

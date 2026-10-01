@@ -16,3 +16,4 @@ consequences. Add a new record instead of rewriting an accepted one; mark the ol
 | [0009](0009-authentication.md) | Sessions for browsers, API keys for machines, MFA for staff | Accepted |
 | [0010](0010-long-form-streaming.md) | Long-form video streamed to a GPU service, charged per minute analysed | Accepted |
 | [0011](0011-detectors-are-not-disclosed.md) | Users never see which detectors run; the admin chooses them | Accepted |
+| [0012](0012-image-studio.md) | Image studio: generation and editing with the admin's model | Accepted |

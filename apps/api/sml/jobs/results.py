@@ -25,7 +25,7 @@ from .timeline import emit, push_job_state
 logger = logging.getLogger(__name__)
 
 TASK_WEIGHT = {JobTask.Kind.MODEL: 1.0, JobTask.Kind.LONG_VIDEO: 1.0, JobTask.Kind.NEWS: 1.0,
-               JobTask.Kind.AUDIT: 0.25}
+               JobTask.Kind.STUDIO: 1.0, JobTask.Kind.AUDIT: 0.25}
 RETRYABLE_CODES = {"WORKER_LOST", "TIMEOUT", "GPU_OOM", "RUNTIME_ERROR", "INFRA_ERROR"}
 
 # What users see when a step starts. They never learn which detectors run or how many.
@@ -42,6 +42,9 @@ def _public_start(job: Job, task: JobTask, first_start: bool) -> str:
         return PUBLIC_CHECK_STARTED.get(task.target, "") if first_start else ""
     if task.kind == JobTask.Kind.NEWS:
         return "Verifying the story" if first_start else ""
+    if task.kind == JobTask.Kind.STUDIO:
+        mode = (job.options.get("studio") or {}).get("mode")
+        return ("Editing the image" if mode == "edit" else "Generating the image") if first_start else ""
     # Detectors (and long-form scans): one message when the analysis begins, not one per detector.
     started = job.tasks.filter(kind__in=[JobTask.Kind.MODEL, JobTask.Kind.LONG_VIDEO],
                                started_at__isnull=False).exclude(pk=task.pk).exists()
@@ -198,6 +201,11 @@ def _emit_success(job: Job, task: JobTask) -> None:
     if task.kind == JobTask.Kind.AUDIT:
         emit(job, "audit.done", f"Audit step '{task.target}' completed", task=task, level="success")
         return
+    if task.kind == JobTask.Kind.STUDIO:
+        delivered = len(r.get("outputs") or [])
+        emit(job, "studio.done", f"'{task.target}' delivered {delivered} image(s) (peak {r.get('peak_gb')} GB)",
+             task=task, level="success", data={"delivered": delivered, "blocked": r.get("blocked", 0)})
+        return
     if r.get("no_face"):
         emit(job, "task.no_face", f"'{task.target}': no face found in the media", task=task, level="warning")
     elif r.get("fake_prob") is not None:
@@ -335,10 +343,16 @@ def finalize_job(job: Job) -> Job:
     reasons: list[dict[str, Any]] = []
 
     news = next((t for t in tasks if t.kind == JobTask.Kind.NEWS), None)
+    studio = next((t for t in tasks if t.kind == JobTask.Kind.STUDIO), None)
     if job.cancel_requested:
         job.status = Job.Status.CANCELED
         job.verdict = ""
         _release(job, "Job canceled — credits released")
+    elif studio is not None:
+        from sml.studio.services import finalize_studio
+
+        job.summary = {}
+        finalize_studio(job, studio, reasons)
     elif news is not None:
         _finalize_news(job, news, reasons)
     elif usable or scored_groups:
@@ -409,6 +423,11 @@ def _finalize_news(job: Job, news: JobTask, reasons: list[dict[str, Any]]) -> No
 
 
 def _final_message(job: Job) -> str:
+    if job.kind == Job.Kind.STUDIO and job.status == Job.Status.SUCCEEDED:
+        count = len((job.summary.get("studio") or {}).get("outputs") or [])
+        return f"Done: {count} image{'s' if count != 1 else ''} ready"
+    if job.kind == Job.Kind.STUDIO and job.status == Job.Status.FAILED:
+        return job.error_message or "The image could not be made"
     if job.status == Job.Status.SUCCEEDED and job.fake_probability is not None:
         label = "Likely manipulated" if job.verdict == Job.Verdict.FAKE else "Likely authentic"
         return f"Analysis complete: {label} ({job.fake_probability * 100:.1f}% fake)"

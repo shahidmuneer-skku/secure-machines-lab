@@ -128,6 +128,8 @@ class PriceRule(models.Model):
         REPORT_PDF = "report_pdf", "PDF report"
         REPORT_HWP = "report_hwp", "HWP report"
         REPORT_CSV = "report_csv", "CSV report"
+        STUDIO_GENERATE = "studio_generate", "Image studio: generated image (per image)"
+        STUDIO_EDIT = "studio_edit", "Image studio: edited image (per image)"
 
     key = models.CharField(max_length=40, choices=Key.choices, unique=True)
     credits = models.PositiveIntegerField()
@@ -144,6 +146,8 @@ class PriceRule(models.Model):
         Key.REPORT_PDF: 0,
         Key.REPORT_HWP: 0,
         Key.REPORT_CSV: 0,
+        Key.STUDIO_GENERATE: 3,
+        Key.STUDIO_EDIT: 2,
     }
 
     def __str__(self) -> str:

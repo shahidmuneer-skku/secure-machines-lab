@@ -26,5 +26,9 @@ export const qk = {
   sessions: ["auth", "sessions"] as const,
   trialStatus: ["trial", "status"] as const,
   trialJob: (id: string) => ["trial", "job", id] as const,
+  // Under ["jobs", ...] so job events from the event stream refresh them too.
+  studioConfig: ["studio", "config"] as const,
+  studioJobs: ["jobs", "list", "studio"] as const,
+  studioJob: (id: string) => ["jobs", "detail", id, "studio"] as const,
   admin: (...parts: (string | object)[]) => ["admin", ...parts] as const,
 }

@@ -1,0 +1,158 @@
+# Image studio: text-to-image generation and instruction-based editing (owner, 2026-10-01).
+#
+# Read by the API (what users may ask for, prices are PriceRules) and by the studio server
+# (sml_worker/studio/server.py), which runs in the `imagegen` conda env on `server.gpu`. The admin
+# picks one model per mode (Admin → Studio); that model stays loaded, others load on demand and the
+# admin's model is loaded again once the studio is idle. Users never choose and never see the model:
+# the studio adapts its controls to the chosen model's `capabilities`.
+#
+# Per model:
+#   repo         Hugging Face repository (downloaded into the HF cache; `hf download <repo>`)
+#   pipeline     diffusers pipeline class
+#   modes        generate (text → image) and/or edit (reference images + instruction → image)
+#   commercial   false = the license forbids paid use (owner: allowed for now; license to be bought
+#                before going live)
+#   work_gb      GPU working memory needed on top of the weights while generating
+#   call         how the studio's controls map to the pipeline's arguments; `fixed` is always passed
+#   capabilities what the studio offers for this model (and what the API accepts)
+
+server:
+  conda_env: imagegen
+  gpu: "1"
+  # The studio never fills the GPU past this (other services share it); models that do not fit
+  # next to the loaded ones are swapped in on demand.
+  memory_budget_gb: 66
+  # The admin's models are loaded again after this long without requests.
+  idle_restore_seconds: 45
+  # A single generation request (all its images) may run this long.
+  max_request_seconds: 900
+
+safety:
+  # Same classifier as the NSFW check (Marqo/nsfw-image-detection-384), run inside the studio server
+  # on reference images and on every output.
+  nsfw_model_dir: "{models_root}/nsfw_detection/nsfw-image-detection-384/model"
+  nsfw_threshold: 0.5
+  # Faces in reference images need the user's confirmation that they have the person's consent.
+  face_detector: "~/.insightface/models/buffalo_l/det_10g.onnx"
+  face_min_score: 0.6
+
+limits:
+  prompt_max_chars: 2000
+  reference_max_mb: 50  # the platform's image upload limit
+
+models:
+  - id: qwen-image-2512
+    name: Qwen-Image 2512
+    vendor: Qwen (Alibaba)
+    license: Apache-2.0
+    commercial: true
+    repo: Qwen/Qwen-Image-2512
+    pipeline: QwenImagePipeline
+    modes: [generate]
+    work_gb: 8
+    call:
+      steps: num_inference_steps
+      guidance: true_cfg_scale
+      negative_prompt: negative_prompt
+      size: true
+    default_negative_prompt: "低分辨率，低画质，肢体畸形，手指畸形，画面过饱和，蜡像感，人脸无细节，过度光滑，画面具有AI感。构图混乱。文字模糊，扭曲。"
+    capabilities:
+      max_references: 0
+      negative_prompt: true
+      aspect_ratios:
+        "1:1": [1328, 1328]
+        "16:9": [1664, 928]
+        "9:16": [928, 1664]
+        "4:3": [1472, 1104]
+        "3:4": [1104, 1472]
+        "3:2": [1584, 1056]
+        "2:3": [1056, 1584]
+      steps: {default: 50, min: 10, max: 60}
+      guidance: {default: 4.0, min: 1.0, max: 10.0, step: 0.5}
+      max_outputs: 4
+
+  - id: qwen-image-edit-2511
+    name: Qwen-Image-Edit 2511
+    vendor: Qwen (Alibaba)
+    license: Apache-2.0
+    commercial: true
+    repo: Qwen/Qwen-Image-Edit-2511
+    pipeline: QwenImageEditPlusPipeline
+    modes: [edit]
+    work_gb: 10
+    call:
+      steps: num_inference_steps
+      guidance: true_cfg_scale
+      negative_prompt: negative_prompt
+      images: image
+      fixed: {guidance_scale: 1.0}
+    default_negative_prompt: " "
+    capabilities:
+      max_references: 3
+      negative_prompt: true
+      # The output follows the reference images' size (about one megapixel).
+      aspect_ratios: {}
+      steps: {default: 40, min: 10, max: 60}
+      guidance: {default: 4.0, min: 1.0, max: 10.0, step: 0.5}
+      max_outputs: 4
+
+  - id: qwen-image-2.1
+    name: Qwen-Image 2.1
+    vendor: Qwen (Alibaba)
+    license: Qwen Research License (non-commercial)
+    commercial: false
+    repo: Qwen/Qwen-Image-2.1
+    pipeline: QwenImage21Pipeline
+    modes: [generate, edit]
+    work_gb: 30
+    # Sampled without guidance (the pipeline's default true_cfg_scale 1.0 ignores a negative prompt).
+    call:
+      steps: num_inference_steps
+      images: image
+      size: generate  # edits follow the last reference image's aspect ratio at about one megapixel
+    # The model card's prompt format for transparent (RGBA) output.
+    transparent_prompt: "This is an RGBA image with transparency. {prompt} The image has alpha channel and the background is transparent."
+    capabilities:
+      max_references: 10
+      negative_prompt: false
+      transparent: true
+      aspect_ratios:
+        "1:1": [2048, 2048]
+        "4:3": [2400, 1792]
+        "3:4": [1792, 2400]
+        "3:2": [2528, 1696]
+        "2:3": [1696, 2528]
+        "16:9": [2752, 1536]
+        "9:16": [1536, 2752]
+      steps: {default: 40, min: 10, max: 60}
+      max_outputs: 4
+
+  - id: flux2-klein-4b
+    name: FLUX.2 [klein] 4B
+    vendor: Black Forest Labs
+    license: Apache-2.0
+    commercial: true
+    repo: black-forest-labs/FLUX.2-klein-4B
+    pipeline: Flux2KleinPipeline
+    modes: [generate, edit]
+    work_gb: 6
+    # Distilled: four steps without guidance. Edits take the last reference image's size unless a
+    # format is chosen.
+    call:
+      steps: num_inference_steps
+      images: image
+      size: true
+      fixed: {guidance_scale: 1.0}
+    capabilities:
+      max_references: 4
+      negative_prompt: false
+      aspect_ratios:
+        "1:1": [1024, 1024]
+        "16:9": [1344, 768]
+        "9:16": [768, 1344]
+        "4:3": [1152, 896]
+        "3:4": [896, 1152]
+        "3:2": [1216, 832]
+        "2:3": [832, 1216]
+      steps: {default: 4, min: 2, max: 12}
+      max_outputs: 4

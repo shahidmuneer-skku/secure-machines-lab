@@ -38,6 +38,9 @@ class MediaObject(TimeStampedModel):
     s3_multipart_upload_id = models.CharField(max_length=255, blank=True, default="")
     rejection_reason = models.CharField(max_length=255, blank=True, default="")
     training_consent = models.BooleanField(default=False, help_text="Owner had opted in when uploading.")
+    # Images made in the image studio: the job that generated or edited them (purged with it).
+    generated_by = models.ForeignKey("jobs.Job", null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name="outputs")
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
