@@ -264,6 +264,33 @@ models:
         parser: b2
         timeout_seconds: 1800
 
+  - id: xb-dfd
+    legacy_ids: [XB-DFD]
+    display_name: {en: XB-DFD, ko: XB-DFD, de: XB-DFD}
+    description:
+      en: Explanation-bottleneck face-swap detector (CLIP + BLIP captions) with a heatmap of forgery cues. Heavy.
+      ko: 위조 단서 히트맵을 제공하는 설명 병목 기반 얼굴 교체 탐지 모델(CLIP + BLIP 캡션). 무거움.
+      de: Face-Swap-Detektor mit Erklärungs-Bottleneck (CLIP + BLIP-Beschreibungen) und Heatmap der Fälschungsspuren. Rechenintensiv.
+    family: deepfake
+    face_required: true
+    xai: gradcam
+    default_selected: true
+    gpu_mem_mb: 12000   # measured peak 11.2 GB (fp32 weights, 2.9B parameters)
+    # sml_infer.py is our wrapper around the repo's inference.py. Weights come from the Hugging Face
+    # cache (XB-DF/XB-DF). Videos score up to 128 frames spread over the clip and write the standard
+    # per-frame CSV.
+    media:
+      image: &xbdfd_image
+        conda_env: wacv
+        cwd: "{models_root}/detection_models/XB-DFD"
+        argv: ["{python}", "sml_infer.py", "--input", "{input}", "--stem", "{stem}", "--media", "{media}",
+               "--out-root", "{models_root}"]
+        parser: standard
+        timeout_seconds: 900
+      video:
+        <<: *xbdfd_image
+        timeout_seconds: 1800
+
   - id: skku-aigc
     legacy_ids: [SKKU-AIGC, Safe]
     display_name: {en: SKKU-AIGC, ko: SKKU-AIGC, de: SKKU-AIGC}

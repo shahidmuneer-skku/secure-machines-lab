@@ -28,6 +28,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- XB-DFD face-swap detector (explanation bottleneck: CLIP + BLIP captions, with a heatmap of forgery
+  cues) for images and videos. Videos are scored frame by frame: up to 128 frames spread over the clip,
+  with the per-frame timeline and the most suspicious frame's heatmap.
 
 ### Changed
 - Users no longer choose detectors or checks: the administrator sets which detectors run on every
@@ -37,7 +40,7 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   explanations (ADR 0011). Staff keep the full detail in the admin console, including per-task logs.
 - Results are reported per analysis — face swap and AI generation — each with its own verdict
   and probability (no detector counts); the headline ("Analysis Result") is fake when any analysis is
-  fake. SKKU (BEYBI) and B2 count towards face swap, Center and Inzi towards AI generation. The
+  fake. SKKU (BEYBI), B2 and XB-DFD count towards face swap, Center and Inzi towards AI generation. The
   administrator can move a detector to another analysis. Reports, the AI explanation and the news
   agent use the same split; video timelines show one line per analysis.
 - Heatmaps: the administrator chooses whose heatmap users see (one image per detector; Center by
@@ -72,6 +75,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Restarting a model worker (deploys, systemctl) lost the tasks it was running or holding: the pool
   processes received the stop signal and Celery acknowledged their messages as failed. Tasks now go
   back to the queue, and the model subprocess is stopped instead of running on without a worker.
+- Per-frame video scores: per-frame percentages such as `73%` (SKKU/BEYBI) were dropped, so its
+  timeline was empty; a total row of frame counts above 100 (`Total result,145,0`) lost the count;
+  the `processing` placeholder row counted as a frame scored 0.5; and `Total result,0,0,no_face` read
+  as 0% fake instead of "no face".
 - SKKU (BEYBI) video: dlib loaded CUDA 12.9 cuSOLVER against PyTorch's cuBLAS 12.1; the env now puts
   PyTorch's CUDA libraries first.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors

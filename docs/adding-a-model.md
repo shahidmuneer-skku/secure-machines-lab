@@ -33,7 +33,7 @@ working directory you choose. Your script must:
   | `center` | `real: 12.5` / `fake: 87.5` percentages |
   | `safe_csv` | a CSV with a `prediction` column (`result_file`), else `prediction: …` on stdout |
 
-  Values in [0, 1] are probabilities, values in (1, 100] are percentages;
+  Values in [0, 1] are probabilities, values in (1, 100] or with a `%` sign are percentages;
 - exit non-zero on failure. `CUDA out of memory` and "no kernel image is available" in stderr are
   recognised and reported as `GPU_OOM` / `GPU_UNSUPPORTED`; anything else is `RUNTIME_ERROR`
   (retried once);
@@ -43,6 +43,14 @@ working directory you choose. Your script must:
   `inference_images/<stem>*.png`, annotated videos as `detected/<stem>*.mp4`, per-frame scores as
   `inference_csv/<stem>.csv` (under the models root). They are uploaded and shown with the result
   automatically; a per-frame CSV also drives the live progress bar for videos.
+
+  The per-frame CSV is `frame,real,fake,result,progress`: one row per frame (probabilities or
+  percentages; leave `real`/`fake` empty for a frame without a face), `progress` in percent, and a
+  final `Total result,<real>,<fake>,<real|fake>,100` row, used when stdout has no score. The total may
+  hold frame counts instead (the share of fake frames is used), and `Total result,0,0,no_face,100`
+  means no frame had a face. A `0,0.5,0.5,processing,0.0` placeholder row is ignored.
+  `detection_models/XB-DFD/sml_infer.py` is a compact example of a wrapper that does all of this for
+  images and videos.
 
 Do not choose a GPU in code: the worker sets `CUDA_VISIBLE_DEVICES` (and
 `CUDA_DEVICE_ORDER=PCI_BUS_ID`). The script runs with its conda environment activated

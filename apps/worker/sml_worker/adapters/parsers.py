@@ -23,11 +23,14 @@ NO_FACE_MARKERS = ("SKKU_P_NO_FACE_DETECTED", "No faces detected", "얼굴을 �
 
 
 def to_percent(value: str | float) -> float | None:
-    """Legacy semantics: values in [0,1] are probabilities, (1,100] already percents."""
+    """Legacy semantics: values in [0,1] are probabilities, (1,100] already percents; "73%" is a percent."""
+    text = str(value).strip()
     try:
-        v = float(value)
+        v = float(text.rstrip("%"))
     except (TypeError, ValueError):
         return None
+    if text.endswith("%"):
+        return v if 0 <= v <= 100 else None
     if 0 <= v <= 1:
         return v * 100
     if 1 < v <= 100:
@@ -114,6 +117,18 @@ def detect_no_face(stdout: str, stderr: str) -> bool:
     return any(marker in blob for marker in NO_FACE_MARKERS)
 
 
+def _fake_frame_share(real: str, fake: str) -> float | None:
+    """BEYBI's total row holds frame counts ("Total result,145,0,real,100"). Counts above 100 are not
+    percents, so the share of fake frames is returned instead."""
+    try:
+        r, f = float(real), float(fake)
+    except ValueError:
+        return None
+    if r < 0 or f < 0 or max(r, f) <= 100:
+        return None  # probabilities or percents (smaller counts renormalize to the same share)
+    return f / (r + f)
+
+
 def read_frame_csv(path: Path) -> tuple[list[dict[str, Any]], float | None, float | None]:
     """Legacy inference_csv/<stem>.csv → (per-frame rows, last progress %, total fake prob)."""
     if not path.exists():
@@ -134,8 +149,13 @@ def read_frame_csv(path: Path) -> tuple[list[dict[str, Any]], float | None, floa
                     with contextlib.suppress(ValueError):
                         progress = float(row[4])
                 if label.lower().startswith("total"):
-                    total = _normalize(real, fake)
+                    # "Total result,0,0,no_face,100" means no frame had a face, not 0% fake.
+                    no_face = len(row) >= 4 and row[3].strip().lower() == "no_face"
+                    share = _fake_frame_share(row[1], row[2])
+                    total = None if no_face else share if share is not None else _normalize(real, fake)
                     continue
+                if len(row) >= 4 and row[3].strip().lower() == "processing":
+                    continue  # the "0,0.5,0.5,processing,0.0" placeholder written before any frame is scored
                 if fake is not None:
                     rows.append({"frame": label, "fake_prob": round(fake / 100, 5)})
     except OSError:

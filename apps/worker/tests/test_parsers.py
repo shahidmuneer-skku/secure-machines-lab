@@ -57,6 +57,24 @@ def test_frame_csv_progress_and_total(tmp_path: Path):
     assert parsers.read_frame_csv(tmp_path / "none.csv") == ([], None, None)
 
 
+def test_frame_csv_without_any_face_has_no_total(tmp_path: Path):
+    """BEYBI and XB-DFD end with "Total result,0,0,no_face,100" when no frame had a face."""
+    f = tmp_path / "x.csv"
+    f.write_text("frame,real,fake,result,progress\n0,0.5,0.5,processing,0.0\n0,,,no_face,50.00\n1,,,no_face,100.00\n"
+                 "Total result,0,0,no_face,100\n")
+    rows, progress, total = parsers.read_frame_csv(f)
+    assert (rows, total, progress) == ([], None, 100.0)  # the "processing" placeholder is not a frame
+
+
+def test_frame_csv_skips_frames_without_a_face(tmp_path: Path):
+    f = tmp_path / "x.csv"  # XB-DFD: frames without a face have no score
+    f.write_text("frame,real,fake,result,progress\n0,0.5,0.5,processing,0.0\n0,0.7000,0.3000,real,33.33\n"
+                 "1,,,no_face,66.67\n2,0.2000,0.8000,fake,100.00\nTotal result,0.4500,0.5500,fake,100\n")
+    rows, _, total = parsers.read_frame_csv(f)
+    assert [(r["frame"], r["fake_prob"]) for r in rows] == [("0", 0.3), ("2", 0.8)]
+    assert total == pytest.approx(0.55)
+
+
 def test_missing_anti_spoofing_code_is_a_failure_not_a_result():
     from sml_worker.adapters.audit import _raise_if_fas_unavailable
     from sml_worker.adapters.base import AdapterError
@@ -87,3 +105,18 @@ def test_prompts_never_name_detectors():
     text = explain_prompt({**context, "analyses": [{"id": "face_swap", "verdict": "fake", "fake_probability": 0.9,
                                                     "status": "done"}]}, "media.png", [], "en")
     assert '"analysis": "face-swap analysis"' in text and "Results by analysis" in text
+
+
+def test_beybi_frame_csv_percents_and_frame_counts(tmp_path: Path):
+    """BEYBI writes per-frame percents ("73%") and a total row of frame counts (job 01a0f649)."""
+    f = tmp_path / "x.csv"
+    f.write_text("frame,real,fake,result,progress\n0,0.5,0.5,processing,0.0\n0,73%,27%,real,0.00\n"
+                 "1,1%,99%,fake,50.00\n\nTotal result,145,0,real,100\n")
+    rows, progress, total = parsers.read_frame_csv(f)
+    assert [(r["frame"], r["fake_prob"]) for r in rows] == [("0", 0.27), ("1", 0.99)]
+    assert (total, progress) == (0.0, 100.0)
+    f.write_text("frame,real,fake,result,progress\nTotal result,30,120,fake,100\n")
+    assert parsers.read_frame_csv(f)[2] == pytest.approx(0.8)  # share of fake frames, not 100 - 30
+    f.write_text("frame,real,fake,result,progress\nTotal result,30,20,real,100\n")
+    assert parsers.read_frame_csv(f)[2] == pytest.approx(0.4)
+    assert parsers.to_percent("1%") == 1.0 and parsers.to_percent("0.5") == 50.0 and parsers.to_percent("x%") is None
