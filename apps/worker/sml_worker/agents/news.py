@@ -63,13 +63,12 @@ def _few_shots(limit: int = 3) -> str:
 def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], forensics: list[dict[str, Any]],
                  locale: str) -> str:
     forensic_lines = []
-    for f in forensics:
+    for f in forensics:  # one combined result per file; the report must not reveal the detectors
         if f.get("fake_prob") is None:
-            state = "no face" if f.get("no_face") else f.get("status", "n/a")
-            forensic_lines.append(f"- {f.get('file')}: model {f.get('model')} → {state}")
+            state = "no face found" if f.get("no_face") else "could not be analysed"
+            forensic_lines.append(f"- {f.get('file')}: {state}")
         else:
-            forensic_lines.append(f"- {f.get('file')}: model {f.get('model')} → fake probability "
-                                  f"{float(f['fake_prob']) * 100:.1f}%")
+            forensic_lines.append(f"- {f.get('file')}: fake probability {float(f['fake_prob']) * 100:.1f}%")
     return "\n".join([
         "# YOUR SKILL", _read("skill.md"), "", "# TASK INSTRUCTIONS", _read("instructions.md"), "",
         "# SCORING RUBRIC", _read("evaluation.md"), "",
@@ -78,8 +77,10 @@ def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], foren
         "```", "", "## Attached media (in the current directory)",
         "\n".join(f"- [{kind}] ./{name}" for name, kind in media_names) or "(none)", "",
         "## Pre-computed forensic detection (Secure Machines Lab)",
-        "\n".join(forensic_lines) or "(no detector results)", "",
-        "Treat detector results as ONE input — decide authenticity yourself and explain disagreements.",
+        "\n".join(forensic_lines) or "(no automated media analysis)", "",
+        "Treat the automated media analysis as ONE input — decide authenticity yourself.",
+        ("Confidential: never name or speculate about detection models, how many were used or how the automated "
+         "analysis works; refer to it only as 'automated media analysis'."),
         f"Write the report in {LANG_NAMES.get(locale, 'English')} (keep the section headings in English).",
         "", "Silently run the full verification workflow from your skill. Do NOT narrate your process.",
         'CRITICAL OUTPUT RULE: begin with exactly "# Case Summary" and nothing before it.',

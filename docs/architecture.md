@@ -87,15 +87,23 @@ unloaded and the model is pinned with the same context size, so it is never load
 older attempt are ignored. A model may declare fallbacks in `config/models.yaml` (e.g. no face
 found → run Center).
 
-**Verdict and charging** (ADR 0006). The verdict is the weighted mean of the models that
-produced a score; a metadata indicator of AI generation (EXIF/XMP/C2PA) forces "fake". A job is
+**Verdict and charging** (ADR 0006). The verdict is the weighted mean of the detectors that
+produced a score. A definite AI-generation marker in the metadata (C2PA / IPTC declaration,
+embedded generation parameters, generator software tag) forces "fake" and labels the file
+"likely AI-generated"; a weak hint only adds that label when the detectors already judged it fake. A job is
 charged its quoted price only if at least one model produced a score. No-face results, failures
 on our side and cancellations release the hold in full.
 
 **Live progress.** Workers write progress and log lines to Redis (`sml:task-progress:*`,
-`sml:task-log:*`) and publish events on `sml:events:user:<id>` and `sml:events:job:<id>`. The API's
-async SSE endpoint (`/api/v1/events/stream`) relays them; the browser patches TanStack Query
-caches in place and falls back to polling when the stream is unavailable. Queue position and ETA
+`sml:task-log:*`, read by the admin console) and publish only a `job.activity` ping on
+`sml:events:user:<id>` / `sml:events:job:<id>`; timeline events reach those channels only with their
+user-facing message. The API's async SSE endpoint (`/api/v1/events/stream`) relays them; the browser
+refetches the job's user view and falls back to polling when the stream is unavailable.
+
+**What users see** (ADR 0011). `sml/jobs/public.py` is the single projection of a job for users:
+generic steps, verdict reasons, provenance, check results, a combined timeline and a few
+unlabelled evidence images. Reports and the AI prompts use it too; `Admin*` serializers are for
+the admin API only. Queue position and ETA
 come from queue depth, consumers and recent task durations (`sml/jobs/eta.py`).
 
 ## Long-form streaming (ADR 0010)
@@ -168,7 +176,7 @@ contract is stale, so frontend and backend cannot drift silently.
 | Accounts, roles, MFA | `sml/accounts`, `sml/core/permissions.py` | `components/auth`, `components/settings` |
 | Credits | `sml/credits` | `components/sml/credit-meter.tsx`, billing page |
 | Jobs, queue, live progress | `sml/jobs` | `components/detect`, `components/results`, `hooks/use-event-stream.ts` |
-| Models catalog | `config/models.yaml`, `sml/catalog` | model picker in `components/detect` |
+| Models catalog | `config/models.yaml`, `sml/catalog` | Admin → Models (`components/admin/operations.tsx`) |
 | Billing | `sml/billing` | `components/billing` |
 | API keys | `sml/apikeys` | `components/api-keys` |
 | Admin | `sml/adminapi` | `components/admin`, `app/admin` |

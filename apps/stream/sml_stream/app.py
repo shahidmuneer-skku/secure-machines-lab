@@ -38,7 +38,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
 from . import engines, settings
-from .reporter import ApiRefused, report
+from .reporter import ApiRefused, claim, report
 from .tokens import TokenError, verify
 
 logger = logging.getLogger("sml_stream")
@@ -57,12 +57,25 @@ app = FastAPI(title="SML long-form stream", docs_url=None, redoc_url=None, opena
 
 _gpu = asyncio.Lock()
 _waiting = 0
-_used_sessions: set[str] = set()
 REPORT_EVERY = 2.0  # seconds between interval batches sent to the API
 
 
 class _Stopped(Exception):
     """The client stopped the scan (or went away) before it finished."""
+
+
+# Engine events go to the browser with these fields only: the legacy engines also report model
+# names, checkpoints and devices, which users must not see.
+PUBLIC_EVENT_FIELDS = {
+    "meta": ("type", "duration_sec", "start_sec", "end_sec", "interval_sec", "num_intervals"),
+    "interval": ("type", "index", "start_sec", "end_sec", "fake_probability"),
+    "done": ("type", "average_fake_probability", "verdict"),
+}
+
+
+def _public_event(event: dict[str, Any]) -> dict[str, Any]:
+    fields = PUBLIC_EVENT_FIELDS.get(str(event.get("type")), ("type",))
+    return {k: event[k] for k in fields if k in event}
 
 
 def _action(msg: dict[str, Any]) -> str:
@@ -164,14 +177,19 @@ async def stream(ws: WebSocket) -> None:
         return await _fail(ws, "Authenticate first.", 4401)
 
     sid = str(claims["sid"])
-    if sid in _used_sessions:
-        return await _fail(ws, "This scan was already started. Start a new scan.", 4409)
-    _used_sessions.add(sid)
-
     loop = asyncio.get_running_loop()
+    try:
+        # The token only names the session; what was paid for comes from the API, once.
+        claims = await loop.run_in_executor(None, claim, sid)
+    except ApiRefused:
+        return await _fail(ws, "This scan was already started or canceled. Start a new scan.", 4409)
+    except ConnectionError:
+        return await _fail(ws, "The scan could not be started. Please try again.")
+
     engine = await loop.run_in_executor(None, engines.resolve, str(claims["model"]))
     if engine is None:
-        return await _fail(ws, f"Model {claims['model']} is not available for long-form scanning.")
+        logger.error("Stream %s: detector %s is not available", sid, claims["model"])
+        return await _fail(ws, "Long-form scanning is not available right now.")
 
     size = int(claims["size"])
     suffix = re.sub(r"[^a-z0-9.]", "", Path(str(claims.get("name", ""))).suffix.lower())[:8] or ".mp4"
@@ -298,7 +316,7 @@ async def stream(ws: WebSocket) -> None:
                     state["summary_statistic"] = event["summary_statistic"]
                     state["frames_scored"] = event.get("frames_scored") or state["frames_scored"]
                     state["frames_voted_fake"] = event.get("frames_voted_fake") or state["frames_voted_fake"]
-                await _send(ws, event)
+                await _send(ws, _public_event(event))
                 if pending and (time.monotonic() - last_report > REPORT_EVERY or kind == "done"):
                     batch, pending = pending, []
                     last_report = time.monotonic()

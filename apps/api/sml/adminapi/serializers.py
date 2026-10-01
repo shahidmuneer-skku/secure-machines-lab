@@ -131,7 +131,8 @@ class RefundRequestSerializer(serializers.Serializer):
 class PlatformSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlatformSettings
-        exclude = ["id"]
+        # What jobs run is edited (and validated) on Admin → Models (DetectionSetupView).
+        exclude = ["id", "audit_steps", "long_video_model", "long_video_face_crop"]
         read_only_fields = ["updated_at"]
 
 

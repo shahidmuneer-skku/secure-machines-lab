@@ -12,6 +12,7 @@ from sml.catalog.registry import registry
 from sml.media.models import MediaObject
 from sml.reports.serializers import ReportSerializer
 
+from . import public
 from .eta import queue_info
 from .live import task_progress
 from .models import Artifact, Explanation, Job, JobEvent, JobTask
@@ -50,6 +51,26 @@ def _lang(context: dict[str, Any]) -> str:
     return getattr(user, "locale", None) or context.get("lang", "en")
 
 
+def _thumbnail_url(obj: Job, context: dict[str, Any]) -> str | None:
+    media = obj.media
+    if media is None and (obj.options or {}).get("stream"):
+        # Streamed long-form scans keep no media, only a preview frame.
+        preview = next((a for a in obj.artifacts.all() if (a.meta or {}).get("preview")), None)
+        return f"/api/v1/jobs/{obj.pk}/artifacts/{preview.pk}/content" if preview else None
+    if media is None or not media.thumbnail_key or media.status != MediaObject.Status.READY:
+        return None
+    return f"{context.get('media_url_prefix', '/api/v1/media')}/{media.pk}/thumbnail"
+
+
+def _queue_info(obj: Job) -> dict[str, Any] | None:
+    """Queue position of the job's first waiting analysis task."""
+    if obj.status != Job.Status.QUEUED:
+        return None
+    first = next((t for t in obj.tasks.all() if t.kind != JobTask.Kind.AUDIT
+                  and t.status in (JobTask.Status.PENDING, JobTask.Status.DISPATCHED)), None)
+    return queue_info(first) if first else None
+
+
 class MediaSummarySerializer(serializers.ModelSerializer):
     content_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
@@ -72,16 +93,20 @@ class MediaSummarySerializer(serializers.ModelSerializer):
         return f"{self._prefix()}/{obj.pk}/thumbnail" if obj.thumbnail_key else None
 
 
-class JobListSerializer(serializers.ModelSerializer):
+class AdminJobListSerializer(serializers.ModelSerializer):
+    """Operator view: detectors, checks and raw results. Admin endpoints only."""
+
     models = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     queue = serializers.SerializerMethodField()
     verdict_label = serializers.CharField(source="get_verdict_display")
+    ai_generated = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
         fields = ["id", "created_at", "kind", "source", "status", "stage", "progress", "title", "media_type",
-                  "thumbnail_url", "models", "audit_steps", "verdict", "verdict_label", "fake_probability",
+                  "thumbnail_url", "models", "audit_steps", "verdict", "verdict_label", "ai_generated",
+                  "fake_probability",
                   "partial", "credits_quoted", "credits_charged", "queue", "started_at", "finished_at",
                   "expires_at", "batch_id", "run_number", "error_code", "error_message"]
 
@@ -91,25 +116,18 @@ class JobListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_thumbnail_url(self, obj: Job) -> str | None:
-        media = obj.media
-        if media is None and (obj.options or {}).get("stream"):
-            # Streamed long-form scans keep no media, only a preview frame.
-            preview = next((a for a in obj.artifacts.all() if (a.meta or {}).get("preview")), None)
-            return f"/api/v1/jobs/{obj.pk}/artifacts/{preview.pk}/content" if preview else None
-        if media is None or not media.thumbnail_key or media.status != MediaObject.Status.READY:
-            return None
-        return f"{self.context.get('media_url_prefix', '/api/v1/media')}/{media.pk}/thumbnail"
+        return _thumbnail_url(obj, self.context)
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_ai_generated(self, obj: Job) -> bool:
+        return public.ai_generated(obj)
 
     @extend_schema_field(QueueInfoSerializer(allow_null=True))
     def get_queue(self, obj: Job) -> dict[str, Any] | None:
-        if obj.status != Job.Status.QUEUED:
-            return None
-        first = next((t for t in obj.tasks.all() if t.kind != JobTask.Kind.AUDIT
-                      and t.status in (JobTask.Status.PENDING, JobTask.Status.DISPATCHED)), None)
-        return queue_info(first) if first else None
+        return _queue_info(obj)
 
 
-class JobTaskSerializer(serializers.ModelSerializer):
+class AdminJobTaskSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display")
     live = serializers.SerializerMethodField()
@@ -151,13 +169,13 @@ class JobTaskSerializer(serializers.ModelSerializer):
         return r
 
 
-class JobEventSerializer(serializers.ModelSerializer):
+class AdminJobEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobEvent
-        fields = ["id", "created_at", "level", "code", "message", "task", "data"]
+        fields = ["id", "created_at", "level", "code", "message", "public_message", "task", "data"]
 
 
-class ArtifactSerializer(serializers.ModelSerializer):
+class AdminArtifactSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -170,32 +188,32 @@ class ArtifactSerializer(serializers.ModelSerializer):
         return f"{prefix}/{obj.job_id}/artifacts/{obj.pk}/content"
 
 
-class ExplanationSerializer(serializers.ModelSerializer):
+class AdminExplanationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Explanation
         fields = ["id", "status", "engine", "model_name", "locale", "content", "progress_log", "credits_charged",
                   "error_message", "created_at", "started_at", "finished_at"]
 
 
-class JobDetailSerializer(JobListSerializer):
+class AdminJobDetailSerializer(AdminJobListSerializer):
     media = MediaSummarySerializer(read_only=True)
     tasks = serializers.SerializerMethodField()
-    events = JobEventSerializer(many=True, read_only=True)
-    artifacts = ArtifactSerializer(many=True, read_only=True)
-    explanations = ExplanationSerializer(many=True, read_only=True)
+    events = AdminJobEventSerializer(many=True, read_only=True)
+    artifacts = AdminArtifactSerializer(many=True, read_only=True)
+    explanations = AdminExplanationSerializer(many=True, read_only=True)
     reports = serializers.SerializerMethodField()
 
-    class Meta(JobListSerializer.Meta):
-        fields = [*JobListSerializer.Meta.fields, "media", "options", "locale", "summary", "verdict_reasons",
+    class Meta(AdminJobListSerializer.Meta):
+        fields = [*AdminJobListSerializer.Meta.fields, "media", "options", "locale", "summary", "verdict_reasons",
                   "quote_lines", "tasks", "events", "artifacts", "explanations", "reports", "parent",
                   "cancel_requested", "purged_at"]
 
-    @extend_schema_field(JobTaskSerializer(many=True))
+    @extend_schema_field(AdminJobTaskSerializer(many=True))
     def get_tasks(self, obj: Job) -> list[dict[str, Any]]:
         tasks = list(obj.tasks.all())
         running = [str(t.pk) for t in tasks if t.status == JobTask.Status.RUNNING]
         ctx = {**self.context, "live": task_progress(running)}
-        return JobTaskSerializer(tasks, many=True, context=ctx).data
+        return AdminJobTaskSerializer(tasks, many=True, context=ctx).data
 
     @extend_schema_field(ReportSerializer(many=True))
     def get_reports(self, obj: Job) -> list[dict[str, Any]]:
@@ -203,13 +221,11 @@ class JobDetailSerializer(JobListSerializer):
 
 
 class JobCreateSerializer(serializers.Serializer):
+    """Detectors and checks are chosen by the administrator, not by the caller."""
+
     media_id = serializers.UUIDField(required=False)
     media_ids = serializers.ListField(child=serializers.UUIDField(), required=False, max_length=50)
     module = serializers.ChoiceField(choices=["detect", "long_video"], default="detect")
-    models = serializers.ListField(child=serializers.CharField(max_length=64), required=False, allow_empty=True,
-                                   help_text="Model ids from GET /catalog/models. Empty = default selection.")
-    audit_steps = serializers.ListField(child=serializers.ChoiceField(choices=["face", "safety", "fas"]),
-                                        required=False, default=list)
     locale = serializers.ChoiceField(choices=User.Locale.choices, required=False)
     batch_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
     options = serializers.DictField(required=False, default=dict)
@@ -238,10 +254,195 @@ class JobCreateSerializer(serializers.Serializer):
 class QuoteResponseSerializer(serializers.Serializer):
     credits = serializers.IntegerField()
     lines = serializers.ListField(child=serializers.DictField())
-    models = serializers.ListField(child=serializers.DictField())
-    audit_steps = serializers.ListField(child=serializers.CharField())
     balance = serializers.IntegerField()
     affordable = serializers.BooleanField()
+
+
+# --- user view (web app and public API): verdict and evidence, never the detectors ---------------
+
+class PublicQueueSerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    eta_seconds = serializers.IntegerField()
+    workers_online = serializers.BooleanField()
+
+
+class JobListSerializer(serializers.ModelSerializer):
+    thumbnail_url = serializers.SerializerMethodField()
+    queue = serializers.SerializerMethodField()
+    verdict_label = serializers.SerializerMethodField()
+    ai_generated = serializers.SerializerMethodField(
+        help_text="True when AI-generation markers in the file's metadata flag it as likely AI-generated.")
+
+    class Meta:
+        model = Job
+        fields = ["id", "created_at", "kind", "source", "status", "stage", "progress", "title", "media_type",
+                  "thumbnail_url", "verdict", "verdict_label", "ai_generated", "fake_probability", "partial",
+                  "credits_quoted", "credits_charged", "queue", "started_at", "finished_at", "expires_at",
+                  "batch_id", "run_number", "error_code", "error_message"]
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_thumbnail_url(self, obj: Job) -> str | None:
+        return _thumbnail_url(obj, self.context)
+
+    @extend_schema_field(PublicQueueSerializer(allow_null=True))
+    def get_queue(self, obj: Job) -> dict[str, Any] | None:
+        return public.queue(_queue_info(obj))
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_verdict_label(self, obj: Job) -> str:
+        return "Likely AI-generated" if public.ai_generated(obj) else obj.get_verdict_display()
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_ai_generated(self, obj: Job) -> bool:
+        return public.ai_generated(obj)
+
+
+class JobStepSerializer(serializers.Serializer):
+    id = serializers.ChoiceField(choices=["queued", "checks", "analysis", "verification", "results"])
+    status = serializers.CharField()
+    progress = serializers.FloatField()
+
+
+class EvidenceSerializer(serializers.Serializer):
+    source = serializers.CharField()
+    detail = serializers.CharField()
+    strength = serializers.CharField(allow_blank=True)
+
+
+class ProvenanceSerializer(serializers.Serializer):
+    ai_generated = serializers.BooleanField()
+    confidence = serializers.CharField()
+    c2pa_status = serializers.CharField()
+    camera = serializers.CharField(allow_null=True)
+    software = serializers.CharField(allow_null=True)
+    evidence = EvidenceSerializer(many=True)
+    notes = serializers.ListField(child=serializers.CharField())
+
+
+class CheckSerializer(serializers.Serializer):
+    id = serializers.ChoiceField(choices=["face", "safety", "fas"])
+    status = serializers.CharField()
+    result = serializers.DictField(help_text="faces_found, sensitive_content or spoof_detected")
+
+
+class TimelinePointSerializer(serializers.Serializer):
+    start_sec = serializers.FloatField()
+    end_sec = serializers.FloatField()
+    fake_prob = serializers.FloatField()
+
+
+class LongVideoSummarySerializer(serializers.Serializer):
+    status = serializers.CharField()
+    analysed_seconds = serializers.FloatField(allow_null=True)
+    range_seconds = serializers.FloatField(allow_null=True)
+    duration_seconds = serializers.FloatField(allow_null=True)
+    range = serializers.ListField(child=serializers.FloatField(allow_null=True), allow_null=True)
+
+
+class NewsReportSerializer(serializers.Serializer):
+    status = serializers.CharField(allow_null=True)
+    confidence = serializers.FloatField(allow_null=True)
+    report_markdown = serializers.CharField(allow_blank=True)
+    meta = serializers.DictField()
+
+
+class JobEventSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+    level = serializers.CharField()
+    code = serializers.CharField()
+    message = serializers.CharField()
+    data = serializers.DictField()
+
+
+class ArtifactSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    kind = serializers.ChoiceField(choices=["heatmap", "face", "video"])
+    label = serializers.ChoiceField(choices=["heatmap", "face", "video"])
+    content_type = serializers.CharField()
+    size_bytes = serializers.IntegerField()
+    url = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class ExplanationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Explanation
+        fields = ["id", "status", "locale", "content", "credits_charged", "error_message", "created_at",
+                  "started_at", "finished_at"]
+
+
+class JobDetailSerializer(JobListSerializer):
+    media = MediaSummarySerializer(read_only=True)
+    options = serializers.SerializerMethodField()
+    verdict_reasons = serializers.SerializerMethodField()
+    steps = serializers.SerializerMethodField()
+    provenance = serializers.SerializerMethodField()
+    checks = serializers.SerializerMethodField()
+    timeline = serializers.SerializerMethodField()
+    long_video = serializers.SerializerMethodField()
+    news = serializers.SerializerMethodField()
+    events = serializers.SerializerMethodField()
+    artifacts = serializers.SerializerMethodField()
+    explanations = ExplanationSerializer(many=True, read_only=True)
+    reports = serializers.SerializerMethodField()
+
+    class Meta(JobListSerializer.Meta):
+        fields = [*JobListSerializer.Meta.fields, "media", "options", "locale", "verdict_reasons", "quote_lines",
+                  "steps", "provenance", "checks", "timeline", "long_video", "news", "events", "artifacts",
+                  "explanations", "reports", "parent", "cancel_requested", "purged_at"]
+
+    def _tasks(self, obj: Job) -> list[JobTask]:
+        cache = self.context.setdefault("_tasks", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = list(obj.tasks.all())
+        return cache[obj.pk]
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_options(self, obj: Job) -> dict[str, Any]:
+        return public.options(obj)
+
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_verdict_reasons(self, obj: Job) -> list[dict[str, Any]]:
+        return public.reasons(obj)
+
+    @extend_schema_field(JobStepSerializer(many=True))
+    def get_steps(self, obj: Job) -> list[dict[str, Any]]:
+        tasks = self._tasks(obj)
+        running = [str(t.pk) for t in tasks if t.status == JobTask.Status.RUNNING]
+        return public.steps(obj, tasks, task_progress(running))
+
+    @extend_schema_field(ProvenanceSerializer(allow_null=True))
+    def get_provenance(self, obj: Job) -> dict[str, Any] | None:
+        return public.provenance(self._tasks(obj))
+
+    @extend_schema_field(CheckSerializer(many=True))
+    def get_checks(self, obj: Job) -> list[dict[str, Any]]:
+        return public.checks(self._tasks(obj))
+
+    @extend_schema_field(TimelinePointSerializer(many=True))
+    def get_timeline(self, obj: Job) -> list[dict[str, float]]:
+        return public.timeline(obj, self._tasks(obj))
+
+    @extend_schema_field(LongVideoSummarySerializer(allow_null=True))
+    def get_long_video(self, obj: Job) -> dict[str, Any] | None:
+        return public.long_video(obj, self._tasks(obj))
+
+    @extend_schema_field(NewsReportSerializer(allow_null=True))
+    def get_news(self, obj: Job) -> dict[str, Any] | None:
+        return public.news(obj)
+
+    @extend_schema_field(JobEventSerializer(many=True))
+    def get_events(self, obj: Job) -> list[dict[str, Any]]:
+        return public.events(obj)
+
+    @extend_schema_field(ArtifactSerializer(many=True))
+    def get_artifacts(self, obj: Job) -> list[dict[str, Any]]:
+        return public.artifacts(obj, self.context.get("job_url_prefix", "/api/v1/jobs"), self._tasks(obj))
+
+    @extend_schema_field(ReportSerializer(many=True))
+    def get_reports(self, obj: Job) -> list[dict[str, Any]]:
+        return ReportSerializer(obj.reports.all(), many=True, context=self.context).data
 
 
 def job_detail_url(job: Job) -> str:

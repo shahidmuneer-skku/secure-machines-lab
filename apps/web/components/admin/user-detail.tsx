@@ -25,7 +25,6 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useCatalog } from "@/hooks/use-catalog"
 import { useDraft } from "@/hooks/use-draft"
 import { useCan, useMe } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
@@ -81,7 +80,9 @@ export function AdminUserDetail({ id }: { id: string }) {
   const t = useTranslations("admin.user")
   const locale = useLocale()
   const qc = useQueryClient()
-  const catalog = useCatalog()
+  // Detector ids for the access-policy restriction list (admin endpoint; users never see these).
+  const detectors = useQuery({ queryKey: qk.admin("models"),
+    queryFn: async () => data(await api.GET("/api/v1/admin/models")) })
   const canManage = useCan("manage_users")
   const canAccess = useCan("manage_user_access")
   const canRoles = useCan("manage_roles")
@@ -128,7 +129,7 @@ export function AdminUserDetail({ id }: { id: string }) {
   if (user.error || !user.data) return <AdminError error={user.error} />
   const u = user.data
   const isSelf = me.data?.id === u.id
-  const modelIds = (catalog.data?.models ?? []).map((m) => m.id).concat((catalog.data?.long_video_models ?? []).map((m) => m.id))
+  const modelIds = (detectors.data ?? []).map((m) => m.id)
   return (
     <div className="space-y-5">
       <Button asChild variant="ghost" size="sm" className="-ml-2 text-muted-foreground"><Link href="/admin/users"><ArrowLeft className="size-4" /> {t("back")}</Link></Button>

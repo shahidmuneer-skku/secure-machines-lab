@@ -12,14 +12,14 @@ from starlette.websockets import WebSocketDisconnect
 from sml_stream import app as app_module
 from sml_stream.tokens import sign
 
-from .conftest import make_video
+from .conftest import PAID, make_video
 
 
-def token(size: int, **claims) -> str:  # type: ignore[no-untyped-def]
-    base = {"sid": "sess-1", "uid": "u", "model": "skku-aigc", "name": "clip.mp4", "size": size, "start": 0.0,
-            "end": None, "max_seconds": 4.0, "interval": 1.0, "whole": False, "face_crop": None,
-            "exp": time.time() + 60}
-    return sign({**base, **claims}, "test-stream-secret")
+def token(size: int, sid: str = "sess-1", **paid) -> str:  # type: ignore[no-untyped-def]
+    """A browser token names the session only; what was paid for is claimed from the API."""
+    PAID[sid] = {"sid": sid, "model": "skku-aigc", "name": "clip.mp4", "size": size, "start": 0.0, "end": None,
+                 "max_seconds": 4.0, "interval": 1.0, "whole": False, "face_crop": None, **paid}
+    return sign({"sid": sid, "exp": time.time() + 60}, "test-stream-secret")
 
 
 def upload(ws, data: bytes, chunk: int = 1000) -> None:  # type: ignore[no-untyped-def]
@@ -47,6 +47,8 @@ def test_full_scan_streams_intervals_and_reports_settlement(service):
         events = events_until_finished(ws)
     types = [e["type"] for e in events]
     assert types[0] == "meta" and types.count("interval") == 4 and "done" in types
+    assert "model" not in events[0] and "checkpoint" not in events[0] and "device" not in events[0]
+    assert all("frames_used" not in e for e in events if e["type"] == "interval")
     assert events[-1] == {"type": "finished", "status": "done", "analysed_seconds": 4.0, "average": 0.8,
                           "job_id": "job-1", "credits_charged": 4, "verdict": "fake"}
     reported = [event for _, event, _ in service["reports"]]

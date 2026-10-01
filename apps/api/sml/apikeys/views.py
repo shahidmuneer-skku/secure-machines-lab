@@ -55,7 +55,7 @@ class ApiKeyListCreateView(APIView):
         d = ser.validated_data
         issued = issue_key(
             request.user, name=d["name"], scopes=d["scopes"], allowed_ips=d.get("allowed_ips"),
-            allowed_models=d.get("allowed_models"), rate_limit_per_minute=d.get("rate_limit_per_minute"),
+            rate_limit_per_minute=d.get("rate_limit_per_minute"),
             expires_at=d.get("expires_at"),
         )
         audit.record("api_key.created", request=request, target=issued.api_key,

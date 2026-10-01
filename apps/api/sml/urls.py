@@ -5,7 +5,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from sml.core.views import HealthzView, ReadyzView
-from sml.jobs.stream_views import StreamEventView
+from sml.jobs.stream_views import StreamClaimView, StreamEventView
 
 v1 = [
     path("", include("sml.accounts.urls")),
@@ -27,10 +27,12 @@ urlpatterns = [
     # django-allauth headless: /api/_allauth/browser/v1/auth/login, /auth/2fa/authenticate, ...
     path("api/_allauth/", include("allauth.headless.urls")),
     # Internal service-to-service endpoints (denied by nginx; authenticated with a shared key).
+    path("api/internal/streams/<uuid:pk>/claim", StreamClaimView.as_view(), name="internal-stream-claim"),
     path("api/internal/streams/<uuid:pk>/events", StreamEventView.as_view(), name="internal-stream-events"),
     path("api/healthz", HealthzView.as_view(), name="healthz"),
     path("api/readyz", ReadyzView.as_view(), name="readyz"),
-    path("api/openapi.json", SpectacularAPIView.as_view(), name="openapi-schema"),
+    path("api/openapi.json", SpectacularAPIView.as_view(custom_settings={
+        "PREPROCESSING_HOOKS": ["sml.api_schema_hooks.exclude_admin_endpoints"]}), name="openapi-schema"),
     path("api/docs", SpectacularRedocView.as_view(url_name="openapi-schema"), name="api-docs"),
     path("api/docs/try", SpectacularSwaggerView.as_view(url_name="openapi-schema"), name="api-docs-swagger"),
     path("api/django-admin/", admin.site.urls),

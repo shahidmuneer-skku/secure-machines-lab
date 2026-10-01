@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q, Sum
+from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -44,10 +44,10 @@ class DashboardSummaryView(APIView):
             key = row["verdict"] if row["verdict"] in ("fake", "real") else "other"
             entry[key] += row["n"]
 
-        by_model = list(JobTask.objects.filter(job__user=user, kind=JobTask.Kind.MODEL, created_at__gte=since)
-                        .values("target").annotate(runs=Count("id"),
-                                                   ok=Count("id", filter=Q(status=JobTask.Status.SUCCEEDED)))
-                        .order_by("-runs")[:12])
+        usage: dict[str, int] = {}
+        for row in period.values("kind", "media_type").annotate(n=Count("id")):
+            key = row["media_type"] if row["kind"] == Job.Kind.DETECT and row["media_type"] else row["kind"]
+            usage[key] = usage.get(key, 0) + row["n"]
 
         credit_rows = (LedgerEntry.objects.filter(wallet__user=user, created_at__gte=since)
                        .annotate(day=TruncDate("created_at")).values("day", "kind").annotate(total=Sum("delta")))
@@ -79,7 +79,7 @@ class DashboardSummaryView(APIView):
                 "credits_spent": sum(v["spent"] for v in credits_by_day.values()),
             },
             "jobs_by_day": sorted(by_day.values(), key=lambda r: r["date"]),
-            "usage_by_model": by_model,
+            "usage_by_type": [{"type": k, "jobs": v} for k, v in sorted(usage.items(), key=lambda kv: -kv[1])],
             "credits_by_day": sorted(credits_by_day.values(), key=lambda r: r["date"]),
             "queue_wait_by_day": [{"date": w["day"].isoformat(), "avg_seconds": int(w["avg"].total_seconds())}
                                   for w in waits if w["avg"] is not None],

@@ -15,6 +15,7 @@ from sml.credits import pricing
 from sml.credits import services as credits
 from sml.queues import REASONING, WORKER_TASK
 
+from . import public
 from .errors import user_message
 from .models import Explanation, Job
 
@@ -39,11 +40,15 @@ def request_explanation(job: Job, user: Any, locale: str) -> Explanation:
 
 
 def _context(job: Job) -> dict[str, Any]:
+    """What the reasoning agent may know. Its answer is shown to the user, so it gets the verdict and
+    the evidence (as users see them) and never which detectors ran or their individual scores."""
+    tasks = list(job.tasks.all())
     return {
         "verdict": job.verdict, "fake_probability": job.fake_probability, "media_type": job.media_type,
-        "file_name": job.title, "summary": job.summary, "reasons": job.verdict_reasons,
-        "artifacts": [{"kind": a.kind, "label": a.label, "storage_key": a.storage_key}
-                      for a in job.artifacts.filter(kind__in=["xai", "face"])[:8]],
+        "file_name": job.title, "reasons": public.reasons(job), "provenance": public.provenance(tasks),
+        "checks": public.checks(tasks),
+        "artifacts": [{"kind": public.artifact_label(a), "storage_key": a.storage_key}
+                      for a in public.evidence_artifacts(job, tasks) if a.content_type.startswith("image/")],
     }
 
 
@@ -89,6 +94,6 @@ def record_explanation_event(payload: dict[str, Any]) -> None:
                     credits.release(exp.hold, memo="Explanation failed — not charged")
         exp.save()
         job = exp.job
-        data = {"explanation_id": str(exp.pk), "job_id": str(job.pk), "status": exp.status,
-                "message": payload.get("message", "")}
+        # Users get the status only; the agent's progress messages are for operators.
+        data = {"explanation_id": str(exp.pk), "job_id": str(job.pk), "status": exp.status}
         transaction.on_commit(lambda: publish_job(job, "explanation.updated", data))

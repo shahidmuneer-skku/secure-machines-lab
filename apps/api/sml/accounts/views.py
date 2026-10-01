@@ -100,7 +100,7 @@ class DataExportView(APIView):
             "exported_at": timezone.now().isoformat(),
             "profile": MeSerializer(user).data,
             "jobs": list(Job.objects.filter(user=user).values(
-                "id", "created_at", "kind", "status", "title", "media_type", "models_selected", "verdict",
+                "id", "created_at", "kind", "status", "title", "media_type", "verdict",
                 "fake_probability", "credits_charged")),
             "credit_ledger": list(LedgerEntry.objects.filter(wallet__user=user).values(
                 "created_at", "kind", "delta", "balance_after", "memo")),

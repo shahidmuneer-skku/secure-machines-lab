@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { ArrowRight, CircleStop, FileVideo, Loader2, RotateCcw, TriangleAlert } from "lucide-react"
+import { ArrowRight, CircleStop, FileVideo, RotateCcw, TriangleAlert } from "lucide-react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -16,9 +16,7 @@ import { Button } from "@/components/ui/button"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useLongVideoStream } from "@/hooks/use-long-video-stream"
 import { api, data } from "@/lib/api/client"
@@ -35,9 +33,9 @@ const VIDEO_TYPES = "video/mp4,video/webm,video/quicktime,video/x-matroska,video
 export function LongVideoScanner() {
   const t = useTranslations("longVideo")
   const locale = useLocale()
-  const catalog = useQuery({
-    queryKey: ["long-video", "models"],
-    queryFn: async () => data(await api.GET("/api/v1/long-video/models")),
+  const config = useQuery({
+    queryKey: ["long-video", "config"],
+    queryFn: async () => data(await api.GET("/api/v1/long-video/config")),
     staleTime: 30_000,
   })
   const balance = useBalance()
@@ -49,26 +47,19 @@ export function LongVideoScanner() {
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [range, setRange] = useState<[number, number]>([0, 0])
-  const [modelId, setModelId] = useState<string | null>(null)
   const [mode, setMode] = useState<"intervals" | "whole">("intervals")
   const [interval, setIntervalSec] = useState(5)
-  const [faceCrop, setFaceCrop] = useState<boolean | null>(null)
 
   useEffect(() => () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }, [objectUrl])
 
-  const models = catalog.data?.models ?? []
-  const available = models.filter((m) => m.available)
-  const model = models.find((m) => m.model_id === (modelId ?? available[0]?.model_id))
-  const cropSupport = model?.face_crop.support ?? "none"
-  const cropOn = cropSupport === "always" ? true : cropSupport === "none" ? false : (faceCrop ?? model?.face_crop.default ?? false)
   const [start, end] = range
   const seconds = Math.max(0, end - start)
-  const pricePerMinute = catalog.data?.price_per_minute ?? 0
+  const pricePerMinute = config.data?.price_per_minute ?? 0
   const cost = seconds > 0 ? Math.max(1, Math.ceil(seconds / 60)) * pricePerMinute : 0
   const affordable = balance.data?.unlimited || (balance.data?.balance ?? 0) >= cost
   const busy = ["paying", "connecting", "uploading", "queued", "analyzing"].includes(stream.phase)
-  const tooBig = !!file && !!catalog.data && file.size > catalog.data.max_bytes
-  const canStart = !!file && !!model?.available && duration > 0 && seconds > 0 && affordable && !busy && !tooBig
+  const tooBig = !!file && !!config.data && file.size > config.data.max_bytes
+  const canStart = !!file && !!config.data?.available && duration > 0 && seconds > 0 && affordable && !busy && !tooBig
 
   const choose = (f: File | undefined) => {
     if (!f) return
@@ -81,10 +72,10 @@ export function LongVideoScanner() {
   }
 
   const begin = () => {
-    if (!file || !model) return
+    if (!file) return
     void stream.start(file, duration, {
-      modelId: model.model_id, startSec: start, endSec: end >= duration - 0.05 ? null : end, intervalSec: interval,
-      wholeVideo: mode === "whole", faceCrop: cropSupport === "optional" ? cropOn : null, locale,
+      startSec: start, endSec: end >= duration - 0.05 ? null : end, intervalSec: interval,
+      wholeVideo: mode === "whole", locale,
     })
   }
 
@@ -104,7 +95,7 @@ export function LongVideoScanner() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={t("eyebrow")} index={2} title={t("title")} description={t("subtitle")} />
-      {catalog.data && !catalog.data.online && (
+      {config.data && !config.data.available && (
         <Alert variant="destructive"><TriangleAlert className="size-4" /><AlertDescription>{t("offline")}</AlertDescription></Alert>
       )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -141,7 +132,7 @@ export function LongVideoScanner() {
                         onChange={(e) => choose(e.target.files?.[0])} />
                     </label>
                   </div>
-                  {tooBig && <p className="text-xs text-fake">{t("tooBig", { size: formatBytes(catalog.data!.max_bytes) })}</p>}
+                  {tooBig && <p className="text-xs text-fake">{t("tooBig", { size: formatBytes(config.data!.max_bytes) })}</p>}
                   {duration > 0 && (
                     <LongVideoTimeline intervals={stream.intervals} rangeStart={start} rangeEnd={end}
                       currentTime={currentTime} analysedUntil={stream.phase === "analyzing" ? analysedUntil ?? start : null}
@@ -158,26 +149,6 @@ export function LongVideoScanner() {
               <CardTitle className="text-base">{t("settingsTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label className="hud-eyebrow">{t("model")}</Label>
-                {catalog.isLoading ? <Loader2 className="size-4 animate-spin" /> : (
-                  <RadioGroup value={model?.model_id ?? ""} onValueChange={setModelId} className="grid gap-2 sm:grid-cols-2"
-                    disabled={busy}>
-                    {models.map((m) => (
-                      <label key={m.model_id} className={`flex items-start gap-3 rounded-lg border p-3 ${m.available ? "" : "opacity-60"}`}>
-                        <RadioGroupItem value={m.model_id} disabled={!m.available} className="mt-0.5" />
-                        <span className="min-w-0">
-                          <span className="font-medium">{m.name}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {m.available ? t(`faceCropSupport.${m.face_crop.support}`) : t("unavailable")}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                )}
-              </div>
-
               <div className="space-y-2">
                 <Label className="hud-eyebrow">{t("mode")}</Label>
                 <ToggleGroup type="single" value={mode} variant="outline" disabled={busy}
@@ -217,12 +188,6 @@ export function LongVideoScanner() {
                 </div>
               )}
 
-              {cropSupport === "optional" && (
-                <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
-                  <span>{t("faceCrop")}<span className="block text-xs text-muted-foreground">{t("faceCropHint")}</span></span>
-                  <Switch checked={cropOn} disabled={busy} onCheckedChange={setFaceCrop} />
-                </label>
-              )}
             </CardContent>
           </HudCard>
         </div>

@@ -43,9 +43,9 @@ from sml.core.permissions import admin_permissions, has_capability
 from sml.credits import pricing
 from sml.credits import services as credits
 from sml.credits.models import LedgerEntry, PriceRule
-from sml.jobs import live
+from sml.jobs import live, streams
 from sml.jobs.models import Job, JobTask
-from sml.jobs.serializers import JobDetailSerializer, JobListSerializer
+from sml.jobs.serializers import AdminJobDetailSerializer, AdminJobListSerializer
 from sml.jobs.services import cancel_job
 
 from . import system
@@ -310,7 +310,7 @@ class AdminJobFilter(filters.FilterSet):
 
 
 class AdminJobListView(generics.ListAPIView):
-    serializer_class = JobListSerializer
+    serializer_class = AdminJobListSerializer
     filterset_class = AdminJobFilter
     permission_classes = admin_permissions("view_all_jobs")
     queryset = Job.objects.select_related("media", "user").prefetch_related("tasks")
@@ -325,10 +325,10 @@ class AdminJobDetailView(APIView):
         cap = "manage_all_jobs" if self.request.method == "POST" else "view_all_jobs"
         return [p() for p in admin_permissions(cap)]
 
-    @extend_schema(tags=TAG, responses=schemas.AdminJobDetailSerializer)
+    @extend_schema(tags=TAG, responses=schemas.AdminJobViewSerializer)
     def get(self, request: Request, pk: str) -> Response:
         job = get_object_or_404(Job.objects.prefetch_related("tasks", "events", "artifacts"), pk=pk)
-        data = JobDetailSerializer(job, context={"request": request}).data
+        data = AdminJobDetailSerializer(job, context={"request": request}).data
         data["user_email"] = job.user.email if job.user else None
         if not has_capability(request.user, "view_all_media"):
             data["media"] = None
@@ -338,11 +338,21 @@ class AdminJobDetailView(APIView):
                                                        "duration_ms"))
         return Response(data)
 
-    @extend_schema(tags=TAG, request=None, responses=JobListSerializer)
+    @extend_schema(tags=TAG, request=None, responses=AdminJobListSerializer)
     def post(self, request: Request, pk: str) -> Response:
         job = cancel_job(get_object_or_404(Job, pk=pk), actor=request.user)
         audit.record("admin.job_canceled", request=request, target=job)
-        return Response(JobListSerializer(job, context={"request": request}).data)
+        return Response(AdminJobListSerializer(job, context={"request": request}).data)
+
+
+class AdminTaskLogView(APIView):
+    permission_classes = admin_permissions("view_all_jobs")
+
+    @extend_schema(tags=TAG, responses=schemas.TaskLogSerializer,
+                   summary="Live processing log of one task (detector output, GPU admission)")
+    def get(self, request: Request, pk: str, task_id: str) -> Response:
+        task = get_object_or_404(JobTask, pk=task_id, job_id=pk)
+        return Response({"task_id": str(task.pk), "status": task.status, "lines": live.task_log(str(task.pk))})
 
 
 # --- queues / workers / models --------------------------------------------------------------
@@ -425,7 +435,7 @@ class ModelAdminView(APIView):
             o = overrides.get(spec.id)
             out.append({
                 "id": spec.id, "name": spec.name("en"), "family": spec.family, "media": sorted(spec.media),
-                "enabled": spec.enabled, "weight": spec.weight, "default_selected": spec.default_selected,
+                "enabled": spec.enabled, "weight": spec.weight, "run_on": sorted(spec.runs_on),
                 "trial": spec.trial, "gpu_mem_mb": spec.gpu_mem_mb, "queue": spec.queue,
                 "consumers": consumers.get(spec.queue, 0), "note": o.note if o else "",
                 "stats_24h": stats.get(spec.id, {"runs": 0, "failed": 0, "waiting": 0}),
@@ -435,15 +445,21 @@ class ModelAdminView(APIView):
 
     @extend_schema(tags=TAG, request={"application/json": {"type": "object", "properties": {
         "model_id": {"type": "string"}, "enabled": {"type": "boolean"}, "weight": {"type": "number"},
-        "default_selected": {"type": "boolean"}, "trial": {"type": "boolean"}, "note": {"type": "string"}}}},
+        "run_on_image": {"type": "boolean"}, "run_on_video": {"type": "boolean"}, "trial": {"type": "boolean"},
+        "note": {"type": "string"}}}},
         responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:
         model_id = str(request.data.get("model_id", ""))
-        if registry().get(model_id) is None:
+        spec = registry().get(model_id)
+        if spec is None:
             raise ApiError("Unknown model.")
-        o, _ = ModelOverride.objects.get_or_create(model_id=model_id)
-        before = {"enabled": o.enabled, "weight": o.weight, "default_selected": o.default_selected, "trial": o.trial}
-        for field in ("enabled", "default_selected", "trial"):
+        for media in ("image", "video"):
+            if request.data.get(f"run_on_{media}") and not spec.supports(media):
+                raise ApiError(f"{spec.name('en')} cannot analyse {media}s.")
+        o, _ = ModelOverride.objects.get_or_create(model_id=spec.id)
+        fields = ("enabled", "run_on_image", "run_on_video", "trial")
+        before = {"weight": o.weight, **{f: getattr(o, f) for f in fields}}
+        for field in fields:
             if field in request.data:
                 setattr(o, field, bool(request.data[field]))
         if "weight" in request.data:
@@ -455,10 +471,71 @@ class ModelAdminView(APIView):
             o.note = str(request.data["note"])[:255]
         o.save()
         invalidate_overrides()
-        audit.record("admin.model_updated", request=request, target_type="catalog.model", target_id=model_id,
-                     before=before, after={"enabled": o.enabled, "weight": o.weight,
-                                           "default_selected": o.default_selected, "trial": o.trial})
+        audit.record("admin.model_updated", request=request, target_type="catalog.model", target_id=spec.id,
+                     before=before, after={"weight": o.weight, **{f: getattr(o, f) for f in fields}})
         return Response({"ok": True})
+
+
+class DetectionSetupView(APIView):
+    """What every job runs besides the per-media detectors: extra checks and the long-form detector."""
+
+    def get_permissions(self):  # type: ignore[no-untyped-def]
+        cap = "manage_models" if self.request.method == "PATCH" else "view_queues"
+        return [p() for p in admin_permissions(cap)]
+
+    def _payload(self) -> dict:
+        cfg = PlatformSettings.load()
+        reg = registry()
+        try:
+            stream_models, online = streams.available_models(use_cache=False), True
+        except streams.StreamServiceUnavailable:
+            stream_models, online = [], False
+        return {
+            "checks": [{"id": a.id, "name": a.name("en"), "description": a.description.get("en", ""),
+                        "always": a.builtin, "enabled": a.builtin or a.id in (cfg.audit_steps or [])}
+                       for a in reg.audit_steps.values()],
+            "long_video": {
+                "online": online, "model": cfg.long_video_model, "face_crop": cfg.long_video_face_crop,
+                "models": [{"model_id": m["model_id"], "name": m.get("name") or m["model_id"],
+                            "available": bool(m.get("available")), "reason": m.get("reason") or "",
+                            "face_crop": (m.get("face_crop") or {}).get("support", "none")}
+                           for m in stream_models],
+            },
+        }
+
+    @extend_schema(tags=TAG, responses=schemas.DetectionSetupSerializer,
+                   summary="Extra checks run on every job and the long-form video detector")
+    def get(self, request: Request) -> Response:
+        return Response(self._payload())
+
+    @extend_schema(tags=TAG, request=schemas.DetectionSetupUpdateSerializer, responses=schemas.DetectionSetupSerializer)
+    def patch(self, request: Request) -> Response:
+        ser = schemas.DetectionSetupUpdateSerializer(data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+        cfg = PlatformSettings.load()
+        before = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
+                  "long_video_face_crop": cfg.long_video_face_crop}
+        if "audit_steps" in d:
+            reg = registry()
+            unknown = [s for s in d["audit_steps"] if s not in reg.audit_steps]
+            if unknown:
+                raise ApiError(f"Unknown checks: {', '.join(unknown)}")
+            cfg.audit_steps = [s for s in dict.fromkeys(d["audit_steps"]) if not reg.audit_steps[s].builtin]
+        if "long_video_model" in d:
+            if d["long_video_model"]:
+                offered = {m["model_id"] for m in streams.available_models(use_cache=False)}
+                if d["long_video_model"] not in offered:
+                    raise ApiError("The stream service does not offer that detector.")
+            cfg.long_video_model = d["long_video_model"]
+        if "long_video_face_crop" in d:
+            cfg.long_video_face_crop = d["long_video_face_crop"]
+        cfg.save()
+        after = {"audit_steps": cfg.audit_steps, "long_video_model": cfg.long_video_model,
+                 "long_video_face_crop": cfg.long_video_face_crop}
+        audit.record("admin.detection_setup", request=request, target_type="core.platformsettings", target_id="1",
+                     before=before, after=after)
+        return Response(self._payload())
 
 
 class FailedTaskRetryView(APIView):

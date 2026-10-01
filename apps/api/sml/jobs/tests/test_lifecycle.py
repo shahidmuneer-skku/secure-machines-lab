@@ -57,10 +57,12 @@ def model_score(scores: dict[str, float]) -> Callable[[JobTask], dict]:
 
 
 @pytest.fixture
-def job_for(make_media) -> Callable[..., Job]:  # type: ignore[no-untyped-def]
+def job_for(make_media, use_detectors) -> Callable[..., Job]:  # type: ignore[no-untyped-def]
+    """A job for an uploaded image; `models` sets the admin's image detectors first."""
     def make(user, models: list[str] | None = None) -> Job:  # type: ignore[no-untyped-def]
+        use_detectors(models or image_models())
         media = make_media(user)
-        return services.create_job(user, services.JobRequest(media=media, models=models or image_models()))
+        return services.create_job(user, services.JobRequest(media=media))
 
     return make
 
@@ -195,7 +197,7 @@ def test_cancel_before_start_refunds_everything(user, job_for):
 def test_not_enough_credits_creates_no_job(user, make_media):
     media = make_media(user)
     with pytest.raises(InsufficientCredits):
-        services.create_job(user, services.JobRequest(media=media, models=image_models()))
+        services.create_job(user, services.JobRequest(media=media))
     assert not Job.objects.exists()
 
 
@@ -287,7 +289,8 @@ def test_worker_error_details_reach_staff_but_never_users(user, job_for, worker,
 
     user_view = json.dumps(client_for(user).get(f"/api/v1/jobs/{job.pk}").json())
     assert "/home/ops" not in user_view and "error_detail" not in user_view
-    assert "The model stopped with an error." in user_view
+    assert "The analysis could not be completed. You were not charged." in user_view
+    assert not any(t.target in user_view for t in job.tasks.filter(kind=JobTask.Kind.MODEL))
 
     admin = client_for(make_user(roles=("admin",)), mfa=True)
     staff_view = admin.get(f"/api/v1/admin/jobs/{job.pk}").json()

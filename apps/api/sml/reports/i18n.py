@@ -1,61 +1,85 @@
-"""Report strings (EN / KO / DE)."""
+"""Report strings (EN / KO / DE). Reports never name the detectors or describe how they work."""
 
 LABELS = {
     "en": {
+        "ai_generated": "Likely AI-generated",
         "title": "Media Forensics Report", "subtitle": "Deepfake & AI-generated media analysis",
         "verdict": "Verdict", "fake": "Likely manipulated / AI-generated", "real": "Likely authentic",
         "no_face": "No face detected", "inconclusive": "Inconclusive", "probability": "Fake probability",
         "file": "File", "file_name": "File name", "type": "Type", "size": "Size", "resolution": "Resolution",
         "duration": "Duration", "sha256": "SHA-256", "submitted": "Submitted", "completed": "Completed",
-        "job_id": "Job ID", "models": "Model results", "model": "Model", "score": "Fake %", "status": "Status",
-        "weight": "Weight", "provenance": "Metadata & provenance", "ai_indicators": "AI-generation indicators",
-        "none_found": "No AI-generation indicators found in metadata.", "audit": "Audit steps",
+        "job_id": "Job ID", "status": "Status", "provenance": "Metadata & provenance",
+        "ai_indicators": "AI-generation indicators", "none_found": "No AI-generation indicators found in metadata.",
         "xai": "Explainability", "explanation": "Reasoning (AI analyst)",
-        "disclaimer": ("Scores are probabilistic estimates from machine-learning models and may be wrong. "
-                       "This report supports, but does not replace, expert review and must not be used as "
-                       "sole legal evidence."),
-        "generated": "Generated", "page": "Page", "run": "Run", "partial": "Some models failed; the verdict uses the "
-        "models that completed.", "reasons": "Why", "metadata_ai_indicator": "Metadata indicates AI generation",
-        "model_consensus": "Weighted consensus of detection models", "timeline": "Processing timeline",
+        "disclaimer": ("Scores are probabilistic estimates from automated analysis and may be wrong. This "
+                       "report supports, but does not replace, expert review and must not be used as sole "
+                       "legal evidence."),
+        "generated": "Generated", "page": "Page", "run": "Run",
+        "partial": "Some analysis steps could not complete; the verdict is based on the steps that finished.",
+        "reasons": "Why", "metadata_ai_indicator": "Metadata indicates AI generation",
+        "timeline": "Processing timeline", "analysis": "Combined result of the automated analysis",
+        "stopped_early": "The scan was stopped before the end of the selected range",
+        "news_agent": "Verification of the story and its sources", "checks": "Additional checks", "check": "Check",
+        "result": "Result", "check_face": "Face detection", "check_safety": "Content safety",
+        "check_fas": "Face liveness", "faces_found": "Faces found", "faces_none": "No face found",
+        "sensitive_yes": "Sensitive content detected", "sensitive_no": "No sensitive content detected",
+        "spoof_yes": "Presentation attack suspected", "spoof_no": "No presentation attack detected",
+        "check_failed": "Could not be completed", "camera": "Camera", "software": "Software", "c2pa_status": "C2PA",
+        "heatmap": "Heatmap", "original": "Original", "face": "Face", "video": "Annotated video",
     },
     "ko": {
-        "title": "미디어 포렌식 보고서", "subtitle": "딥페이크 및 AI 생성 미디어 분석",
-        "verdict": "판정", "fake": "조작 또는 AI 생성 가능성 높음", "real": "원본일 가능성 높음",
-        "no_face": "얼굴이 감지되지 않음", "inconclusive": "판단 불가", "probability": "가짜 확률",
-        "file": "파일", "file_name": "파일명", "type": "유형", "size": "크기", "resolution": "해상도",
-        "duration": "길이", "sha256": "SHA-256", "submitted": "제출", "completed": "완료",
-        "job_id": "작업 ID", "models": "모델별 결과", "model": "모델", "score": "가짜 %", "status": "상태",
-        "weight": "가중치", "provenance": "메타데이터 및 출처", "ai_indicators": "AI 생성 흔적",
-        "none_found": "메타데이터에서 AI 생성 흔적이 발견되지 않았습니다.", "audit": "감사 단계",
-        "xai": "설명 가능성(XAI)", "explanation": "추론 분석(AI 분석가)",
-        "disclaimer": ("점수는 머신러닝 모델의 확률적 추정치이며 틀릴 수 있습니다. 본 보고서는 전문가 검토를 "
+        "ai_generated": "AI 생성 가능성 높음",
+        "title": "미디어 포렌식 보고서", "subtitle": "딥페이크 및 AI 생성 미디어 분석", "verdict": "판정",
+        "fake": "조작 또는 AI 생성 가능성 높음", "real": "원본일 가능성 높음", "no_face": "얼굴이 감지되지 않음",
+        "inconclusive": "판단 불가", "probability": "가짜 확률", "file": "파일", "file_name": "파일명",
+        "type": "유형", "size": "크기", "resolution": "해상도", "duration": "길이", "sha256": "SHA-256",
+        "submitted": "제출", "completed": "완료", "job_id": "작업 ID", "status": "상태",
+        "provenance": "메타데이터 및 출처", "ai_indicators": "AI 생성 흔적",
+        "none_found": "메타데이터에서 AI 생성 흔적이 발견되지 않았습니다.", "xai": "설명 가능성(XAI)",
+        "explanation": "추론 분석(AI 분석가)",
+        "disclaimer": ("점수는 자동 분석의 확률적 추정치이며 틀릴 수 있습니다. 본 보고서는 전문가 검토를 "
                        "보조하며 단독 법적 증거로 사용될 수 없습니다."),
         "generated": "생성 일시", "page": "페이지", "run": "실행",
-        "partial": "일부 모델이 실패했으며, 완료된 모델로 판정했습니다.",
-        "reasons": "근거", "metadata_ai_indicator": "메타데이터에 AI 생성 흔적이 있음",
-        "model_consensus": "탐지 모델의 가중 합의", "timeline": "처리 과정",
+        "partial": "일부 분석 단계를 완료하지 못했으며, 완료된 단계의 결과로 판정했습니다.", "reasons": "근거",
+        "metadata_ai_indicator": "메타데이터에 AI 생성 흔적이 있음", "timeline": "처리 과정",
+        "analysis": "자동 분석의 종합 결과", "stopped_early": "선택한 구간이 끝나기 전에 분석이 중지되었습니다",
+        "news_agent": "기사 내용과 출처 검증", "checks": "추가 검사", "check": "검사", "result": "결과",
+        "check_face": "얼굴 탐지", "check_safety": "유해성 검사", "check_fas": "얼굴 생체 확인",
+        "faces_found": "얼굴 발견", "faces_none": "얼굴 없음", "sensitive_yes": "민감한 콘텐츠 감지",
+        "sensitive_no": "민감한 콘텐츠 없음", "spoof_yes": "위변조 시도 의심", "spoof_no": "위변조 시도 없음",
+        "check_failed": "완료하지 못함", "camera": "카메라", "software": "소프트웨어", "c2pa_status": "C2PA",
+        "heatmap": "히트맵", "original": "원본", "face": "얼굴", "video": "분석 영상",
     },
     "de": {
+        "ai_generated": "Wahrscheinlich KI-generiert",
         "title": "Medienforensik-Bericht", "subtitle": "Analyse von Deepfakes und KI-generierten Medien",
         "verdict": "Ergebnis", "fake": "Wahrscheinlich manipuliert / KI-generiert", "real": "Wahrscheinlich echt",
-        "no_face": "Kein Gesicht erkannt", "inconclusive": "Nicht eindeutig", "probability": "Fake-Wahrscheinlichkeit",
-        "file": "Datei", "file_name": "Dateiname", "type": "Typ", "size": "Größe", "resolution": "Auflösung",
-        "duration": "Dauer", "sha256": "SHA-256", "submitted": "Eingereicht", "completed": "Abgeschlossen",
-        "job_id": "Auftrags-ID", "models": "Modellergebnisse", "model": "Modell", "score": "Fake %",
-        "status": "Status", "weight": "Gewicht", "provenance": "Metadaten & Herkunft",
-        "ai_indicators": "Hinweise auf KI-Generierung",
-        "none_found": "Keine Hinweise auf KI-Generierung in den Metadaten gefunden.", "audit": "Prüfschritte",
-        "xai": "Erklärbarkeit", "explanation": "Begründung (KI-Analyst)",
-        "disclaimer": ("Die Werte sind probabilistische Schätzungen von ML-Modellen und können falsch sein. "
-                       "Dieser Bericht unterstützt eine Expertenprüfung, ersetzt sie aber nicht und darf nicht als "
-                       "alleiniges rechtliches Beweismittel verwendet werden."),
+        "no_face": "Kein Gesicht erkannt", "inconclusive": "Nicht eindeutig",
+        "probability": "Fake-Wahrscheinlichkeit", "file": "Datei", "file_name": "Dateiname", "type": "Typ",
+        "size": "Größe", "resolution": "Auflösung", "duration": "Dauer", "sha256": "SHA-256",
+        "submitted": "Eingereicht", "completed": "Abgeschlossen", "job_id": "Auftrags-ID", "status": "Status",
+        "provenance": "Metadaten & Herkunft", "ai_indicators": "Hinweise auf KI-Generierung",
+        "none_found": "Keine Hinweise auf KI-Generierung in den Metadaten gefunden.", "xai": "Erklärbarkeit",
+        "explanation": "Begründung (KI-Analyst)",
+        "disclaimer": ("Die Werte sind probabilistische Schätzungen einer automatischen Analyse und können "
+                       "falsch sein. Dieser Bericht unterstützt eine Expertenprüfung, ersetzt sie aber nicht "
+                       "und darf nicht als alleiniges rechtliches Beweismittel verwendet werden."),
         "generated": "Erstellt", "page": "Seite", "run": "Durchlauf",
-        "partial": "Einige Modelle sind fehlgeschlagen; das Ergebnis basiert auf den abgeschlossenen Modellen.",
+        "partial": ("Einige Analyseschritte konnten nicht abgeschlossen werden; das Ergebnis beruht auf den "
+                    "abgeschlossenen Schritten."),
         "reasons": "Begründung", "metadata_ai_indicator": "Metadaten deuten auf KI-Generierung hin",
-        "model_consensus": "Gewichteter Konsens der Erkennungsmodelle", "timeline": "Verarbeitungsverlauf",
+        "timeline": "Verarbeitungsverlauf", "analysis": "Gesamtergebnis der automatischen Analyse",
+        "stopped_early": "Die Analyse wurde vor dem Ende des gewählten Bereichs gestoppt",
+        "news_agent": "Prüfung der Meldung und ihrer Quellen", "checks": "Zusätzliche Prüfungen", "check": "Prüfung",
+        "result": "Ergebnis", "check_face": "Gesichtserkennung", "check_safety": "Inhaltssicherheit",
+        "check_fas": "Lebenderkennung", "faces_found": "Gesichter gefunden", "faces_none": "Kein Gesicht gefunden",
+        "sensitive_yes": "Sensible Inhalte erkannt", "sensitive_no": "Keine sensiblen Inhalte erkannt",
+        "spoof_yes": "Täuschungsversuch vermutet", "spoof_no": "Kein Täuschungsversuch erkannt",
+        "check_failed": "Konnte nicht abgeschlossen werden", "camera": "Kamera", "software": "Software",
+        "c2pa_status": "C2PA", "heatmap": "Heatmap", "original": "Original", "face": "Gesicht",
+        "video": "Analysiertes Video",
     },
 }
-
 
 def labels(locale: str) -> dict[str, str]:
     return LABELS.get(locale, LABELS["en"])

@@ -15,7 +15,7 @@ import yaml
 from django.conf import settings
 from django.core.cache import cache
 
-OVERRIDES_CACHE_KEY = "model-overrides:v1"
+OVERRIDES_CACHE_KEY = "model-overrides:v2"
 
 
 def model_queue(model_id: str) -> str:
@@ -31,7 +31,7 @@ class ModelSpec:
     face_required: bool
     xai: str
     enabled: bool
-    default_selected: bool
+    runs_on: frozenset[str]  # media types this detector runs on in every job (admin-chosen)
     trial: bool
     weight: float
     gpu_mem_mb: int
@@ -78,6 +78,18 @@ class AuditStepSpec:
         return self.display_name.get(lang) or self.display_name.get("en") or self.id
 
 
+def _runs_on(raw_model: dict[str, Any], override: dict[str, Any]) -> frozenset[str]:
+    """Media types the detector runs on: the admin's per-media choice, else models.yaml's
+    `default_selected` (which applies to every media type the detector supports)."""
+    default = bool(raw_model.get("default_selected", False))
+    chosen = set()
+    for media in raw_model.get("media", {}):
+        flag = override.get(f"run_on_{media}")
+        if flag if flag is not None else default:
+            chosen.add(media)
+    return frozenset(chosen)
+
+
 class Registry:
     def __init__(self, raw: dict[str, Any], overrides: dict[str, dict[str, Any]]):
         defaults = raw.get("defaults", {})
@@ -94,8 +106,7 @@ class Registry:
                 face_required=bool(m.get("face_required", False)),
                 xai=m.get("xai", "none"),
                 enabled=ov.get("enabled") if ov.get("enabled") is not None else bool(m.get("enabled", True)),
-                default_selected=(ov["default_selected"] if ov.get("default_selected") is not None
-                                  else bool(m.get("default_selected", False))),
+                runs_on=_runs_on(m, ov),
                 trial=ov["trial"] if ov.get("trial") is not None else bool(m.get("trial", False)),
                 weight=float(ov["weight"] if ov.get("weight") is not None
                              else m.get("weight", defaults.get("weight", 1.0))),
@@ -126,7 +137,8 @@ class Registry:
         return [m for m in self.models.values() if m.enabled and m.supports(media_type)]
 
     def default_selection(self, media_type: str) -> list[str]:
-        return [m.id for m in self.enabled_for(media_type) if m.default_selected]
+        """The detectors every job of this media type runs (before per-user restrictions)."""
+        return [m.id for m in self.enabled_for(media_type) if media_type in m.runs_on]
 
     def trial_selection(self) -> list[str]:
         return [m.id for m in self.enabled_for("image") if m.trial]
@@ -143,8 +155,8 @@ def _overrides() -> dict[str, dict[str, Any]]:
         from .models import ModelOverride
 
         data = {
-            o.model_id: {"enabled": o.enabled, "weight": o.weight, "default_selected": o.default_selected,
-                         "trial": o.trial}
+            o.model_id: {"enabled": o.enabled, "weight": o.weight, "run_on_image": o.run_on_image,
+                         "run_on_video": o.run_on_video, "trial": o.trial}
             for o in ModelOverride.objects.all()
         }
         cache.set(OVERRIDES_CACHE_KEY, data, 30)

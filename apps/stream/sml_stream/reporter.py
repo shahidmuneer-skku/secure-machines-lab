@@ -18,9 +18,18 @@ class ApiRefused(Exception):
     """The API rejected the report (e.g. the job was canceled); the scan must stop."""
 
 
+def claim(session_id: str) -> dict[str, Any]:
+    """What the session paid for (detector, range, file size). The API answers once per session."""
+    return _post(session_id, "claim", {}, "claim")
+
+
 def report(session_id: str, event: str, payload: dict[str, Any], *, retries: int = 3) -> dict[str, Any]:
-    url = f"{settings.API_INTERNAL_URL}/api/internal/streams/{session_id}/events"
-    body = json.dumps({"event": event, **payload}).encode()
+    return _post(session_id, "events", {"event": event, **payload}, event, retries=retries)
+
+
+def _post(session_id: str, path: str, data: dict[str, Any], event: str, *, retries: int = 3) -> dict[str, Any]:
+    url = f"{settings.API_INTERNAL_URL}/api/internal/streams/{session_id}/{path}"
+    body = json.dumps(data).encode()
     for attempt in range(retries):
         req = urllib.request.Request(url, data=body, method="POST", headers={  # noqa: S310 - http(s) only (settings)
             "Content-Type": "application/json", "X-Stream-Key": settings.SHARED_SECRET})

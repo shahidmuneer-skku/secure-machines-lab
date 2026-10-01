@@ -73,7 +73,8 @@ export function Dashboard() {
     added: { label: t("series.added"), color: "var(--viz-real)" },
     spent: { label: t("series.spent"), color: "var(--viz-other)" },
   } satisfies ChartConfig
-  const modelConfig = { runs: { label: t("series.runs"), color: "var(--viz-real)" } } satisfies ChartConfig
+  const usageConfig = { jobs: { label: t("series.jobs"), color: "var(--viz-real)" } } satisfies ChartConfig
+  const usage = (summary?.usage_by_type ?? []).map((u) => ({ ...u, label: t(`usageType.${u.type}`) }))
   const waitConfig = { avg_seconds: { label: t("series.wait"), color: "var(--viz-real)" } } satisfies ChartConfig
 
   const k = summary?.kpis
@@ -180,18 +181,18 @@ export function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-3">
         <HudCard>
           <CardHeader>
-            <Eyebrow index={4}>{t("modelChart.eyebrow")}</Eyebrow>
-            <CardTitle className="mt-1 text-base">{t("modelChart.title")}</CardTitle>
+            <Eyebrow index={4}>{t("usageChart.eyebrow")}</Eyebrow>
+            <CardTitle className="mt-1 text-base">{t("usageChart.title")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-56" /> : !summary?.usage_by_model.length ? <EmptyChart label={t("noData")} /> : (
-              <ChartContainer config={modelConfig} className="h-56 w-full">
-                <BarChart data={summary.usage_by_model} layout="vertical" margin={{ left: 8, right: 32 }}>
+            {isLoading ? <Skeleton className="h-56" /> : !usage.length ? <EmptyChart label={t("noData")} /> : (
+              <ChartContainer config={usageConfig} className="h-56 w-full">
+                <BarChart data={usage} layout="vertical" margin={{ left: 8, right: 32 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="target" type="category" tickLine={false} axisLine={false} width={96} />
+                  <YAxis dataKey="label" type="category" tickLine={false} axisLine={false} width={96} />
                   <ChartTooltip cursor={{ fill: "var(--accent)" }} content={<ChartTooltipContent hideIndicator />} />
-                  <Bar dataKey="runs" fill="var(--color-runs)" radius={[0, 4, 4, 0]} barSize={14}>
-                    <LabelList dataKey="runs" position="right" className="fill-muted-foreground" fontSize={11} />
+                  <Bar dataKey="jobs" fill="var(--color-jobs)" radius={[0, 4, 4, 0]} barSize={14}>
+                    <LabelList dataKey="jobs" position="right" className="fill-muted-foreground" fontSize={11} />
                   </Bar>
                 </BarChart>
               </ChartContainer>

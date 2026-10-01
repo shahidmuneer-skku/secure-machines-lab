@@ -41,7 +41,7 @@
     "creditsCount": "{count, plural, one {# credit} other {# credits}}",
     "simulated": "Simulated",
     "simulatedHint": "The real model environment is not installed yet; this score is simulated for testing.",
-    "disclaimer": "Scores are probabilistic estimates from machine-learning models and can be wrong. Use them to support, not replace, expert judgement.",
+    "disclaimer": "Scores are probabilistic estimates from automated analysis and can be wrong. Use them to support, not replace, expert judgement.",
     "notFound": "Page not found",
     "notFoundBody": "The page you are looking for does not exist or you do not have access to it.",
     "goHome": "Go to dashboard",
@@ -110,7 +110,8 @@
     "real": "Likely authentic",
     "no_face": "No face detected",
     "inconclusive": "Inconclusive",
-    "aiMetadata": "AI-generation indicator in metadata"
+    "aiMetadata": "AI-generation indicator in metadata",
+    "ai_generated": "Likely AI-generated"
   },
   "queue": {
     "position": "#{position} in queue · ~{eta}",
@@ -134,7 +135,7 @@
     "NOT_FOUND": "Not found.",
     "RATE_LIMITED": "Too many requests. Please slow down.",
     "INSUFFICIENT_CREDITS": "Not enough credits.",
-    "MODEL_NOT_ALLOWED": "One of the selected models is not available to you.",
+    "MODEL_NOT_ALLOWED": "This type of file cannot be analysed for your account right now.",
     "MODULE_NOT_ALLOWED": "This module is not enabled for your account.",
     "INVALID_MEDIA": "That file is not a supported image or video.",
     "MFA_REQUIRED": "This area requires a session verified with two-factor authentication.",
@@ -258,15 +259,12 @@
       "added": "Added",
       "spent": "Spent",
       "runs": "Runs",
-      "wait": "Avg. wait"
+      "wait": "Avg. wait",
+      "jobs": "Analyses"
     },
     "jobsChart": {
       "eyebrow": "Verdicts",
       "title": "Jobs over time by verdict"
-    },
-    "modelChart": {
-      "eyebrow": "Models",
-      "title": "Usage by model"
     },
     "creditsChart": {
       "eyebrow": "Credits",
@@ -279,7 +277,7 @@
     "quick": {
       "eyebrow": "Quick start",
       "title": "Drop a file",
-      "subtitle": "Runs the recommended models. Use Detect for full control.",
+      "subtitle": "Drop files to analyse them right away. Use Detect to see the price first.",
       "analyze": "{count, plural, =0 {Analyze} one {Analyze # file} other {Analyze # files}}"
     },
     "recent": {
@@ -294,15 +292,24 @@
       "jobs": "{count} jobs",
       "credits": "{count} credits",
       "manage": "Manage API keys"
+    },
+    "usageChart": {
+      "eyebrow": "Usage",
+      "title": "Analyses by type"
+    },
+    "usageType": {
+      "image": "Images",
+      "video": "Videos",
+      "long_video": "Long-form",
+      "news": "News"
     }
   },
   "detect": {
     "eyebrow": "Workspace · Detect",
     "title": "Detect deepfakes & AI-generated media",
-    "subtitle": "Drop images and videos together. We recognise each file type automatically and combine the models you choose into one verdict.",
+    "subtitle": "Drop images and videos together. Each file is analysed automatically and you get one combined verdict with its evidence.",
     "step1": "Files",
-    "step2": "Detectors",
-    "step3": "Review",
+    "step2": "Review & submit",
     "filesTitle": "Add images or videos",
     "filesHint": "Drag and drop, click to browse, or paste from the clipboard. Up to 50 files per batch.",
     "dropLabel": "Upload images or videos",
@@ -321,49 +328,23 @@
     "uploadFailed": "Upload failed.",
     "retryUpload": "Retry upload",
     "removeFile": "Remove file",
-    "modelsTitle": "Choose the models that contribute",
-    "modelsHint": "Each selected model analyses every compatible file; you get one combined verdict (per-model scores stay under Details).",
-    "recommended": "Recommended",
-    "selectAll": "Select all",
-    "clearSelection": "Clear",
-    "selectedCount": "{count} selected",
-    "family": {
-      "deepfake": "Face manipulation (deepfakes)",
-      "ai_generated": "Fully AI-generated",
-      "general": "General purpose"
-    },
-    "needsFace": "Needs a face",
-    "needsFaceHint": "This model analyses faces. Files without a face are not charged for it.",
-    "hasXai": "Explainability heatmap",
-    "locked": "Not available on your account",
-    "imageOnly": "images only",
-    "videoOnly": "videos only",
-    "auditTitle": "Audit chain",
-    "auditHint": "Extra checks around the detection. Metadata & C2PA provenance always runs.",
-    "alwaysOn": "always on",
     "summaryTitle": "Summary & cost",
     "filesReady": "Files ready",
-    "modelsSelected": "Models",
-    "auditSelected": "Audit steps",
     "total": "Total",
     "creditsN": "{count, plural, one {# credit} other {# credits}}",
     "balanceAfter": "Balance {balance} → {after} after this batch",
-    "flatPriceHint": "Price is per file, regardless of how many models you pick.",
-    "quoteHint": "Upload files and pick models to see the price.",
+    "flatPriceHint": "The price is per file.",
+    "quoteHint": "Upload files to see the price.",
     "quoteFailed": "Could not price this request.",
     "notEnough": "You don't have enough credits for this batch.",
     "buyCredits": "Buy credits",
-    "noModelFor": "Pick at least one model that supports: {types}",
     "submit": "Start analysis",
     "submitHint": "Jobs are queued immediately — you can leave this page and follow progress in Results.",
     "queuedToast": "{count, plural, one {Queued — analysis started} other {# files queued}}",
     "queuedToastHint": "Track progress live in Results.",
     "track": "Track",
     "insufficient": "Not enough credits",
-    "submitFailed": "Could not start the analysis",
-    "collapseAll": "Collapse all",
-    "expandAll": "Expand all",
-    "selectGroup": "Select all in {group}"
+    "submitFailed": "Could not start the analysis"
   },
   "results": {
     "eyebrow": "Workspace · Results",
@@ -454,34 +435,9 @@
     "notCharged": "Not charged",
     "expires": "Media expires {when}",
     "stages": "Processing stages",
-    "stage": {
-      "queued": "Queued",
-      "analyzing": "Analyzing",
-      "aggregating": "Aggregating",
-      "done": "Done"
-    },
-    "taskKind": {
-      "model": "model",
-      "audit": "audit",
-      "long_video": "scanner",
-      "news": "agent"
-    },
-    "simulated": "Simulated",
-    "attempt": "attempt {n}",
-    "fallbackUsed": "fallback: {model}",
-    "taskProgress": "{name} progress",
-    "scoreFake": "{pct}% fake",
-    "noFace": "No face",
-    "log": "Log",
-    "toggleLog": "Show live log for {name}",
-    "liveLog": "Live processing log",
-    "logWaiting": "Waiting for the worker…",
-    "logEmpty": "No log lines.",
     "processing": {
       "eyebrow": "Behind the scenes",
-      "title": "What's happening now",
-      "models": "Detection models",
-      "audit": "Audit chain"
+      "title": "What's happening now"
     },
     "timeline": {
       "eyebrow": "Timeline",
@@ -491,7 +447,7 @@
       "eyebrow": "Media",
       "original": "Original",
       "overlayAlt": "{label} overlay",
-      "explainability": "Explainability overlay",
+      "explainability": "Heatmap overlay",
       "opacity": "Opacity",
       "expired": "Media expired and was deleted.",
       "unavailable": "Media is not available.",
@@ -499,7 +455,12 @@
       "timeline": "Score over time",
       "timelineHint": "Click the chart to jump the player to that moment.",
       "streamPreview": "Preview frame",
-      "streamNotStored": "Streamed scan: the video itself was not stored."
+      "streamNotStored": "Streamed scan: the video itself was not stored.",
+      "artifact": {
+        "heatmap": "Heatmap {n}",
+        "face": "Face {n}",
+        "video": "Annotated video {n}"
+      }
     },
     "verdict": {
       "eyebrow": "Verdict",
@@ -508,26 +469,21 @@
       "failed": "The analysis failed. You were not charged.",
       "canceled": "This job was canceled. Reserved credits were returned.",
       "expired": "This job has expired.",
-      "pending": "Results appear here as soon as the models finish.",
-      "partial": "Some models failed; the verdict uses the models that completed.",
-      "simulated": "Some scores are simulated because the real model environment isn't installed on the server yet.",
-      "details": "Per-model details",
-      "model": "Model",
-      "fakePct": "Fake %",
-      "weight": "Weight",
-      "time": "Time",
-      "failedShort": "failed"
+      "pending": "The result appears here as soon as the analysis finishes.",
+      "partial": "Some analysis steps could not complete; the verdict is based on the steps that finished."
     },
     "reason": {
-      "model_consensus": "Weighted consensus of the selected models",
       "metadata_ai_indicator": "Metadata or Content Credentials indicate AI generation",
-      "no_face": "No face was found for face-based models",
-      "news_agent": "Verification agent assessment"
+      "no_face": "No face was found in the file",
+      "news_agent": "Verification agent assessment",
+      "analysis": "Combined result of the automated analysis",
+      "metadata_hint": "The metadata hints at AI generation, consistent with the analysis",
+      "stopped_early": "The scan was stopped before the end of the selected range"
     },
     "disclaimer": "Scores are probabilistic estimates and can be wrong. Use them to support, not replace, expert judgement; they are not legal evidence.",
     "provenance": {
       "eyebrow": "Provenance",
-      "title": "Metadata & audit",
+      "title": "Metadata & checks",
       "aiFound": "AI-generation indicator found",
       "noneFound": "No AI indicator in metadata",
       "confidence": {
@@ -544,13 +500,13 @@
         "tool_unavailable": "Not checked",
         "error": "Could not read"
       },
-      "audit": "Audit steps",
-      "completed": "Completed"
+      "hintFound": "Weak AI-generation hint in metadata",
+      "checks": "Additional checks"
     },
     "explain": {
       "eyebrow": "AI analyst",
       "title": "Explain why",
-      "subtitle": "A reasoning model looks at the file, heatmaps, scores and metadata and explains the verdict in plain language.",
+      "subtitle": "An AI analyst looks at the file, the heatmaps and the metadata and explains the verdict in plain language.",
       "ask": "Explain why",
       "again": "Ask again",
       "cost": "{count} cr",
@@ -579,18 +535,42 @@
       "reserved": "Reserved",
       "trial": "Free trial — no credits used."
     },
-    "taskError": {
-      "GPU_OOM": "The GPU ran out of memory while running this model.",
-      "GPU_UNSUPPORTED": "This model is temporarily unavailable on the assigned hardware.",
-      "TIMEOUT": "The model took too long and was stopped.",
-      "WORKER_LOST": "The worker running this model stopped responding.",
-      "QUEUE_TIMEOUT": "No worker picked this task up in time.",
-      "RUNTIME_ERROR": "The model stopped with an error.",
-      "PARSE_ERROR": "The model finished without producing a score.",
-      "CONFIG_ERROR": "This model is not configured correctly.",
-      "INFRA_ERROR": "A temporary system error occurred.",
-      "AGENT_ERROR": "The AI agent could not complete the task.",
-      "INVALID_MEDIA": "The file could not be read by this model."
+    "step": {
+      "queued": "Waiting in the queue",
+      "checks": "Checking the file (metadata, provenance)",
+      "analysis": "{media, select, image {Analysing the image} video {Analysing the video} attachments {Analysing the attached media} other {Analysing the file}}",
+      "verification": "Verifying the story and its sources",
+      "results": "Preparing the result"
+    },
+    "stepStatus": {
+      "pending": "waiting",
+      "running": "in progress",
+      "done": "done",
+      "failed": "failed",
+      "canceled": "canceled",
+      "expired": "expired",
+      "skipped": "skipped"
+    },
+    "check": {
+      "name": {
+        "face": "Face detection",
+        "safety": "Content safety",
+        "fas": "Face liveness"
+      },
+      "facesFound": "Faces found",
+      "noFace": "No face found",
+      "sensitive": "Sensitive content detected",
+      "notSensitive": "No sensitive content",
+      "spoof": "Presentation attack suspected",
+      "live": "No presentation attack",
+      "status": {
+        "pending": "Waiting",
+        "running": "Running",
+        "done": "Done",
+        "failed": "Could not be completed",
+        "canceled": "Canceled",
+        "skipped": "Skipped"
+      }
     }
   },
   "admin": {
@@ -740,7 +720,10 @@
       "retry": "Retry task",
       "retried": "Task re-queued",
       "failed": "That didn't work.",
-      "openAsUser": "Open result page"
+      "openAsUser": "Open result page",
+      "showLog": "Show the live log of {task}",
+      "log": "Task log",
+      "logEmpty": "No log lines."
     },
     "queues": {
       "eyebrow": "Admin · Operations",
@@ -768,10 +751,9 @@
     "models": {
       "eyebrow": "Admin · Models",
       "title": "Detection models",
-      "subtitle": "Enable or disable models, set their weight in the combined verdict and choose defaults.",
+      "subtitle": "Choose which detectors run on every image and every video, their weights, and what else every job runs. Users never see these.",
       "model": "Model",
       "enabled": "Enabled",
-      "default": "Default",
       "trial": "Trial",
       "weight": "Weight",
       "consumers": "Workers",
@@ -779,7 +761,31 @@
       "envs": "Conda env",
       "saved": "Model updated",
       "failed": "Could not update the model.",
-      "legend": "24h runs = completed / failed / waiting. Models with no worker keep jobs waiting until a worker starts."
+      "legend": "Runs = last 24 h: runs / failed / waiting. Consumers = workers serving the model's queue. Weights set each detector's share of the combined verdict.",
+      "media": {
+        "image": "Images",
+        "video": "Videos"
+      },
+      "runOnFor": "Run {model} on {media}",
+      "runsSummary": "{count, plural, =0 {No detector runs — jobs of this type are refused} one {# detector runs on every job} other {# detectors run on every job}}",
+      "setup": {
+        "checksTitle": "Checks on every job",
+        "checksHint": "Run besides the detectors on every image and video. The metadata / C2PA check always runs.",
+        "always": "Always runs",
+        "longVideoTitle": "Long-form video detector",
+        "longVideoHint": "Every long-form scan uses this detector; users only choose the range and mode.",
+        "streamOffline": "The long-form service is not reachable, so its detectors cannot be listed.",
+        "detector": "Detector",
+        "automatic": "Automatic (first available)",
+        "unavailable": "unavailable",
+        "faceCrop": "Crop to faces before scoring",
+        "faceCropDefault": "Detector default",
+        "faceCropOn": "On",
+        "faceCropOff": "Off",
+        "faceCropFixed": "This detector decides face cropping itself.",
+        "saved": "Saved",
+        "failed": "That didn't work."
+      }
     },
     "pricing": {
       "eyebrow": "Admin · Pricing",
@@ -1365,18 +1371,11 @@
     "replace": "Choose another video",
     "tooBig": "This file is larger than {size}.",
     "settingsTitle": "Scan settings",
-    "model": "Detector",
-    "unavailable": "Not available right now",
-    "faceCropSupport": {
-      "always": "Always analyses the largest face",
-      "optional": "Optional face crop",
-      "none": "Analyses whole frames"
-    },
     "mode": "Mode",
     "modeIntervals": "Timeline (per interval)",
     "modeWhole": "Whole video (one verdict)",
     "modeIntervalsHint": "Scores every interval of the selected range, so you can jump to suspicious moments.",
-    "modeWholeHint": "One score for the selected range, computed the way the detector was designed to judge a whole clip.",
+    "modeWholeHint": "One score for the whole selected range.",
     "interval": "Interval length",
     "seconds": "{count}s",
     "intervalHint": "Shorter intervals give a finer timeline and take longer.",
@@ -1384,8 +1383,6 @@
     "setStart": "Start at playhead",
     "setEnd": "End at playhead",
     "wholeRange": "Whole video",
-    "faceCrop": "Crop to faces",
-    "faceCropHint": "Analyse the largest face in each frame instead of the whole frame.",
     "summary": "Summary",
     "selected": "Selected length",
     "maxCost": "Maximum cost",
@@ -1442,7 +1439,7 @@
       "media": "Images or videos (up to 10)",
       "submit": "Verify case",
       "cost": "{count} credits per case",
-      "duration": "Detectors run on each file first, then the agent researches the case. This usually takes several minutes."
+      "duration": "Each attached file is analysed first, then the case is researched. This usually takes several minutes."
     },
     "category": {
       "conflict": "Conflict",
@@ -1491,7 +1488,7 @@
     "free": {
       "title": "Free allowances",
       "trial": "{count} free image checks a day",
-      "trialBody": "Try the detector on the homepage — no account needed.",
+      "trialBody": "Try a free analysis on the homepage — no account needed.",
       "bonus": "{count} welcome credits",
       "bonusBody": "Added when you verify your email. Valid for {days} days.",
       "daily": "{count} free credits every day",
@@ -1506,7 +1503,7 @@
       "news": "News verification — {count} credits per case",
       "explain": "Explain why (AI analyst) — {count} credits",
       "reports": "PDF / HWP / CSV reports — free",
-      "flat": "Prices are per file, no matter how many detection models you select. Files where analysis fails are never charged."
+      "flat": "Prices are per file. Files where the analysis fails are never charged."
     },
     "plans": {
       "eyebrow": "Subscriptions",
@@ -1525,8 +1522,8 @@
         "a": "Daily free credits reset every day, the welcome bonus lasts 30 days, subscription credits last until the end of the billing month and purchased credits for 12 months. We always spend the credits that expire soonest first."
       },
       "models": {
-        "q": "Does choosing more models cost more?",
-        "a": "No. The price is per file; you can combine as many detection models as your account allows into one verdict."
+        "q": "Does a more thorough analysis cost more?",
+        "a": "No. Every file gets the full analysis for its type and costs the same flat price."
       },
       "refund": {
         "q": "Can I get a refund?",

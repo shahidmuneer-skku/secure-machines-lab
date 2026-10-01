@@ -27,9 +27,15 @@ defaults:
 # that uses it (on top of the activation the worker always does: PATH, CONDA_PREFIX).
 # {env_prefix} is <CONDA_ROOT>/envs/<name>; search-path variables are prepended.
 conda_envs:
+  # These environments were copied from another machine: dlib's RUNPATH still points at the old
+  # /home/dev25 prefix, so its OpenBLAS / cuBLAS / cuSOLVER (shipped in the env's lib/) are not found.
   mixture3:
-    # dlib in this env links OpenBLAS without an RPATH; the env ships libopenblas.so.0 in lib/.
     LD_LIBRARY_PATH: "{env_prefix}/lib"
+  BEYBI:
+    LD_LIBRARY_PATH: "{env_prefix}/lib"
+
+# What runs: users never choose. `default_selected: true` means "runs on every job of each media type
+# the model supports" until an admin changes it per media type on Admin → Models (ADR 0011).
 
 # Aggregation shown to users as one verdict (weighted mean of fake probability).
 aggregation:
@@ -491,7 +497,8 @@ long_video_models:
     parser: long_video_events
     timeout_seconds: 14400
 
-# Audit chain (pre/post analysis steps). Users choose them per job within their permissions.
+# Audit chain (checks besides the detectors). The admin chooses which run on every job (Admin → Models);
+# `builtin` steps (metadata / C2PA) always run.
 audit_steps:
   - id: face
     display_name: {en: Face detection, ko: 얼굴 탐지, de: Gesichtserkennung}

@@ -245,7 +245,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/PaginatedJobListList"
+                                    "$ref": "#/components/schemas/PaginatedAdminJobListList"
                                 }
                             }
                         },
@@ -290,7 +290,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/AdminJobDetail"
+                                    "$ref": "#/components/schemas/AdminJobView"
                                 }
                             }
                         },
@@ -333,7 +333,62 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/JobList"
+                                    "$ref": "#/components/schemas/AdminJobList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/jobs/{id}/tasks/{task_id}/log": {
+            "get": {
+                "operationId": "admin_jobs_tasks_log_retrieve",
+                "summary": "Live processing log of one task (detector output, GPU admission)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "task_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskLog"
                                 }
                             }
                         },
@@ -399,7 +454,10 @@
                                     "weight": {
                                         "type": "number"
                                     },
-                                    "default_selected": {
+                                    "run_on_image": {
+                                        "type": "boolean"
+                                    },
+                                    "run_on_video": {
                                         "type": "boolean"
                                     },
                                     "trial": {
@@ -433,6 +491,94 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Ok"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/models/setup": {
+            "get": {
+                "operationId": "admin_models_setup_retrieve",
+                "description": "What every job runs besides the per-media detectors: extra checks and the long-form detector.",
+                "summary": "Extra checks run on every job and the long-form video detector",
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DetectionSetup"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin_models_setup_partial_update",
+                "description": "What every job runs besides the per-media detectors: extra checks and the long-form detector.",
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDetectionSetupUpdateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDetectionSetupUpdateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDetectionSetupUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DetectionSetup"
                                 }
                             }
                         },
@@ -3173,66 +3319,6 @@
                 }
             }
         },
-        "/api/v1/catalog/models": {
-            "get": {
-                "operationId": "catalog_models_retrieve",
-                "summary": "Detection models available to the caller",
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "lang",
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "de",
-                                "en",
-                                "ko"
-                            ]
-                        }
-                    },
-                    {
-                        "in": "query",
-                        "name": "media",
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "image",
-                                "video"
-                            ]
-                        }
-                    }
-                ],
-                "tags": [
-                    "catalog"
-                ],
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "cookieAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "SessionAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ModelCatalog"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/api/v1/catalog/modules": {
             "get": {
                 "operationId": "catalog_modules_list",
@@ -3262,46 +3348,6 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/ModuleInfo"
-                                    }
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/api/v1/catalog/public-models": {
-            "get": {
-                "operationId": "catalog_public_models_list",
-                "description": "Public model list for marketing/docs pages.",
-                "summary": "Public model catalog",
-                "tags": [
-                    "catalog"
-                ],
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "cookieAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "SessionAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ModelInfo"
                                     }
                                 }
                             }
@@ -3627,14 +3673,6 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "models": {
-                                        "type": "string",
-                                        "description": "Comma-separated model ids (optional)"
-                                    },
-                                    "audit_steps": {
-                                        "type": "string",
-                                        "description": "Comma-separated: face,safety,fas (optional)"
-                                    },
                                     "module": {
                                         "type": "string",
                                         "enum": [
@@ -3751,13 +3789,6 @@
                             ]
                         },
                         "description": "* `image` - image\n* `video` - video"
-                    },
-                    {
-                        "in": "query",
-                        "name": "model",
-                        "schema": {
-                            "type": "string"
-                        }
                     },
                     {
                         "in": "query",
@@ -3989,7 +4020,7 @@
         "/api/v1/jobs/{id}/artifacts/{artifact_id}/content": {
             "get": {
                 "operationId": "jobs_artifacts_content_retrieve",
-                "summary": "Download an artifact (XAI map, face crop, annotated video, ...)",
+                "summary": "Download a heatmap, face crop or annotated video listed in the job's artifacts",
                 "parameters": [
                     {
                         "in": "path",
@@ -4307,61 +4338,6 @@
                 }
             }
         },
-        "/api/v1/jobs/{id}/tasks/{task_id}/log": {
-            "get": {
-                "operationId": "jobs_tasks_log_retrieve",
-                "summary": "Live processing log for one task (what the worker is doing now)",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        },
-                        "required": true
-                    },
-                    {
-                        "in": "path",
-                        "name": "task_id",
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        },
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "jobs"
-                ],
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "cookieAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "SessionAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/TaskLog"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/api/v1/jobs/quote": {
             "post": {
                 "operationId": "jobs_quote_create",
@@ -4416,10 +4392,10 @@
                 }
             }
         },
-        "/api/v1/long-video/models": {
+        "/api/v1/long-video/config": {
             "get": {
-                "operationId": "long_video_models_retrieve",
-                "summary": "Detectors available for long-form streaming, with the price per minute",
+                "operationId": "long_video_config_retrieve",
+                "summary": "Whether long-form scans are available, the price per minute and the size limits",
                 "tags": [
                     "long-video"
                 ],
@@ -4442,7 +4418,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/StreamCatalog"
+                                    "$ref": "#/components/schemas/StreamConfig"
                                 }
                             }
                         },
@@ -5726,8 +5702,174 @@
                     "keys"
                 ]
             },
-            "AdminJobDetail": {
+            "AdminArtifact": {
                 "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/ArtifactKindEnum"
+                    },
+                    "label": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "size_bytes": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": -9223372036854775808,
+                        "format": "int64"
+                    },
+                    "meta": {},
+                    "task": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "url": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "content_type",
+                    "created_at",
+                    "id",
+                    "kind",
+                    "label",
+                    "meta",
+                    "size_bytes",
+                    "task",
+                    "url"
+                ]
+            },
+            "AdminExplanation": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/ExplanationStatusEnum"
+                    },
+                    "engine": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "model_name": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "locale": {
+                        "type": "string",
+                        "maxLength": 5
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "progress_log": {},
+                    "credits_charged": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "error_message": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "content",
+                    "created_at",
+                    "credits_charged",
+                    "engine",
+                    "error_message",
+                    "finished_at",
+                    "id",
+                    "locale",
+                    "model_name",
+                    "progress_log",
+                    "started_at",
+                    "status"
+                ]
+            },
+            "AdminJobEvent": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "level": {
+                        "$ref": "#/components/schemas/LevelEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 48
+                    },
+                    "message": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "public_message": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "task": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "data": {}
+                },
+                "required": [
+                    "code",
+                    "created_at",
+                    "data",
+                    "id",
+                    "level",
+                    "message",
+                    "public_message",
+                    "task"
+                ]
+            },
+            "AdminJobList": {
+                "type": "object",
+                "description": "Operator view: detectors, checks and raw results. Admin endpoints only.",
                 "properties": {
                     "id": {
                         "type": "string",
@@ -5789,6 +5931,296 @@
                     },
                     "verdict_label": {
                         "type": "string"
+                    },
+                    "ai_generated": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "fake_probability": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "partial": {
+                        "type": "boolean",
+                        "description": "Some models failed but a verdict was produced."
+                    },
+                    "credits_quoted": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "credits_charged": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "queue": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "batch_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "run_number": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "error_message": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "ai_generated",
+                    "audit_steps",
+                    "batch_id",
+                    "created_at",
+                    "credits_charged",
+                    "credits_quoted",
+                    "error_code",
+                    "error_message",
+                    "expires_at",
+                    "fake_probability",
+                    "finished_at",
+                    "id",
+                    "kind",
+                    "media_type",
+                    "models",
+                    "partial",
+                    "progress",
+                    "queue",
+                    "run_number",
+                    "source",
+                    "stage",
+                    "started_at",
+                    "status",
+                    "thumbnail_url",
+                    "title",
+                    "verdict",
+                    "verdict_label"
+                ]
+            },
+            "AdminJobTask": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/TaskKindEnum"
+                    },
+                    "target": {
+                        "type": "string",
+                        "description": "Model id or audit step id.",
+                        "maxLength": 64
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatusEnum"
+                    },
+                    "status_label": {
+                        "type": "string"
+                    },
+                    "attempt": {
+                        "type": "integer",
+                        "maximum": 32767,
+                        "minimum": 0
+                    },
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "stage_message": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "dispatched_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "duration_ms": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "gpu": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "error_message": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "fallback_for": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "live": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LiveProgress"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "queue_info": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/QueueInfo"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "result": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "attempt",
+                    "dispatched_at",
+                    "duration_ms",
+                    "error_code",
+                    "error_message",
+                    "fallback_for",
+                    "finished_at",
+                    "gpu",
+                    "id",
+                    "kind",
+                    "live",
+                    "name",
+                    "progress",
+                    "queue_info",
+                    "result",
+                    "stage_message",
+                    "started_at",
+                    "status",
+                    "status_label",
+                    "target"
+                ]
+            },
+            "AdminJobView": {
+                "type": "object",
+                "description": "Operator view: detectors, checks and raw results. Admin endpoints only.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/JobKindEnum"
+                    },
+                    "source": {
+                        "$ref": "#/components/schemas/JobSourceEnum"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/JobStatusEnum"
+                    },
+                    "stage": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "progress": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "File name or case title.",
+                        "maxLength": 255
+                    },
+                    "media_type": {
+                        "type": "string",
+                        "maxLength": 8
+                    },
+                    "thumbnail_url": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ModelRef"
+                        },
+                        "readOnly": true
+                    },
+                    "audit_steps": {},
+                    "verdict": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/VerdictEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "verdict_label": {
+                        "type": "string"
+                    },
+                    "ai_generated": {
+                        "type": "boolean",
+                        "readOnly": true
                     },
                     "fake_probability": {
                         "type": "number",
@@ -5871,28 +6303,28 @@
                     "tasks": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/JobTask"
+                            "$ref": "#/components/schemas/AdminJobTask"
                         },
                         "readOnly": true
                     },
                     "events": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/JobEvent"
+                            "$ref": "#/components/schemas/AdminJobEvent"
                         },
                         "readOnly": true
                     },
                     "artifacts": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/Artifact"
+                            "$ref": "#/components/schemas/AdminArtifact"
                         },
                         "readOnly": true
                     },
                     "explanations": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/Explanation"
+                            "$ref": "#/components/schemas/AdminExplanation"
                         },
                         "readOnly": true
                     },
@@ -5930,6 +6362,7 @@
                     }
                 },
                 "required": [
+                    "ai_generated",
                     "artifacts",
                     "audit_steps",
                     "batch_id",
@@ -5999,8 +6432,12 @@
                         "type": "number",
                         "format": "double"
                     },
-                    "default_selected": {
-                        "type": "boolean"
+                    "run_on": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RunOnEnum"
+                        },
+                        "description": "Media types this detector runs on in every job."
                     },
                     "trial": {
                         "type": "boolean"
@@ -6030,7 +6467,6 @@
                 "required": [
                     "conda_envs",
                     "consumers",
-                    "default_selected",
                     "enabled",
                     "family",
                     "gpu_mem_mb",
@@ -6039,6 +6475,7 @@
                     "name",
                     "note",
                     "queue",
+                    "run_on",
                     "stats_24h",
                     "trial",
                     "weight"
@@ -6326,14 +6763,6 @@
                             "maxLength": 64
                         }
                     },
-                    "allowed_models": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "maxLength": 64
-                        },
-                        "nullable": true
-                    },
                     "rate_limit_per_minute": {
                         "type": "integer",
                         "maximum": 6000,
@@ -6370,7 +6799,6 @@
                 },
                 "required": [
                     "allowed_ips",
-                    "allowed_models",
                     "created_at",
                     "display_key",
                     "expires_at",
@@ -6417,14 +6845,6 @@
                             "maxLength": 64
                         }
                     },
-                    "allowed_models": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "maxLength": 64
-                        },
-                        "nullable": true
-                    },
                     "rate_limit_per_minute": {
                         "type": "integer",
                         "maximum": 6000,
@@ -6466,7 +6886,6 @@
                 },
                 "required": [
                     "allowed_ips",
-                    "allowed_models",
                     "created_at",
                     "display_key",
                     "expires_at",
@@ -6502,15 +6921,6 @@
                             "minLength": 1,
                             "maxLength": 64
                         }
-                    },
-                    "allowed_models": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 64
-                        },
-                        "nullable": true
                     },
                     "rate_limit_per_minute": {
                         "type": "integer",
@@ -6723,40 +7133,26 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "format": "uuid",
-                        "readOnly": true
+                        "format": "uuid"
                     },
                     "kind": {
-                        "$ref": "#/components/schemas/ArtifactKindEnum"
+                        "$ref": "#/components/schemas/EvidenceKindEnum"
                     },
                     "label": {
-                        "type": "string",
-                        "maxLength": 128
+                        "$ref": "#/components/schemas/EvidenceKindEnum"
                     },
                     "content_type": {
-                        "type": "string",
-                        "maxLength": 100
+                        "type": "string"
                     },
                     "size_bytes": {
-                        "type": "integer",
-                        "maximum": 9223372036854775807,
-                        "minimum": -9223372036854775808,
-                        "format": "int64"
-                    },
-                    "meta": {},
-                    "task": {
-                        "type": "string",
-                        "format": "uuid",
-                        "nullable": true
+                        "type": "integer"
                     },
                     "url": {
-                        "type": "string",
-                        "readOnly": true
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string",
-                        "format": "date-time",
-                        "readOnly": true
+                        "format": "date-time"
                     }
                 },
                 "required": [
@@ -6765,9 +7161,7 @@
                     "id",
                     "kind",
                     "label",
-                    "meta",
                     "size_bytes",
-                    "task",
                     "url"
                 ]
             },
@@ -6855,42 +7249,6 @@
                     "target_type",
                     "user_agent"
                 ]
-            },
-            "AuditStepInfo": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "always_on": {
-                        "type": "boolean"
-                    },
-                    "allowed": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "allowed",
-                    "always_on",
-                    "description",
-                    "id",
-                    "name"
-                ]
-            },
-            "AuditStepsEnum": {
-                "enum": [
-                    "face",
-                    "safety",
-                    "fas"
-                ],
-                "type": "string",
-                "description": "* `face` - face\n* `safety` - safety\n* `fas` - fas"
             },
             "Balance": {
                 "type": "object",
@@ -7012,6 +7370,36 @@
                     "name",
                     "thumbnail_url"
                 ]
+            },
+            "Check": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/CheckIdEnum"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "result": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "description": "faces_found, sensitive_content or spoof_detected"
+                    }
+                },
+                "required": [
+                    "id",
+                    "result",
+                    "status"
+                ]
+            },
+            "CheckIdEnum": {
+                "enum": [
+                    "face",
+                    "safety",
+                    "fas"
+                ],
+                "type": "string",
+                "description": "* `face` - face\n* `safety` - safety\n* `fas` - fas"
             },
             "CheckoutRequest": {
                 "type": "object",
@@ -7432,10 +7820,10 @@
                             "$ref": "#/components/schemas/JobsByDay"
                         }
                     },
-                    "usage_by_model": {
+                    "usage_by_type": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/UsageByModel"
+                            "$ref": "#/components/schemas/UsageByType"
                         }
                     },
                     "credits_by_day": {
@@ -7467,7 +7855,7 @@
                     "kpis",
                     "queue_wait_by_day",
                     "recent_jobs",
-                    "usage_by_model"
+                    "usage_by_type"
                 ]
             },
             "DeleteAccountRequest": {
@@ -7488,6 +7876,52 @@
                     "password"
                 ]
             },
+            "DetectionSetup": {
+                "type": "object",
+                "properties": {
+                    "checks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SetupCheck"
+                        }
+                    },
+                    "long_video": {
+                        "$ref": "#/components/schemas/SetupLongVideo"
+                    }
+                },
+                "required": [
+                    "checks",
+                    "long_video"
+                ]
+            },
+            "Evidence": {
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "type": "string"
+                    },
+                    "detail": {
+                        "type": "string"
+                    },
+                    "strength": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "detail",
+                    "source",
+                    "strength"
+                ]
+            },
+            "EvidenceKindEnum": {
+                "enum": [
+                    "heatmap",
+                    "face",
+                    "video"
+                ],
+                "type": "string",
+                "description": "* `heatmap` - heatmap\n* `face` - face\n* `video` - video"
+            },
             "Explanation": {
                 "type": "object",
                 "properties": {
@@ -7499,14 +7933,6 @@
                     "status": {
                         "$ref": "#/components/schemas/ExplanationStatusEnum"
                     },
-                    "engine": {
-                        "type": "string",
-                        "maxLength": 32
-                    },
-                    "model_name": {
-                        "type": "string",
-                        "maxLength": 128
-                    },
                     "locale": {
                         "type": "string",
                         "maxLength": 5
@@ -7514,7 +7940,6 @@
                     "content": {
                         "type": "string"
                     },
-                    "progress_log": {},
                     "credits_charged": {
                         "type": "integer",
                         "maximum": 2147483647,
@@ -7544,13 +7969,10 @@
                     "content",
                     "created_at",
                     "credits_charged",
-                    "engine",
                     "error_message",
                     "finished_at",
                     "id",
                     "locale",
-                    "model_name",
-                    "progress_log",
                     "started_at",
                     "status"
                 ]
@@ -7565,29 +7987,14 @@
                 "type": "string",
                 "description": "* `queued` - Queued\n* `running` - Running\n* `succeeded` - Done\n* `failed` - Failed"
             },
-            "FaceCrop": {
-                "type": "object",
-                "properties": {
-                    "support": {
-                        "$ref": "#/components/schemas/SupportEnum"
-                    },
-                    "default": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "default",
-                    "support"
-                ]
-            },
-            "FamilyEnum": {
+            "FaceCropEnum": {
                 "enum": [
-                    "deepfake",
-                    "ai_generated",
-                    "general"
+                    "always",
+                    "optional",
+                    "none"
                 ],
                 "type": "string",
-                "description": "* `deepfake` - deepfake\n* `ai_generated` - ai_generated\n* `general` - general"
+                "description": "* `always` - always\n* `optional` - optional\n* `none` - none"
             },
             "FreeAllowance": {
                 "type": "object",
@@ -7643,7 +8050,7 @@
                 "type": "object",
                 "properties": {
                     "status": {
-                        "$ref": "#/components/schemas/StatusA3dEnum"
+                        "$ref": "#/components/schemas/ServiceStatusEnum"
                     },
                     "latency_ms": {
                         "type": "integer"
@@ -7671,6 +8078,7 @@
             },
             "JobCreateRequest": {
                 "type": "object",
+                "description": "Detectors and checks are chosen by the administrator, not by the caller.",
                 "properties": {
                     "media_id": {
                         "type": "string",
@@ -7691,21 +8099,6 @@
                             }
                         ],
                         "default": "detect"
-                    },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 64
-                        },
-                        "description": "Model ids from GET /catalog/models. Empty = default selection."
-                    },
-                    "audit_steps": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AuditStepsEnum"
-                        }
                     },
                     "locale": {
                         "$ref": "#/components/schemas/LocaleEnum"
@@ -7777,14 +8170,6 @@
                         "type": "string",
                         "readOnly": true
                     },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ModelRef"
-                        },
-                        "readOnly": true
-                    },
-                    "audit_steps": {},
                     "verdict": {
                         "oneOf": [
                             {
@@ -7796,7 +8181,13 @@
                         ]
                     },
                     "verdict_label": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "ai_generated": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "True when AI-generation markers in the file's metadata flag it as likely AI-generated."
                     },
                     "fake_probability": {
                         "type": "number",
@@ -7820,7 +8211,7 @@
                     "queue": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/QueueInfo"
+                                "$ref": "#/components/schemas/PublicQueue"
                             }
                         ],
                         "nullable": true,
@@ -7868,19 +8259,70 @@
                         ],
                         "readOnly": true
                     },
-                    "options": {},
+                    "options": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
                     "locale": {
                         "type": "string",
                         "maxLength": 5
                     },
-                    "summary": {},
-                    "verdict_reasons": {},
-                    "quote_lines": {},
-                    "tasks": {
+                    "verdict_reasons": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/JobTask"
+                            "type": "object",
+                            "additionalProperties": {}
                         },
+                        "readOnly": true
+                    },
+                    "quote_lines": {},
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/JobStep"
+                        },
+                        "readOnly": true
+                    },
+                    "provenance": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Provenance"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "checks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Check"
+                        },
+                        "readOnly": true
+                    },
+                    "timeline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TimelinePoint"
+                        },
+                        "readOnly": true
+                    },
+                    "long_video": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LongVideoSummary"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "news": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NewsReport"
+                            }
+                        ],
+                        "nullable": true,
                         "readOnly": true
                     },
                     "events": {
@@ -7926,10 +8368,11 @@
                     }
                 },
                 "required": [
+                    "ai_generated",
                     "artifacts",
-                    "audit_steps",
                     "batch_id",
                     "cancel_requested",
+                    "checks",
                     "created_at",
                     "credits_charged",
                     "credits_quoted",
@@ -7943,13 +8386,15 @@
                     "id",
                     "kind",
                     "locale",
+                    "long_video",
                     "media",
                     "media_type",
-                    "models",
+                    "news",
                     "options",
                     "parent",
                     "partial",
                     "progress",
+                    "provenance",
                     "purged_at",
                     "queue",
                     "quote_lines",
@@ -7959,9 +8404,9 @@
                     "stage",
                     "started_at",
                     "status",
-                    "summary",
-                    "tasks",
+                    "steps",
                     "thumbnail_url",
+                    "timeline",
                     "title",
                     "verdict",
                     "verdict_label",
@@ -7972,31 +8417,25 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer",
-                        "readOnly": true
+                        "type": "integer"
                     },
                     "created_at": {
                         "type": "string",
-                        "format": "date-time",
-                        "readOnly": true
+                        "format": "date-time"
                     },
                     "level": {
-                        "$ref": "#/components/schemas/LevelEnum"
+                        "type": "string"
                     },
                     "code": {
-                        "type": "string",
-                        "maxLength": 48
+                        "type": "string"
                     },
                     "message": {
-                        "type": "string",
-                        "maxLength": 500
+                        "type": "string"
                     },
-                    "task": {
-                        "type": "string",
-                        "format": "uuid",
-                        "nullable": true
-                    },
-                    "data": {}
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
                 },
                 "required": [
                     "code",
@@ -8004,8 +8443,7 @@
                     "data",
                     "id",
                     "level",
-                    "message",
-                    "task"
+                    "message"
                 ]
             },
             "JobKindEnum": {
@@ -8060,14 +8498,6 @@
                         "type": "string",
                         "readOnly": true
                     },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ModelRef"
-                        },
-                        "readOnly": true
-                    },
-                    "audit_steps": {},
                     "verdict": {
                         "oneOf": [
                             {
@@ -8079,7 +8509,13 @@
                         ]
                     },
                     "verdict_label": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "ai_generated": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "True when AI-generation markers in the file's metadata flag it as likely AI-generated."
                     },
                     "fake_probability": {
                         "type": "number",
@@ -8103,7 +8539,7 @@
                     "queue": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/QueueInfo"
+                                "$ref": "#/components/schemas/PublicQueue"
                             }
                         ],
                         "nullable": true,
@@ -8145,7 +8581,7 @@
                     }
                 },
                 "required": [
-                    "audit_steps",
+                    "ai_generated",
                     "batch_id",
                     "created_at",
                     "credits_charged",
@@ -8158,7 +8594,6 @@
                     "id",
                     "kind",
                     "media_type",
-                    "models",
                     "partial",
                     "progress",
                     "queue",
@@ -8194,129 +8629,36 @@
                 "type": "string",
                 "description": "* `queued` - Queued\n* `running` - Running\n* `succeeded` - Succeeded\n* `failed` - Failed\n* `canceled` - Canceled\n* `expired` - Expired"
             },
-            "JobTask": {
+            "JobStep": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "readOnly": true
-                    },
-                    "kind": {
-                        "$ref": "#/components/schemas/TaskKindEnum"
-                    },
-                    "target": {
-                        "type": "string",
-                        "description": "Model id or audit step id.",
-                        "maxLength": 64
-                    },
-                    "name": {
-                        "type": "string",
-                        "readOnly": true
+                        "$ref": "#/components/schemas/JobStepEnum"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/TaskStatusEnum"
-                    },
-                    "status_label": {
                         "type": "string"
-                    },
-                    "attempt": {
-                        "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
                     },
                     "progress": {
                         "type": "number",
                         "format": "double"
-                    },
-                    "stage_message": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "dispatched_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "started_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "finished_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "duration_ms": {
-                        "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0,
-                        "nullable": true
-                    },
-                    "gpu": {
-                        "type": "string",
-                        "maxLength": 32
-                    },
-                    "error_code": {
-                        "type": "string",
-                        "maxLength": 64
-                    },
-                    "error_message": {
-                        "type": "string",
-                        "maxLength": 500
-                    },
-                    "fallback_for": {
-                        "type": "string",
-                        "format": "uuid",
-                        "nullable": true
-                    },
-                    "live": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/LiveProgress"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "queue_info": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/QueueInfo"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "result": {
-                        "type": "object",
-                        "additionalProperties": {},
-                        "readOnly": true
                     }
                 },
                 "required": [
-                    "attempt",
-                    "dispatched_at",
-                    "duration_ms",
-                    "error_code",
-                    "error_message",
-                    "fallback_for",
-                    "finished_at",
-                    "gpu",
                     "id",
-                    "kind",
-                    "live",
-                    "name",
                     "progress",
-                    "queue_info",
-                    "result",
-                    "stage_message",
-                    "started_at",
-                    "status",
-                    "status_label",
-                    "target"
+                    "status"
                 ]
+            },
+            "JobStepEnum": {
+                "enum": [
+                    "queued",
+                    "checks",
+                    "analysis",
+                    "verification",
+                    "results"
+                ],
+                "type": "string",
+                "description": "* `queued` - queued\n* `checks` - checks\n* `analysis` - analysis\n* `verification` - verification\n* `results` - results"
             },
             "JobsByDay": {
                 "type": "object",
@@ -8478,27 +8820,43 @@
                 "type": "string",
                 "description": "* `en` - English\n* `ko` - 한국어\n* `de` - Deutsch"
             },
-            "LongVideoModelInfo": {
+            "LongVideoSummary": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "status": {
                         "type": "string"
                     },
-                    "name": {
-                        "type": "string"
+                    "analysed_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
                     },
-                    "description": {
-                        "type": "string"
+                    "range_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
                     },
-                    "default_selected": {
-                        "type": "boolean"
+                    "duration_seconds": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "range": {
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "double",
+                            "nullable": true
+                        },
+                        "nullable": true
                     }
                 },
                 "required": [
-                    "default_selected",
-                    "description",
-                    "id",
-                    "name"
+                    "analysed_seconds",
+                    "duration_seconds",
+                    "range",
+                    "range_seconds",
+                    "status"
                 ]
             },
             "Me": {
@@ -8748,14 +9106,6 @@
                     "width"
                 ]
             },
-            "MediaEnum": {
-                "enum": [
-                    "image",
-                    "video"
-                ],
-                "type": "string",
-                "description": "* `image` - image\n* `video` - video"
-            },
             "MediaStatusEnum": {
                 "enum": [
                     "uploading",
@@ -8870,88 +9220,6 @@
                 ],
                 "type": "string",
                 "description": "* `image` - Image\n* `video` - Video"
-            },
-            "ModelCatalog": {
-                "type": "object",
-                "properties": {
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ModelInfo"
-                        }
-                    },
-                    "long_video_models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/LongVideoModelInfo"
-                        }
-                    },
-                    "audit_steps": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AuditStepInfo"
-                        }
-                    }
-                },
-                "required": [
-                    "audit_steps",
-                    "long_video_models",
-                    "models"
-                ]
-            },
-            "ModelInfo": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "family": {
-                        "$ref": "#/components/schemas/FamilyEnum"
-                    },
-                    "media": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/MediaEnum"
-                        }
-                    },
-                    "face_required": {
-                        "type": "boolean"
-                    },
-                    "xai": {
-                        "type": "string"
-                    },
-                    "default_selected": {
-                        "type": "boolean"
-                    },
-                    "variant_of": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "enabled": {
-                        "type": "boolean"
-                    },
-                    "allowed": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "default_selected",
-                    "description",
-                    "enabled",
-                    "face_required",
-                    "family",
-                    "id",
-                    "media",
-                    "name",
-                    "variant_of",
-                    "xai"
-                ]
             },
             "ModelRef": {
                 "type": "object",
@@ -9122,14 +9390,6 @@
                         "type": "string",
                         "readOnly": true
                     },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ModelRef"
-                        },
-                        "readOnly": true
-                    },
-                    "audit_steps": {},
                     "verdict": {
                         "oneOf": [
                             {
@@ -9141,7 +9401,13 @@
                         ]
                     },
                     "verdict_label": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "ai_generated": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "description": "True when AI-generation markers in the file's metadata flag it as likely AI-generated."
                     },
                     "fake_probability": {
                         "type": "number",
@@ -9165,7 +9431,7 @@
                     "queue": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/QueueInfo"
+                                "$ref": "#/components/schemas/PublicQueue"
                             }
                         ],
                         "nullable": true,
@@ -9213,19 +9479,70 @@
                         ],
                         "readOnly": true
                     },
-                    "options": {},
+                    "options": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
                     "locale": {
                         "type": "string",
                         "maxLength": 5
                     },
-                    "summary": {},
-                    "verdict_reasons": {},
-                    "quote_lines": {},
-                    "tasks": {
+                    "verdict_reasons": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/JobTask"
+                            "type": "object",
+                            "additionalProperties": {}
                         },
+                        "readOnly": true
+                    },
+                    "quote_lines": {},
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/JobStep"
+                        },
+                        "readOnly": true
+                    },
+                    "provenance": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Provenance"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "checks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Check"
+                        },
+                        "readOnly": true
+                    },
+                    "timeline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TimelinePoint"
+                        },
+                        "readOnly": true
+                    },
+                    "long_video": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LongVideoSummary"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "news": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NewsReport"
+                            }
+                        ],
+                        "nullable": true,
                         "readOnly": true
                     },
                     "events": {
@@ -9282,12 +9599,13 @@
                     }
                 },
                 "required": [
+                    "ai_generated",
                     "artifacts",
-                    "audit_steps",
                     "batch_id",
                     "cancel_requested",
                     "case",
                     "case_media",
+                    "checks",
                     "created_at",
                     "credits_charged",
                     "credits_quoted",
@@ -9301,13 +9619,15 @@
                     "id",
                     "kind",
                     "locale",
+                    "long_video",
                     "media",
                     "media_type",
-                    "models",
+                    "news",
                     "options",
                     "parent",
                     "partial",
                     "progress",
+                    "provenance",
                     "purged_at",
                     "queue",
                     "quote_lines",
@@ -9317,9 +9637,9 @@
                     "stage",
                     "started_at",
                     "status",
-                    "summary",
-                    "tasks",
+                    "steps",
                     "thumbnail_url",
+                    "timeline",
                     "title",
                     "verdict",
                     "verdict_label",
@@ -9387,6 +9707,33 @@
                 "type": "string",
                 "description": "* `openclaude` - OpenClaude (local Qwen)\n* `claude` - Claude (Anthropic API)"
             },
+            "NewsReport": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "report_markdown": {
+                        "type": "string"
+                    },
+                    "meta": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "required": [
+                    "confidence",
+                    "meta",
+                    "report_markdown",
+                    "status"
+                ]
+            },
             "Ok": {
                 "type": "object",
                 "properties": {
@@ -9397,6 +9744,34 @@
                 "required": [
                     "ok"
                 ]
+            },
+            "PaginatedAdminJobListList": {
+                "type": "object",
+                "required": [
+                    "next",
+                    "previous",
+                    "results"
+                ],
+                "properties": {
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cD00ODY%3D\""
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cj0xJnA9NDg3"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminJobList"
+                        }
+                    }
+                }
             },
             "PaginatedAdminUserList": {
                 "type": "object",
@@ -9685,15 +10060,6 @@
                             "maxLength": 64
                         }
                     },
-                    "allowed_models": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 64
-                        },
-                        "nullable": true
-                    },
                     "rate_limit_per_minute": {
                         "type": "integer",
                         "maximum": 6000,
@@ -9757,6 +10123,27 @@
                         "type": "integer",
                         "maximum": 32767,
                         "minimum": 0
+                    }
+                }
+            },
+            "PatchedDetectionSetupUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "audit_steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32
+                        }
+                    },
+                    "long_video_model": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "long_video_face_crop": {
+                        "type": "boolean",
+                        "nullable": true
                     }
                 }
             },
@@ -10173,6 +10560,15 @@
                 ],
                 "type": "string",
                 "description": "* `pack` - Credit pack\n* `subscription` - Subscription (first payment)\n* `renewal` - Subscription renewal"
+            },
+            "PaymentModeEnum": {
+                "enum": [
+                    "off",
+                    "test",
+                    "live"
+                ],
+                "type": "string",
+                "description": "* `off` - off\n* `test` - test\n* `live` - live"
             },
             "PaymentStatusEnum": {
                 "enum": [
@@ -10634,6 +11030,49 @@
                 "type": "string",
                 "description": "* `pack` - pack\n* `plan` - plan"
             },
+            "Provenance": {
+                "type": "object",
+                "properties": {
+                    "ai_generated": {
+                        "type": "boolean"
+                    },
+                    "confidence": {
+                        "type": "string"
+                    },
+                    "c2pa_status": {
+                        "type": "string"
+                    },
+                    "camera": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "software": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "evidence": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Evidence"
+                        }
+                    },
+                    "notes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "ai_generated",
+                    "c2pa_status",
+                    "camera",
+                    "confidence",
+                    "evidence",
+                    "notes",
+                    "software"
+                ]
+            },
             "ProviderEnum": {
                 "enum": [
                     "toss",
@@ -10708,6 +11147,25 @@
                     "signups_enabled"
                 ]
             },
+            "PublicQueue": {
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": "integer"
+                    },
+                    "eta_seconds": {
+                        "type": "integer"
+                    },
+                    "workers_online": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "eta_seconds",
+                    "position",
+                    "workers_online"
+                ]
+            },
             "QueueInfo": {
                 "type": "object",
                 "properties": {
@@ -10760,19 +11218,6 @@
                             "additionalProperties": {}
                         }
                     },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "additionalProperties": {}
-                        }
-                    },
-                    "audit_steps": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
                     "balance": {
                         "type": "integer"
                     },
@@ -10782,11 +11227,9 @@
                 },
                 "required": [
                     "affordable",
-                    "audit_steps",
                     "balance",
                     "credits",
-                    "lines",
-                    "models"
+                    "lines"
                 ]
             },
             "RabbitQueue": {
@@ -11078,6 +11521,14 @@
                     "name"
                 ]
             },
+            "RunOnEnum": {
+                "enum": [
+                    "image",
+                    "video"
+                ],
+                "type": "string",
+                "description": "* `image` - image\n* `video` - video"
+            },
             "ScopesEnum": {
                 "enum": [
                     "detect:write",
@@ -11090,13 +11541,97 @@
                 "type": "string",
                 "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases"
             },
-            "StatusA3dEnum": {
+            "ServiceStatusEnum": {
                 "enum": [
                     "ok",
                     "error"
                 ],
                 "type": "string",
                 "description": "* `ok` - ok\n* `error` - error"
+            },
+            "SetupCheck": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "always": {
+                        "type": "boolean",
+                        "description": "Runs on every job and cannot be turned off (metadata / C2PA)."
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "always",
+                    "description",
+                    "enabled",
+                    "id",
+                    "name"
+                ]
+            },
+            "SetupLongVideo": {
+                "type": "object",
+                "properties": {
+                    "online": {
+                        "type": "boolean"
+                    },
+                    "model": {
+                        "type": "string",
+                        "description": "Empty = the first available detector."
+                    },
+                    "face_crop": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "Empty = the detector's default."
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SetupStreamModel"
+                        }
+                    }
+                },
+                "required": [
+                    "face_crop",
+                    "model",
+                    "models",
+                    "online"
+                ]
+            },
+            "SetupStreamModel": {
+                "type": "object",
+                "properties": {
+                    "model_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "face_crop": {
+                        "$ref": "#/components/schemas/FaceCropEnum"
+                    }
+                },
+                "required": [
+                    "available",
+                    "face_crop",
+                    "model_id",
+                    "name",
+                    "reason"
+                ]
             },
             "StorageEnum": {
                 "enum": [
@@ -11106,17 +11641,16 @@
                 "type": "string",
                 "description": "* `s3` - s3\n* `local` - local"
             },
-            "StreamCatalog": {
+            "StreamConfig": {
                 "type": "object",
                 "properties": {
                     "online": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "The long-form service is reachable."
                     },
-                    "models": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/StreamModel"
-                        }
+                    "available": {
+                        "type": "boolean",
+                        "description": "Long-form scans can be started right now."
                     },
                     "price_per_minute": {
                         "type": "integer"
@@ -11129,9 +11663,9 @@
                     }
                 },
                 "required": [
+                    "available",
                     "max_bytes",
                     "max_seconds",
-                    "models",
                     "online",
                     "price_per_minute"
                 ]
@@ -11161,33 +11695,6 @@
                     "mem_used_mb",
                     "name",
                     "util"
-                ]
-            },
-            "StreamModel": {
-                "type": "object",
-                "properties": {
-                    "model_id": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "available": {
-                        "type": "boolean"
-                    },
-                    "reason": {
-                        "type": "string"
-                    },
-                    "face_crop": {
-                        "$ref": "#/components/schemas/FaceCrop"
-                    }
-                },
-                "required": [
-                    "available",
-                    "face_crop",
-                    "model_id",
-                    "name",
-                    "reason"
                 ]
             },
             "StreamSession": {
@@ -11226,12 +11733,8 @@
             },
             "StreamSessionRequestRequest": {
                 "type": "object",
+                "description": "The detector is the administrator's choice; the caller only picks the range and mode.",
                 "properties": {
-                    "model_id": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 64
-                    },
                     "file_name": {
                         "type": "string",
                         "minLength": 1,
@@ -11266,10 +11769,6 @@
                         "type": "boolean",
                         "default": false
                     },
-                    "face_crop": {
-                        "type": "boolean",
-                        "nullable": true
-                    },
                     "locale": {
                         "$ref": "#/components/schemas/LocaleEnum"
                     }
@@ -11277,18 +11776,8 @@
                 "required": [
                     "duration_seconds",
                     "file_name",
-                    "file_size",
-                    "model_id"
+                    "file_size"
                 ]
-            },
-            "StripeEnum": {
-                "enum": [
-                    "off",
-                    "test",
-                    "live"
-                ],
-                "type": "string",
-                "description": "* `off` - off\n* `test` - test\n* `live` - live"
             },
             "Subscription": {
                 "type": "object",
@@ -11363,20 +11852,11 @@
                 "type": "string",
                 "description": "* `incomplete` - Incomplete\n* `active` - Active\n* `past_due` - Past due\n* `canceled` - Canceled\n* `expired` - Expired"
             },
-            "SupportEnum": {
-                "enum": [
-                    "always",
-                    "optional",
-                    "none"
-                ],
-                "type": "string",
-                "description": "* `always` - always\n* `optional` - optional\n* `none` - none"
-            },
             "SystemAgents": {
                 "type": "object",
                 "properties": {
                     "status": {
-                        "$ref": "#/components/schemas/StatusA3dEnum"
+                        "$ref": "#/components/schemas/ServiceStatusEnum"
                     },
                     "loaded": {
                         "type": "array",
@@ -11421,10 +11901,10 @@
                         "type": "boolean"
                     },
                     "toss": {
-                        "$ref": "#/components/schemas/TossEnum"
+                        "$ref": "#/components/schemas/PaymentModeEnum"
                     },
                     "stripe": {
-                        "$ref": "#/components/schemas/StripeEnum"
+                        "$ref": "#/components/schemas/PaymentModeEnum"
                     }
                 },
                 "required": [
@@ -11485,7 +11965,7 @@
                 "type": "object",
                 "properties": {
                     "status": {
-                        "$ref": "#/components/schemas/StatusA3dEnum"
+                        "$ref": "#/components/schemas/ServiceStatusEnum"
                     },
                     "busy": {
                         "type": "boolean"
@@ -11597,6 +12077,28 @@
                 "type": "string",
                 "description": "* `pending` - Waiting for a slot\n* `dispatched` - In queue\n* `running` - Running\n* `succeeded` - Done\n* `failed` - Failed\n* `canceled` - Canceled\n* `skipped` - Skipped"
             },
+            "TimelinePoint": {
+                "type": "object",
+                "properties": {
+                    "start_sec": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "end_sec": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "fake_prob": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "end_sec",
+                    "fake_prob",
+                    "start_sec"
+                ]
+            },
             "TossBillingConfirmRequest": {
                 "type": "object",
                 "properties": {
@@ -11646,15 +12148,6 @@
                     "payment_key"
                 ]
             },
-            "TossEnum": {
-                "enum": [
-                    "off",
-                    "test",
-                    "live"
-                ],
-                "type": "string",
-                "description": "* `off` - off\n* `test` - test\n* `live` - live"
-            },
             "TrialDetectResponse": {
                 "type": "object",
                 "properties": {
@@ -11698,6 +12191,16 @@
                     "remaining"
                 ]
             },
+            "TypeEnum": {
+                "enum": [
+                    "image",
+                    "video",
+                    "long_video",
+                    "news"
+                ],
+                "type": "string",
+                "description": "* `image` - image\n* `video` - video\n* `long_video` - long_video\n* `news` - news"
+            },
             "Url": {
                 "type": "object",
                 "properties": {
@@ -11709,23 +12212,19 @@
                     "url"
                 ]
             },
-            "UsageByModel": {
+            "UsageByType": {
                 "type": "object",
                 "properties": {
-                    "target": {
-                        "type": "string"
+                    "type": {
+                        "$ref": "#/components/schemas/TypeEnum"
                     },
-                    "runs": {
-                        "type": "integer"
-                    },
-                    "ok": {
+                    "jobs": {
                         "type": "integer"
                     }
                 },
                 "required": [
-                    "ok",
-                    "runs",
-                    "target"
+                    "jobs",
+                    "type"
                 ]
             },
             "VerdictEnum": {

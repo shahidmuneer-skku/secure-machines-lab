@@ -28,6 +28,29 @@ TASK_WEIGHT = {JobTask.Kind.MODEL: 1.0, JobTask.Kind.LONG_VIDEO: 1.0, JobTask.Ki
                JobTask.Kind.AUDIT: 0.25}
 RETRYABLE_CODES = {"WORKER_LOST", "TIMEOUT", "GPU_OOM", "RUNTIME_ERROR", "INFRA_ERROR"}
 
+# What users see when a step starts. They never learn which detectors run or how many.
+PUBLIC_CHECK_STARTED = {
+    "metadata": "Checking file metadata and provenance",
+    "face": "Looking for faces",
+    "safety": "Checking content safety",
+    "fas": "Checking face liveness",
+}
+
+
+def _public_start(job: Job, task: JobTask, first_start: bool) -> str:
+    if task.kind == JobTask.Kind.AUDIT:
+        return PUBLIC_CHECK_STARTED.get(task.target, "") if first_start else ""
+    if task.kind == JobTask.Kind.NEWS:
+        return "Verifying the story" if first_start else ""
+    # Detectors (and long-form scans): one message when the analysis begins, not one per detector.
+    started = job.tasks.filter(kind__in=[JobTask.Kind.MODEL, JobTask.Kind.LONG_VIDEO],
+                               started_at__isnull=False).exclude(pk=task.pk).exists()
+    if not first_start or started:
+        return ""
+    if job.kind == Job.Kind.NEWS:
+        return "Analysing the attached media"
+    return f"Analysing the {job.media_type or 'file'}"
+
 
 # --- normalization ---------------------------------------------------------------
 
@@ -104,6 +127,7 @@ def record_task_event(payload: dict[str, Any]) -> None:
 def _on_started(job: Job, task: JobTask, payload: dict[str, Any]) -> None:
     if task.is_terminal:
         return
+    first_start = task.started_at is None  # a retry starts the same task again
     task.status = JobTask.Status.RUNNING
     task.started_at = parse_datetime(payload.get("at") or "") or timezone.now()
     task.worker = str(payload.get("worker", ""))[:128]
@@ -115,7 +139,7 @@ def _on_started(job: Job, task: JobTask, payload: dict[str, Any]) -> None:
         job.started_at = task.started_at
     where = f" on GPU {task.gpu}" if task.gpu else ""
     emit(job, "task.started", f"{task.get_kind_display()} '{task.target}' started{where}", task=task,
-         data={"worker": task.worker, "gpu": task.gpu})
+         public=_public_start(job, task, first_start), data={"worker": task.worker, "gpu": task.gpu})
 
 
 def _on_finished(job: Job, task: JobTask, payload: dict[str, Any]) -> None:
@@ -201,6 +225,19 @@ def _maybe_fallback(job: Job, task: JobTask, code: str) -> None:
 
 # --- aggregation -------------------------------------------------------------------
 
+def _metadata_flags(indicators: dict[str, Any], *, detectors_say_fake: bool) -> bool:
+    """Whether metadata marks the file "likely AI-generated" (owner's rule, 2026-10-01).
+
+    Definite markers (C2PA / IPTC AI declaration, embedded generation parameters, a generator
+    software tag) always do. Weak hints (a generator merely mentioned somewhere in the metadata)
+    only label a file the detectors already judged fake; otherwise the detectors' verdict stands
+    and the hint is shown as evidence.
+    """
+    if indicators.get("ai_generated"):
+        return True
+    return detectors_say_fake and bool(indicators.get("evidence"))
+
+
 def _metadata_indicators(job: Job) -> dict[str, Any]:
     meta = job.tasks.filter(kind=JobTask.Kind.AUDIT, target="metadata", status=JobTask.Status.SUCCEEDED).first()
     return (meta.result or {}).get("ai_indicators", {}) if meta else {}
@@ -251,9 +288,10 @@ def finalize_job(job: Job) -> Job:
         job.fake_probability = round(prob, 6)
         job.verdict = Job.Verdict.FAKE if prob >= threshold else Job.Verdict.REAL
         reasons.append({"code": "model_consensus", "models": len(usable), "fake_probability": job.fake_probability})
-        if indicators.get("ai_generated"):
+        if _metadata_flags(indicators, detectors_say_fake=job.verdict == Job.Verdict.FAKE):
             job.verdict = Job.Verdict.FAKE
-            reasons.append({"code": "metadata_ai_indicator", "evidence": indicators.get("evidence", [])})
+            reasons.append({"code": "metadata_ai_indicator", "strength": indicators.get("confidence"),
+                            "evidence": indicators.get("evidence", [])})
         job.partial = bool(failed)
         job.status = Job.Status.SUCCEEDED
         _capture(job)
@@ -261,20 +299,22 @@ def finalize_job(job: Job) -> Job:
         job.status = Job.Status.SUCCEEDED
         job.verdict = Job.Verdict.NO_FACE
         reasons.append({"code": "no_face"})
-        if indicators.get("ai_generated"):
+        if _metadata_flags(indicators, detectors_say_fake=False):
             job.verdict = Job.Verdict.FAKE
-            reasons.append({"code": "metadata_ai_indicator", "evidence": indicators.get("evidence", [])})
+            reasons.append({"code": "metadata_ai_indicator", "strength": indicators.get("confidence"),
+                            "evidence": indicators.get("evidence", [])})
         _release(job, "No face found — not charged")
     else:
         job.status = Job.Status.FAILED
         job.error_code = "ANALYSIS_FAILED"
-        job.error_message = "None of the selected models could analyze this file. You were not charged."
+        job.error_message = "The analysis could not be completed. You were not charged."
         _release(job, "Analysis failed — credits released")
     job.verdict_reasons = reasons
     job.save()
     level = "success" if job.status == Job.Status.SUCCEEDED else ("warning" if job.status == Job.Status.CANCELED
                                                                    else "error")
-    emit(job, f"job.{job.status}", _final_message(job), level=level,
+    message = _final_message(job)
+    emit(job, f"job.{job.status}", message, public=message, level=level,
          data={"verdict": job.verdict, "fake_probability": job.fake_probability})
     push_job_state(job)
     return job
@@ -322,7 +362,8 @@ def _capture(job: Job) -> None:
         hold = credits.capture(job.hold, memo=f"Detection: {job.title}"[:255])
         job.credits_charged = hold.amount
         if hold.amount:
-            emit(job, "credits.charged", f"{hold.amount} credits charged", level="info")
+            message = f"{hold.amount} credits charged"
+            emit(job, "credits.charged", message, public=message, level="info")
 
 
 def _release(job: Job, memo: str) -> None:
@@ -330,4 +371,5 @@ def _release(job: Job, memo: str) -> None:
         hold = credits.release(job.hold, memo=memo)
         job.credits_charged = 0
         if hold.amount:
-            emit(job, "credits.released", f"{hold.amount} credits returned to your balance", level="info")
+            message = f"{hold.amount} credits returned to your balance"
+            emit(job, "credits.released", message, public=message, level="info")

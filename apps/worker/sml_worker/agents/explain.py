@@ -18,13 +18,11 @@ LANG_NAMES = {"en": "English", "ko": "Korean (한국어)", "de": "German (Deutsc
 
 
 def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str], locale: str) -> str:
-    summary = context.get("summary") or {}
-    models = [
-        {"model": m.get("name"), "fake_probability": m.get("fake_prob"), "no_face": m.get("no_face"),
-         "status": m.get("status")}
-        for m in summary.get("models", [])
-    ]
-    indicators = summary.get("ai_indicators") or {}
+    """The answer is shown to the user, who must not learn which detectors run or how the automated
+    analysis works: the prompt carries only the combined result and the evidence users already see."""
+    provenance = context.get("provenance") or {}
+    checks = [{"check": c.get("id"), "status": c.get("status"), **(c.get("result") or {})}
+              for c in context.get("checks") or []]
     return "\n".join([
         "You are a senior media-forensics analyst at Secure Machines Lab.",
         f"Write your answer in {LANG_NAMES.get(locale, 'English')}.",
@@ -32,18 +30,18 @@ def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str],
         "## Task",
         "Explain to a non-expert WHY this file was judged the way it was, and whether you agree.",
         f"The file is `./{media_name}` in the current directory. Open and look at it carefully.",
-        ("Explainability heatmaps (where the detectors focused) are: " + ", ".join(f"`./{n}`" for n in xai_names))
+        ("Heatmaps of the regions the automated analysis focused on are: " + ", ".join(f"`./{n}`" for n in xai_names))
         if xai_names else "No heatmaps are available.",
         "",
-        "## Automated results",
+        "## Automated result",
         "```json",
-        json.dumps({"verdict": context.get("verdict"), "weighted_fake_probability": context.get("fake_probability"),
-                    "media_type": context.get("media_type"), "models": models,
-                    "metadata_indicators": {"ai_generated": indicators.get("ai_generated"),
-                                            "evidence": indicators.get("evidence"),
-                                            "camera": indicators.get("camera"),
-                                            "software": indicators.get("software"),
-                                            "c2pa_status": indicators.get("c2pa_status")}},
+        json.dumps({"verdict": context.get("verdict"), "fake_probability": context.get("fake_probability"),
+                    "media_type": context.get("media_type"),
+                    "metadata": {"ai_generation_markers": provenance.get("ai_generated"),
+                                 "evidence": provenance.get("evidence"), "camera": provenance.get("camera"),
+                                 "software": provenance.get("software"),
+                                 "c2pa_status": provenance.get("c2pa_status")},
+                    "additional_checks": checks},
                    indent=2, ensure_ascii=False),
         "```",
         "",
@@ -53,11 +51,12 @@ def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str],
         "  edges and blending seams, background warping, text rendering, hands, temporal flicker (video).",
         "  Refer to the heatmap regions when relevant.",
         "### Provenance — what EXIF / C2PA metadata does or doesn't show.",
-        "### How the detectors agree — mention disagreements between models plainly.",
         "### Caveats — what could make this assessment wrong.",
         "",
         "Rules: be specific, never invent facts you cannot see, say 'cannot be determined' when unsure,",
-        "treat detector scores as one input rather than ground truth. Do not include any preamble.",
+        "treat the automated result as one input rather than ground truth. Do not include any preamble.",
+        "Confidential: never name or speculate about detection models, model architectures, how many",
+        "detectors were used or how the automated analysis works; refer to it only as 'the automated analysis'.",
     ])
 
 

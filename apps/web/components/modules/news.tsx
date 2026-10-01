@@ -33,7 +33,6 @@ import { api, data } from "@/lib/api/client"
 import { newIdempotencyKey } from "@/lib/api/csrf"
 import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
-import type { TaskView, TimelineEvent } from "@/lib/api/types"
 import { formatDateTime } from "@/lib/format"
 
 const CATEGORIES = ["conflict", "politics", "disaster", "health", "society", "other"] as const
@@ -125,10 +124,11 @@ export function NewsCaseView({ id }: { id: string }) {
     refetchInterval: (q) => (q.state.data && ["queued", "running"].includes(q.state.data.status) ? 5000 : false),
   })
   if (isLoading || !job) return <Skeleton className="h-96" />
-  const tasks = job.tasks as unknown as TaskView[]
-  const news = (job.summary as { news?: { report_markdown?: string; status?: string; confidence?: number;
-    meta?: { tags?: string[]; coordinates?: { lat: number; lng: number; label?: string }; when?: string; who?: string;
-      sources?: { title?: string; url?: string; date?: string }[] } } }).news
+  const news = job.news && {
+    ...job.news,
+    meta: job.news.meta as { tags?: string[]; coordinates?: { lat: number; lng: number; label?: string }; when?: string;
+      who?: string; sources?: { title?: string; url?: string; date?: string }[] },
+  }
   const c = job.case as Record<string, string> | null
   return (
     <div className="space-y-5">
@@ -137,7 +137,7 @@ export function NewsCaseView({ id }: { id: string }) {
         <Newspaper className="size-6 text-primary" />
         <h1 className="text-2xl font-semibold tracking-tight">{job.title}</h1>
         <StatusChip status={job.status} />
-        {job.status === "succeeded" && <VerdictBadge verdict={job.verdict} />}
+        {job.status === "succeeded" && <VerdictBadge verdict={job.verdict} aiGenerated={job.ai_generated} />}
         {news?.status && <Badge variant="outline">{news.status}</Badge>}
       </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -146,9 +146,9 @@ export function NewsCaseView({ id }: { id: string }) {
             <HudCard><CardHeader><Eyebrow index={1}>{t("report.eyebrow")}</Eyebrow><CardTitle className="mt-1 text-base">{t("report.title")}</CardTitle></CardHeader>
               <CardContent><Markdown>{news.report_markdown}</Markdown></CardContent></HudCard>
           ) : (
-            <ProcessingPanel jobId={job.id} tasks={tasks} stage={job.stage} status={job.status} />
+            <ProcessingPanel job={job} />
           )}
-          {news?.report_markdown && <ProcessingPanel jobId={job.id} tasks={tasks} stage={job.stage} status={job.status} />}
+          {news?.report_markdown && <ProcessingPanel job={job} />}
         </div>
         <div className="space-y-5">
           <HudCard>
@@ -182,7 +182,7 @@ export function NewsCaseView({ id }: { id: string }) {
               </CardContent>
             </HudCard>
           )}
-          <Timeline events={job.events as unknown as TimelineEvent[]} />
+          <Timeline events={job.events} />
         </div>
       </div>
     </div>

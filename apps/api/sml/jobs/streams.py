@@ -91,9 +91,24 @@ def available_models(*, use_cache: bool = True) -> list[dict[str, Any]]:
 
 # --- sessions ---------------------------------------------------------------------------------
 
+def configured_model() -> dict[str, Any]:
+    """The detector the admin chose for long-form scans (Admin → Models), if the service can run it.
+
+    Empty setting = the first available detector. Users never choose and never see which one runs.
+    """
+    chosen = PlatformSettings.load().long_video_model
+    models = available_models()
+    model = next((m for m in models if m["model_id"] == chosen), None) if chosen else next(
+        (m for m in models if m.get("available")), None)
+    if model is None or not model.get("available"):
+        logger.warning("Long-form model %r unavailable: %s", chosen or "(first available)",
+                       (model or {}).get("reason", "not offered by the stream service"))
+        raise ApiError("Long-form scanning is not available right now. Please try again later.")
+    return model
+
+
 @dataclass
 class StreamRequest:
-    model_id: str
     file_name: str
     file_size: int
     duration_seconds: float
@@ -101,7 +116,6 @@ class StreamRequest:
     end_seconds: float | None = None
     interval_seconds: float = 5.0
     whole_video: bool = False
-    face_crop: bool | None = None
     locale: str = "en"
 
 
@@ -115,11 +129,7 @@ def quote(req: StreamRequest) -> pricing.Quote:
 
 
 def _validate(req: StreamRequest) -> dict[str, Any]:
-    models = {m["model_id"]: m for m in available_models()}
-    model = models.get(req.model_id)
-    if model is None or not model.get("available"):
-        raise ApiError(f"{req.model_id} is not available for long-form scanning.",
-                       extra={"model_id": req.model_id, "reason": (model or {}).get("reason", "")})
+    model = configured_model()
     if not 0 < req.file_size <= settings.UPLOAD_MAX_VIDEO_BYTES:
         raise ApiError(f"Videos up to {settings.UPLOAD_MAX_VIDEO_BYTES // 1024**3} GB are supported.")
     if not 0 < req.duration_seconds <= settings.UPLOAD_MAX_VIDEO_SECONDS:
@@ -141,46 +151,66 @@ def create_session(user: Any, req: StreamRequest) -> tuple[StreamSession, str]:
         raise MaintenanceMode()
     access.assert_module_allowed(user, "long_video")
     model = _validate(req)
+    model_id = str(model["model_id"])
+    face_crop = PlatformSettings.load().long_video_face_crop
     q = quote(req)
     seconds = range_seconds(req)
     now = timezone.now()
     with transaction.atomic():
         job = Job.objects.create(
             user=user, source=Job.Source.WEB, kind=Job.Kind.LONG_VIDEO, media=None, media_type="video",
-            title=req.file_name[:255], models_selected=[req.model_id], audit_steps=[], locale=req.locale,
+            title=req.file_name[:255], models_selected=[model_id], audit_steps=[], locale=req.locale,
             priority=priority_for(user, "web"), credits_quoted=q.credits,
             quote_lines=[{"label": ln.label, "credits": ln.credits} for ln in q.lines],
             options={"stream": True, "interval_seconds": req.interval_seconds, "start_sec": req.start_seconds,
-                     "end_sec": req.end_seconds, "whole_video": req.whole_video, "face_crop": req.face_crop},
+                     "end_sec": req.end_seconds, "whole_video": req.whole_video},
             expires_at=now + timedelta(days=retention_days_for(user)),
         )
         job.hold = credits.reserve(user, q.credits, reference_type="job", reference_id=str(job.pk))
         job.save(update_fields=["hold"])
         task = JobTask.objects.create(
-            job=job, kind=JobTask.Kind.LONG_VIDEO, target=req.model_id, media_type="video", queue=STREAM,
+            job=job, kind=JobTask.Kind.LONG_VIDEO, target=model_id, media_type="video", queue=STREAM,
             status=JobTask.Status.DISPATCHED, attempt=1, max_attempts=1, priority=job.priority,
             dispatched_at=now, stage_message="Waiting for the video",
         )
         session = StreamSession.objects.create(
-            job=job, user=user, model_id=req.model_id, model_name=str(model.get("name") or req.model_id)[:128],
+            job=job, user=user, model_id=model_id, model_name=str(model.get("name") or model_id)[:128],
             file_name=req.file_name[:255], file_size=req.file_size, duration_seconds=req.duration_seconds,
             start_seconds=req.start_seconds, end_seconds=req.end_seconds, interval_seconds=req.interval_seconds,
-            whole_video=req.whole_video, face_crop=req.face_crop, reserved_seconds=seconds,
+            whole_video=req.whole_video, face_crop=face_crop, reserved_seconds=seconds,
         )
         emit(job, "job.created", f"Long-form scan of {req.file_name} with {session.model_name}",
-             data={"models": [req.model_id], "range_seconds": round(seconds, 1)})
+             public=f"Long-form scan requested for {req.file_name}",
+             data={"models": [model_id], "range_seconds": round(seconds, 1)})
         if q.credits:
-            emit(job, "credits.reserved", f"{q.credits} credits reserved for {math.ceil(seconds / 60)} min",
-                 data={"credits": q.credits})
-        emit(job, "job.queued", "Waiting for the video to be streamed", task=task)
+            message = f"{q.credits} credits reserved for {math.ceil(seconds / 60)} min"
+            emit(job, "credits.reserved", message, public=message, data={"credits": q.credits})
+        message = "Waiting for the video to be streamed"
+        emit(job, "job.queued", message, public=message, task=task)
         push_job_state(job)
-    token = sign_token({
-        "sid": str(session.pk), "uid": str(user.pk), "model": req.model_id, "name": req.file_name[:255],
-        "size": req.file_size, "start": req.start_seconds, "end": req.end_seconds, "max_seconds": seconds,
-        "interval": req.interval_seconds, "whole": req.whole_video, "face_crop": req.face_crop,
-        "exp": int(time.time()) + settings.STREAM_TOKEN_TTL_SECONDS,
-    })
+    # The browser holds this token: it names the session only. The stream service claims the
+    # scan's parameters (detector, range, size) from the API, so they never reach the client.
+    token = sign_token({"sid": str(session.pk), "exp": int(time.time()) + settings.STREAM_TOKEN_TTL_SECONDS})
     return session, token
+
+
+def claim_session(session_id: str) -> dict[str, Any]:
+    """Called once by the stream service when the browser authenticates: what was paid for."""
+    with transaction.atomic():
+        session = StreamSession.objects.select_for_update().filter(pk=session_id).first()
+        if session is None:
+            raise ApiError("Unknown stream session.", extra={"session_id": session_id})
+        if session.claimed_at is not None or session.status != StreamSession.Status.CREATED:
+            raise Conflict("This scan token has already been used.")
+        if Job.objects.filter(pk=session.job_id, cancel_requested=True).exists():
+            raise Conflict("The scan was canceled.")
+        session.claimed_at = timezone.now()
+        session.save(update_fields=["claimed_at", "updated_at"])
+    return {
+        "sid": str(session.pk), "model": session.model_id, "name": session.file_name, "size": session.file_size,
+        "start": session.start_seconds, "end": session.end_seconds, "max_seconds": session.reserved_seconds,
+        "interval": session.interval_seconds, "whole": session.whole_video, "face_crop": session.face_crop,
+    }
 
 
 # --- events from the stream service ------------------------------------------------------------
@@ -251,7 +281,8 @@ def _on_started(session: StreamSession, job: Job, task: JobTask, payload: dict[s
                                     content_type="image/jpeg", size_bytes=len(data), meta={"preview": True})
         except (binascii.Error, ValueError, OSError):
             logger.warning("Stream %s: preview frame not stored", session.pk, exc_info=True)
-    emit(job, "task.started", f"{session.model_name} started on the stream service", task=task)
+    emit(job, "task.started", f"{session.model_name} started on the stream service", task=task,
+         public="Analysing the video")
     live.record_progress(str(task.pk), 1, "Video received; analysing", log=True)
     push_job_state(job)
     return {"ok": True}
@@ -279,7 +310,7 @@ def _on_intervals(session: StreamSession, job: Job, task: JobTask, payload: dict
                              f"{last['fake_prob'] * 100:.0f}% fake", log=True)
     for row in rows:
         transaction.on_commit(lambda r=row: publish_job(job, "task.interval", {
-            "job_id": str(job.pk), "task_id": str(task.pk), "interval": r}))
+            "job_id": str(job.pk), "interval": {k: r[k] for k in ("index", "start_sec", "end_sec", "fake_prob")}}))
     push_job_state(job)
     return {"ok": True, "continue": True}
 
@@ -351,7 +382,7 @@ def _on_finished(session: StreamSession, job: Job, task: JobTask, payload: dict[
     message = {"done": f"Scan finished: {minutes} min analysed, {charged} credits charged",
                "stopped": f"Stopped after {minutes} min: {charged} credits charged",
                "error": "The scan failed; credits released"}.get(status, "Scan ended")
-    emit(job, f"job.{job.status}", message, level=level,
+    emit(job, f"job.{job.status}", message, public=message, level=level,
          data={"verdict": job.verdict, "fake_probability": job.fake_probability, "credits_charged": charged})
     live.record_progress(str(task.pk), 100, message, log=True)
     push_job_state(job)
@@ -391,7 +422,7 @@ def expire_stale_sessions() -> int:
                                  else "The scan stopped responding; credits released.")
             job.finished_at, job.progress, job.stage = now, 100.0, "done"
             job.save()
-            emit(job, f"job.{job.status}", job.error_message, level="warning")
+            emit(job, f"job.{job.status}", job.error_message, public=job.error_message, level="warning")
             push_job_state(job)
             count += 1
     return count

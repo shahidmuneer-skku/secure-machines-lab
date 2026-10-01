@@ -6,7 +6,7 @@ import secrets
 
 from django.conf import settings
 from django.core import signing
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import status
@@ -127,8 +127,12 @@ class TrialMediaThumbnailView(TrialBase):
 class TrialArtifactView(TrialBase):
     @extend_schema(tags=["trial"], responses={(200, "image/png"): OpenApiTypes.BINARY})
     def get(self, request: Request, pk: str, artifact_id: str) -> HttpResponse:
+        from sml.jobs import public
         from sml.jobs.models import Artifact
 
         token = guest_token_from(request)
-        art = get_object_or_404(Artifact, pk=artifact_id, job_id=pk, job__guest_token=token or "-")
-        return serve_object(art.storage_key, content_type=art.content_type, filename=art.storage_key.rsplit("/")[-1])
+        art = get_object_or_404(Artifact.objects.select_related("job"), pk=artifact_id, job_id=pk,
+                                job__guest_token=token or "-")
+        if not public.is_downloadable(art.job, art):
+            raise Http404
+        return serve_object(art.storage_key, content_type=art.content_type, filename=public.artifact_filename(art))

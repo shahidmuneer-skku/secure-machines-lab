@@ -5,9 +5,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 ## [Unreleased] — first release candidate
 
 ### Added
-- Detection of images and videos with user-selected models combined into one weighted verdict;
-  EXIF / XMP / C2PA AI-generation indicators; Grad-CAM and face maps; optional face, safety and
-  anti-spoofing audit steps.
+- Detection of images and videos combined into one weighted verdict; EXIF / XMP / C2PA
+  AI-generation markers; heatmaps and face maps; face, safety and anti-spoofing checks.
 - Long-form video scanning, news verification agent, on-demand "Explain why".
 - Job queue with per-model priority queues, fair per-user dispatching, live progress over SSE
   (queue position, ETA, per-model progress, processing log), history with retention per plan.
@@ -31,6 +30,14 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   architecture, operations and model-onboarding documentation; decision records.
 
 ### Changed
+- Users no longer choose detectors or checks: the administrator sets which detectors run on every
+  image and every video, the extra checks, and the long-form detector (Admin → Models). Users and
+  API clients see the verdict, its evidence and generic progress steps only — no detector names,
+  counts, per-detector scores, logs or methods in the app, the API, live events, reports or the AI
+  explanations (ADR 0011). Staff keep the full detail in the admin console, including per-task logs.
+- Metadata markers: a definite AI-generation marker labels a file "Likely AI-generated" regardless
+  of the detectors; a weak hint only when the detectors judged it fake.
+- The detect page is upload → review; the dashboard shows analyses by type.
 - Xception is offered for video only until its image weights are restored.
 
 ### Security
@@ -43,5 +50,14 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Tasks never picked up by a worker fail after 24 hours so credits are always released.
 - Only a super admin can block another super admin; removing credits from an empty wallet is
   refused instead of writing a zero entry.
+- The long-form session token names the session only; the stream service claims the paid
+  parameters from the API once. The published OpenAPI document omits the admin API.
+
+### Fixed
+- Video detectors failed on this server: conda envs copied from another machine could not verify
+  HTTPS certificates, BEYBI's dlib could not find its own libraries, and two weight sets that the
+  old machine had downloaded at runtime were missing. The anti-spoofing check now reports a
+  configuration error instead of "completed" when its code is not installed.
+- Development API reloads no longer hang on open live-update connections.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors
   without server details.

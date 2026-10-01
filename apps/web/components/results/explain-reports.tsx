@@ -67,13 +67,11 @@ export function ExplainCard({ job }: { job: JobDetail }) {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <StatusChip status={latest.status === "succeeded" ? "succeeded" : latest.status} />
-            <span>{latest.engine} · {latest.model_name}</span>
           </div>
           {running && (
-            <div className="space-y-1 rounded-md border bg-black/30 p-3 font-mono text-xs text-[#b8f5ff]" role="log" aria-live="polite">
-              {(latest.progress_log as string[]).length ? (latest.progress_log as string[]).slice(-12).map((l, i) => <div key={i}>{l}</div>)
-                : <div className="text-muted-foreground">{t("thinking")}</div>}
-            </div>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+              <Loader2 className="size-4 animate-spin" /> {t("thinking")}
+            </p>
           )}
           {latest.status === "succeeded" && latest.content && <Markdown>{latest.content}</Markdown>}
           {latest.status === "failed" && <p className="text-sm text-fake">{latest.error_message || t("failed")}</p>}

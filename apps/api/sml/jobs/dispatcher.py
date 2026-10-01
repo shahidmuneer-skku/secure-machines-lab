@@ -17,6 +17,7 @@ from django.db import connection, transaction
 from django.db.models import Count
 from django.utils import timezone
 
+from sml.catalog.registry import registry
 from sml.queues import WORKER_TASK
 
 from .models import Job, JobTask
@@ -80,13 +81,31 @@ def _news_case(job: Job) -> dict[str, Any] | None:
 
 
 def _forensics(job: Job) -> list[dict[str, Any]]:
-    """Detector results handed to the news agent as one input among many."""
-    out = []
+    """One combined detector result per attached file, handed to the news agent as one input.
+
+    The agent's report is shown to the user, so it is never told which detectors ran.
+    """
+    reg = registry()
+    per_file: dict[str, dict[str, Any]] = {}
     for t in job.tasks.filter(kind=JobTask.Kind.MODEL).select_related("media"):
-        xai = [a.storage_key for a in t.artifacts.filter(kind="xai", content_type__startswith="image/")[:2]]
-        out.append({"file": (t.media or job.media).original_name if (t.media or job.media) else "",
-                    "model": t.target, "status": t.status, "fake_prob": t.result.get("fake_prob"),
-                    "no_face": t.result.get("no_face", False), "xai_keys": xai})
+        media = t.media or job.media
+        entry = per_file.setdefault(str(media.pk) if media else "", {
+            "file": media.original_name if media else "", "scores": [], "no_face": False, "xai_keys": []})
+        prob = t.result.get("fake_prob") if t.status == JobTask.Status.SUCCEEDED else None
+        if prob is not None:
+            spec = reg.get(t.target)
+            entry["scores"].append((spec.weight if spec else 1.0, float(prob)))
+        entry["no_face"] = entry["no_face"] or bool(t.result.get("no_face"))
+        if len(entry["xai_keys"]) < 2:
+            entry["xai_keys"] += [a.storage_key for a in t.artifacts.filter(
+                kind="xai", content_type__startswith="image/")[:2 - len(entry["xai_keys"])]]
+    out = []
+    for entry in per_file.values():
+        scores = entry.pop("scores")
+        total = sum(w for w, _ in scores)
+        entry["fake_prob"] = round(sum(w * p for w, p in scores) / total, 4) if total else None
+        entry["status"] = "succeeded" if scores else ("no_face" if entry["no_face"] else "failed")
+        out.append(entry)
     return out
 
 

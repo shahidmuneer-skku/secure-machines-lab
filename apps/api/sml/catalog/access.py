@@ -1,4 +1,9 @@
-"""Effective access = role capabilities ∩ user AccessPolicy ∩ API-key restrictions."""
+"""What a job runs and who may run it.
+
+Users never choose detectors or checks: every detection job runs the admin's set for its media
+type (Admin → Models) and the admin's extra checks (Admin → Settings), narrowed by the user's
+AccessPolicy. Modules (detect / long-form video / news) are gated by role capability ∩ policy.
+"""
 
 from __future__ import annotations
 
@@ -32,43 +37,35 @@ def assert_module_allowed(user: Any, module: str) -> None:
         raise ModuleNotAllowed()
 
 
-def model_allowed(user: Any, model: ModelSpec, api_key: Any = None) -> bool:
+def model_allowed(user: Any, model: ModelSpec) -> bool:
     if not model.enabled:
         return False
     policy = _policy(user)
-    if policy is not None and not policy.allows_model(model.id):
-        return False
-    return api_key is None or not hasattr(api_key, "model_allowed") or api_key.model_allowed(model.id)
+    return policy is None or policy.allows_model(model.id)
 
 
-def allowed_models(user: Any, media_type: str, api_key: Any = None) -> list[ModelSpec]:
-    return [m for m in registry().enabled_for(media_type) if model_allowed(user, m, api_key)]
-
-
-def resolve_models(user: Any, media_type: str, requested: list[str] | None, api_key: Any = None) -> list[str]:
-    """Validates a model selection. Empty/None → the default selection the caller may use."""
+def detectors_for(user: Any, media_type: str) -> list[str]:
+    """The detectors a job of this media type runs for this user (admin's set ∩ user policy)."""
     reg = registry()
-    allowed = {m.id for m in allowed_models(user, media_type, api_key)}
-    if not requested:
-        chosen = [m for m in reg.default_selection(media_type) if m in allowed] or sorted(allowed)[:3]
-        if not chosen:
-            raise ModelNotAllowed("No detection models are available to your account for this media type.")
-        return chosen
-    resolved: list[str] = []
-    rejected: list[str] = []
-    for raw in requested:
-        spec = reg.get(raw)
-        if spec is None or not spec.supports(media_type) or spec.id not in allowed:
-            rejected.append(raw)
-        elif spec.id not in resolved:
-            resolved.append(spec.id)
-    if rejected:
-        raise ModelNotAllowed(
-            f"Not available for {media_type}: {', '.join(rejected)}", extra={"models": rejected}
-        )
-    return resolved
+    chosen = [m for m in reg.default_selection(media_type) if model_allowed(user, reg.models[m])]
+    if not chosen:
+        # The message never lists detectors; the operator sees why in the admin console.
+        raise ModelNotAllowed(f"Analysis of {media_type}s is not available for your account right now.")
+    return chosen
 
 
 def allowed_audit_steps(user: Any) -> list[str]:
     policy = _policy(user)
     return [s for s in registry().audit_steps if policy is None or policy.allows_audit_step(s)]
+
+
+def checks_for(user: Any) -> list[str]:
+    """The admin's extra checks (face, safety, fas) this user's policy permits, plus metadata."""
+    from sml.core.models import PlatformSettings
+
+    reg = registry()
+    allowed = set(allowed_audit_steps(user))
+    extra = [s for s in PlatformSettings.load().audit_steps or [] if s in reg.audit_steps and s in allowed
+             and not reg.audit_steps[s].builtin]
+    builtin = [s.id for s in reg.audit_steps.values() if s.builtin]
+    return builtin + extra

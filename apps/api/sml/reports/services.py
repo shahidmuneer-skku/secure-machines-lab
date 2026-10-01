@@ -8,7 +8,8 @@ from django.db.models import Max
 
 from sml.core.events import publish_to_user
 from sml.core.exceptions import Conflict
-from sml.jobs.models import Artifact, Explanation, Job
+from sml.jobs import public
+from sml.jobs.models import Explanation, Job
 from sml.media import storage
 
 from . import generators
@@ -43,21 +44,21 @@ def _read(key: str) -> bytes | None:
 
 
 def build_data(job: Job, locale: str) -> generators.ReportData:
+    """Reports are handed to customers: they carry the verdict and evidence, never the detectors."""
     media = job.media
+    tasks = list(job.tasks.all())
     xai: list[tuple[str, bytes]] = []
-    for art in job.artifacts.filter(kind__in=[Artifact.Kind.XAI, Artifact.Kind.FACE],
-                                    content_type__startswith="image/")[:6]:
-        data = _read(art.storage_key)
-        if data:
-            xai.append((art.label or art.kind, data))
+    for art in public.evidence_artifacts(job, tasks):
+        data = _read(art.storage_key) if art.content_type.startswith("image/") else None
+        if data and len(xai) < 6:
+            xai.append((public.artifact_label(art), data))
     explanation = (job.explanations.filter(status=Explanation.Status.SUCCEEDED).order_by("-created_at")
                    .values_list("content", flat=True).first() or "")
-    summary = job.summary or {}
     return generators.ReportData(
         locale=locale, job_id=str(job.pk), run_number=job.run_number, title=job.title, media_type=job.media_type,
         verdict=job.verdict, fake_probability=job.fake_probability, partial=job.partial,
-        reasons=job.verdict_reasons or [], models=summary.get("models", []), audit=summary.get("audit", {}),
-        ai_indicators=summary.get("ai_indicators", {}),
+        ai_generated=public.ai_generated(job), reasons=public.reasons(job), checks=public.checks(tasks),
+        provenance=public.provenance(tasks),
         media={"size_bytes": media.size_bytes, "width": media.width, "height": media.height,
                "duration_seconds": media.duration_seconds, "sha256": media.sha256} if media else {},
         created_at=job.created_at, finished_at=job.finished_at,
@@ -80,10 +81,10 @@ def generate(report: Report) -> Report:
             blob = generators.render_csv(data)
         else:
             arts = []
-            for art in job.artifacts.all()[:50]:
+            for art in public.evidence_artifacts(job):
                 content = _read(art.storage_key)
                 if content:
-                    arts.append((f"{art.kind}_{art.pk.hex[:8]}_{art.storage_key.rsplit('/', 1)[-1]}", content))
+                    arts.append((public.artifact_filename(art), content))
             blob = generators.render_zip(data, arts)
         key = storage.save_bytes(f"reports/{job.pk}/{report.pk}.{report.format}", blob)
         report.storage_key = key

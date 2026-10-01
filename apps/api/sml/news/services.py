@@ -22,8 +22,6 @@ from sml.queues import MODEL_PREFIX, NEWS
 from .models import NewsCase
 
 MAX_MEDIA = 10
-# Detectors run on each attached file before the agent starts (legacy default: SKKU-AIGC).
-FORENSIC_MODELS = {"image": ["skku-aigc"], "video": ["skku-aigc"]}
 
 
 def create_news_job(user: Any, data: dict[str, Any], media: list[MediaObject], *, source: str = "web",
@@ -54,17 +52,20 @@ def create_news_job(user: Any, data: dict[str, Any], media: list[MediaObject], *
         job.hold = credits.reserve(user, quote.credits, reference_type="job", reference_id=str(job.pk))
         job.save(update_fields=["options", "hold"])
         for m in media:
-            for model_id in FORENSIC_MODELS.get(m.media_type, []):
-                spec = reg.get(model_id)
-                if spec and spec.enabled and spec.supports(m.media_type) and access.model_allowed(user, spec, api_key):
+            # Each attached file runs the admin's detectors for its media type before the agent starts.
+            for model_id in reg.default_selection(m.media_type):
+                if access.model_allowed(user, reg.models[model_id]):
                     JobTask.objects.create(job=job, kind=JobTask.Kind.MODEL, target=model_id, media=m,
                                            media_type=m.media_type, queue=MODEL_PREFIX + model_id,
                                            priority=priority, max_attempts=1)
         JobTask.objects.create(job=job, kind=JobTask.Kind.NEWS, target=cfg.news_engine, queue=NEWS,
                                priority=priority, max_attempts=1, wait_for_models=True)
-        emit(job, "job.created", f"News verification case created: {job.title}")
-        emit(job, "credits.reserved", f"{quote.credits} credits reserved")
-        emit(job, "job.queued", "Forensic detectors run first, then the verification agent")
+        message = f"News verification case created: {job.title}"
+        emit(job, "job.created", message, public=message)
+        message = f"{quote.credits} credits reserved"
+        emit(job, "credits.reserved", message, public=message)
+        emit(job, "job.queued", "Forensic detectors run first, then the verification agent",
+             public="Queued: the attached media are analysed first, then the story is verified")
         push_job_state(job)
         _after_commit_dispatch()
     return job

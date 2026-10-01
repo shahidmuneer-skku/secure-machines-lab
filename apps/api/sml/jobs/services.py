@@ -25,7 +25,6 @@ from .timeline import emit, push_job_state
 
 logger = logging.getLogger(__name__)
 
-ALWAYS_AUDIT = ["metadata"]
 
 
 class MaintenanceMode(ApiError):
@@ -37,10 +36,10 @@ class MaintenanceMode(ApiError):
 
 @dataclass
 class JobRequest:
+    """What the caller asks for. Detectors and checks are not part of it: the admin chooses them."""
+
     media: MediaObject
     module: str = "detect"  # detect | long_video
-    models: list[str] | None = None
-    audit_steps: list[str] = field(default_factory=list)
     options: dict[str, Any] = field(default_factory=dict)
     locale: str = "en"
 
@@ -58,7 +57,7 @@ def _check_platform() -> None:
         raise MaintenanceMode()
 
 
-def prepare(user: Any, req: JobRequest, *, api_key: Any = None) -> PreparedJob:
+def prepare(user: Any, req: JobRequest) -> PreparedJob:
     """Validate access and price a request without side effects (used by /jobs/quote)."""
     media = req.media
     if media.status != MediaObject.Status.READY:
@@ -67,23 +66,14 @@ def prepare(user: Any, req: JobRequest, *, api_key: Any = None) -> PreparedJob:
         if media.media_type != "video":
             raise InvalidMedia("Long-form scanning needs a video.")
         access.assert_module_allowed(user, "long_video")
-        reg = registry()
-        chosen = [m for m in (req.models or []) if m in reg.long_video_models] or [
-            m.id for m in reg.long_video_models.values() if m.default_selected
-        ][:1]
+        chosen = [m.id for m in registry().long_video_models.values() if m.default_selected][:1]
         if not chosen:
-            raise ApiError("No long-form video model is configured.")
-        return PreparedJob(req, chosen[:1], [], pricing.quote_long_video(media.duration_seconds or 0))
+            raise ApiError("Long-form scanning is not available right now.")
+        return PreparedJob(req, chosen, [], pricing.quote_long_video(media.duration_seconds or 0))
 
     access.assert_module_allowed(user, "detect")
-    models = access.resolve_models(user, media.media_type, req.models, api_key)
-    allowed_steps = set(access.allowed_audit_steps(user))
-    steps = [s for s in req.audit_steps if s in registry().audit_steps and s not in ALWAYS_AUDIT]
-    denied = [s for s in steps if s not in allowed_steps]
-    if denied:
-        raise ApiError(f"Audit steps not permitted: {', '.join(denied)}", extra={"audit_steps": denied})
     quote = pricing.quote_media(media.media_type, media.duration_seconds, "detect")
-    return PreparedJob(req, models, ALWAYS_AUDIT + steps, quote)
+    return PreparedJob(req, access.detectors_for(user, media.media_type), access.checks_for(user), quote)
 
 
 def _task_specs(prepared: PreparedJob) -> list[tuple[str, str, str]]:
@@ -122,11 +112,12 @@ def _create_job(user: Any, prepared: PreparedJob, *, source: str, api_key: Any =
         JobTask.objects.create(job=job, kind=kind_, target=target, media_type=media.media_type, queue=queue,
                                priority=priority, max_attempts=max_attempts)
     names = ", ".join(reg.get(m).name(req.locale) if reg.get(m) else m for m in prepared.models)
-    emit(job, "job.created", f"Job created for {media.original_name}", data={"models": prepared.models})
+    emit(job, "job.created", f"Job created for {media.original_name}",
+         public=f"Analysis requested for {media.original_name}", data={"models": prepared.models})
     if user is not None and prepared.quote.credits:
-        emit(job, "credits.reserved", f"{prepared.quote.credits} credits reserved", data={
-            "credits": prepared.quote.credits})
-    emit(job, "job.queued", f"Queued: {names or 'analysis'}", data={"priority": priority})
+        message = f"{prepared.quote.credits} credits reserved"
+        emit(job, "credits.reserved", message, public=message, data={"credits": prepared.quote.credits})
+    emit(job, "job.queued", f"Queued: {names or 'analysis'}", public="Queued", data={"priority": priority})
     push_job_state(job)
     return job
 
@@ -140,7 +131,7 @@ def _after_commit_dispatch() -> None:
 def create_job(user: Any, req: JobRequest, *, source: str = "web", api_key: Any = None,
                guest_token: str = "") -> Job:
     _check_platform()
-    prepared = prepare(user, req, api_key=api_key)
+    prepared = prepare(user, req)
     with transaction.atomic():
         job = _create_job(user, prepared, source=source, api_key=api_key, guest_token=guest_token)
         _after_commit_dispatch()
@@ -155,7 +146,7 @@ def create_batch(user: Any, reqs: list[JobRequest], *, source: str = "web", api_
                  name: str = "") -> tuple[JobBatch, list[Job]]:
     """All-or-nothing: if any job can't be created (e.g. credits run out) nothing is created."""
     _check_platform()
-    prepared = [prepare(user, r, api_key=api_key) for r in reqs]
+    prepared = [prepare(user, r) for r in reqs]
     total = sum(p.quote.credits for p in prepared)
     with transaction.atomic():
         batch = JobBatch.objects.create(user=user, name=name[:120], source=source)
@@ -182,7 +173,7 @@ def cancel_job(job: Job, *, actor: Any = None) -> Job:
         now = timezone.now()
         pending = job.tasks.filter(status__in=[JobTask.Status.PENDING, JobTask.Status.DISPATCHED])
         pending.update(status=JobTask.Status.CANCELED, finished_at=now, stage_message="Canceled")
-        emit(job, "job.cancel_requested", "Cancellation requested", level="warning")
+        emit(job, "job.cancel_requested", "Cancellation requested", public="Cancellation requested", level="warning")
         running = job.tasks.filter(status=JobTask.Status.RUNNING).exists()
         if running:
             transaction.on_commit(lambda: request_cancel(str(job.pk)))
@@ -195,13 +186,11 @@ def cancel_job(job: Job, *, actor: Any = None) -> Job:
 def rerun_job(job: Job, *, user: Any, source: str = "web", api_key: Any = None) -> Job:
     if not job.is_terminal or job.status == Job.Status.EXPIRED or job.media is None:
         raise Conflict("Only finished jobs whose media is still retained can be re-run.")
-    req = JobRequest(
-        media=job.media, module="long_video" if job.kind == Job.Kind.LONG_VIDEO else "detect",
-        models=job.models_selected, audit_steps=[s for s in job.audit_steps if s not in ALWAYS_AUDIT],
-        options=job.options, locale=job.locale,
-    )
+    # A re-run analyses the file again with what the admin has configured now.
+    req = JobRequest(media=job.media, module="long_video" if job.kind == Job.Kind.LONG_VIDEO else "detect",
+                     options=job.options, locale=job.locale)
     _check_platform()
-    prepared = prepare(user, req, api_key=api_key)
+    prepared = prepare(user, req)
     with transaction.atomic():
         new = _create_job(user, prepared, source=source, api_key=api_key, parent=job)
         _after_commit_dispatch()

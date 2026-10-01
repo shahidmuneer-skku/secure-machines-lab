@@ -35,7 +35,6 @@ def issue_key(
     name: str,
     scopes: list[str],
     allowed_ips: list[str] | None = None,
-    allowed_models: list[str] | None = None,
     rate_limit_per_minute: int | None = None,
     expires_at: datetime | None = None,
     rotated_from: ApiKey | None = None,
@@ -44,7 +43,7 @@ def issue_key(
     secret = secrets.token_urlsafe(32)
     key = ApiKey.objects.create(
         user=user, name=name, prefix=prefix, secret_hash=_hash(secret), last_four=secret[-4:],
-        scopes=sorted(set(scopes)), allowed_ips=allowed_ips or [], allowed_models=allowed_models,
+        scopes=sorted(set(scopes)), allowed_ips=allowed_ips or [],
         rate_limit_per_minute=rate_limit_per_minute, expires_at=expires_at, rotated_from=rotated_from,
     )
     return IssuedKey(key, f"sml_{settings.API_KEY_ENV_LABEL}_{prefix}_{secret}")
@@ -79,7 +78,7 @@ def rotate(key: ApiKey) -> IssuedKey:
     """Issue a replacement with identical settings and revoke the old key."""
     issued = issue_key(
         key.user, name=key.name, scopes=key.scopes, allowed_ips=key.allowed_ips,
-        allowed_models=key.allowed_models, rate_limit_per_minute=key.rate_limit_per_minute,
+        rate_limit_per_minute=key.rate_limit_per_minute,
         expires_at=key.expires_at, rotated_from=key,
     )
     revoke(key)

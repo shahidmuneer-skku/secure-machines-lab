@@ -8,7 +8,7 @@ import { qk } from "@/lib/api/keys"
 type Handler = (type: string, data: Record<string, unknown>) => void
 
 const EVENTS = [
-  "job.updated", "job.event", "task.progress", "task.log", "task.interval", "credits.updated", "report.updated",
+  "job.updated", "job.event", "job.activity", "task.interval", "credits.updated", "report.updated",
   "explanation.updated", "billing.payment",
 ]
 
@@ -69,19 +69,9 @@ export function useEventStream(enabled: boolean, onEvent?: Handler) {
         case "job.event":
           if (jobId) qc.invalidateQueries({ queryKey: qk.job(jobId) })
           break
-        case "task.progress":
-        case "task.log":
-          if (jobId) {
-            qc.setQueryData(["jobs", "live", jobId], (prev: Record<string, unknown> | undefined) => ({
-              ...(prev ?? {}),
-              [data.task_id as string]: {
-                ...((prev ?? {})[data.task_id as string] as object),
-                ...(name === "task.progress" ? { progress: data.progress, message: data.message } : {}),
-                ...(name === "task.log" ? { lastLog: data.message } : {}),
-                at: Date.now(),
-              },
-            }))
-          }
+        case "job.activity":
+          // A worker made progress: refetch the job's user view (steps and live progress).
+          if (jobId) qc.invalidateQueries({ queryKey: qk.job(jobId) })
           break
         case "task.interval":
           if (jobId) {

@@ -11,58 +11,27 @@ import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
 import type { Job, MediaObject } from "@/lib/api/types"
 
-export interface CatalogModel {
-  id: string
-  media: ("image" | "video")[]
-}
-
+/** What the user submits: files only. The administrator decides what runs on each media type. */
 export interface SubmitRequest {
   media: MediaObject[]
-  models: string[]
-  catalog: CatalogModel[]
-  auditSteps: ("face" | "safety" | "fas")[]
   module?: "detect" | "long_video"
   options?: Record<string, unknown>
   batchName?: string
 }
 
-/** Splits media by type so each group only gets models that support it. */
-export function groupRequests(req: SubmitRequest) {
-  const groups: { mediaType: "image" | "video"; ids: string[]; models: string[] }[] = []
-  for (const mediaType of ["image", "video"] as const) {
-    const ids = req.media.filter((m) => m.media_type === mediaType).map((m) => m.id)
-    if (!ids.length) continue
-    const supported = new Set(req.catalog.filter((c) => c.media.includes(mediaType)).map((c) => c.id))
-    groups.push({ mediaType, ids, models: req.module === "long_video" ? req.models
-      : req.models.filter((m) => supported.has(m)) })
-  }
-  return groups
-}
-
-function body(req: SubmitRequest, group: ReturnType<typeof groupRequests>[number]) {
+function body(req: SubmitRequest) {
+  const ids = req.media.map((m) => m.id)
   return {
-    ...(group.ids.length === 1 ? { media_id: group.ids[0] } : { media_ids: group.ids }),
+    ...(ids.length === 1 ? { media_id: ids[0] } : { media_ids: ids }),
     module: req.module ?? "detect",
-    models: group.models,
-    audit_steps: req.auditSteps,
     options: req.options ?? {},
     batch_name: req.batchName,
   }
 }
 
 export async function quoteRequest(req: SubmitRequest) {
-  let credits = 0
-  let balance = 0
-  let affordable = true
-  const lines: { label: string; credits: number }[] = []
-  for (const group of groupRequests(req)) {
-    const q = data(await api.POST("/api/v1/jobs/quote", { body: body(req, group) as never }))
-    credits += q.credits
-    balance = q.balance
-    affordable = affordable && q.affordable
-    lines.push(...(q.lines as { label: string; credits: number }[]))
-  }
-  return { credits, balance, affordable: affordable && balance >= credits, lines }
+  const q = data(await api.POST("/api/v1/jobs/quote", { body: body(req) as never }))
+  return { credits: q.credits, balance: q.balance, affordable: q.affordable, lines: q.lines as { label: string; credits: number }[] }
 }
 
 export function useSubmitJobs() {
@@ -70,17 +39,10 @@ export function useSubmitJobs() {
   const router = useRouter()
   const t = useTranslations("detect")
   return useMutation({
-    mutationFn: async (req: SubmitRequest) => {
-      const jobs: Job[] = []
-      for (const group of groupRequests(req)) {
-        const res = data(await api.POST("/api/v1/jobs", {
-          body: body(req, group) as never,
-          params: { header: { "Idempotency-Key": newIdempotencyKey() } },
-        }))
-        jobs.push(...res.jobs)
-      }
-      return jobs
-    },
+    mutationFn: async (req: SubmitRequest): Promise<Job[]> => data(await api.POST("/api/v1/jobs", {
+      body: body(req) as never,
+      params: { header: { "Idempotency-Key": newIdempotencyKey() } },
+    })).jobs,
     onSuccess: (jobs) => {
       qc.invalidateQueries({ queryKey: qk.jobsAll })
       qc.invalidateQueries({ queryKey: qk.balance })

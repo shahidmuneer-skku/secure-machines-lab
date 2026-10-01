@@ -17,6 +17,9 @@ events back, and reports `started` / `intervals` / `finished` to an internal Dja
 authenticated with a shared key. Django records the scan as a normal job (history, timeline,
 reports), keeps only a preview frame, and settles the hold per started minute analysed.
 
+Superseded in part by ADR 0011: the administrator chooses the long-form detector, and the browser's
+token names the session only (the service claims the paid parameters from the API once).
+
 **Consequences.** Videos never reach media storage; verdicts match the legacy system. The
 service scrubs its environment at start-up because the legacy engine passes its environment to
 detector subprocesses. Abandoned sessions are refunded by a sweep (no upload within 60 min, or

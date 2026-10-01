@@ -41,7 +41,7 @@
     "creditsCount": "{count, plural, one {# 크레딧} other {# 크레딧}}",
     "simulated": "시뮬레이션",
     "simulatedHint": "실제 모델 환경이 아직 설치되지 않았습니다. 이 점수는 테스트를 위해 시뮬레이션된 것입니다.",
-    "disclaimer": "점수는 기계 학습 모델의 확률적 추정치이며 오류가 있을 수 있습니다. 전문가의 판단을 대체하는 것이 아니라 보조하는 용도로 사용하세요.",
+    "disclaimer": "점수는 자동 분석의 확률적 추정치이며 틀릴 수 있습니다. 전문가 판단을 대체하지 말고 보조 자료로 사용하세요.",
     "notFound": "페이지를 찾을 수 없습니다",
     "notFoundBody": "찾으시는 페이지가 존재하지 않거나 접근 권한이 없습니다.",
     "goHome": "대시보드로 이동",
@@ -110,7 +110,8 @@
     "real": "진품 가능성 높음",
     "no_face": "얼굴 탐지되지 않음",
     "inconclusive": "판정 불가",
-    "aiMetadata": "메타데이터에 AI 생성 지표 있음"
+    "aiMetadata": "메타데이터에 AI 생성 지표 있음",
+    "ai_generated": "AI 생성 가능성 높음"
   },
   "queue": {
     "position": "대기열 #{position} · 약 {eta}",
@@ -134,7 +135,7 @@
     "NOT_FOUND": "찾을 수 없습니다.",
     "RATE_LIMITED": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     "INSUFFICIENT_CREDITS": "크레딧이 부족합니다.",
-    "MODEL_NOT_ALLOWED": "선택한 모델 중 사용이 불가한 모델이 있습니다.",
+    "MODEL_NOT_ALLOWED": "현재 계정에서는 이 유형의 파일을 분석할 수 없습니다.",
     "MODULE_NOT_ALLOWED": "이 모듈은 귀하의 계정에 활성화되어 있지 않습니다.",
     "INVALID_MEDIA": "해당 파일은 지원되는 이미지 또는 영상이 아닙니다.",
     "MFA_REQUIRED": "이 영역은 2단계 인증으로 검증된 세션이 필요합니다.",
@@ -258,15 +259,12 @@
       "added": "추가",
       "spent": "사용",
       "runs": "실행",
-      "wait": "평균 대기"
+      "wait": "평균 대기",
+      "jobs": "분석"
     },
     "jobsChart": {
       "eyebrow": "판정",
       "title": "판정별 시간 경과 작업"
-    },
-    "modelChart": {
-      "eyebrow": "모델",
-      "title": "모델별 사용량"
     },
     "creditsChart": {
       "eyebrow": "크레딧",
@@ -279,7 +277,7 @@
     "quick": {
       "eyebrow": "빠른 시작",
       "title": "파일 드롭",
-      "subtitle": "권장 모델을 실행합니다. 전체 제어가 필요하면 탐지를 사용하세요.",
+      "subtitle": "파일을 놓으면 바로 분석합니다. 요금을 먼저 확인하려면 탐지 메뉴를 사용하세요.",
       "analyze": "{count, plural, =0 {분석} one {파일 #개 분석} other {파일 #개 분석}}"
     },
     "recent": {
@@ -294,15 +292,24 @@
       "jobs": "작업 {count}건",
       "credits": "크레딧 {count}개",
       "manage": "API 키 관리"
+    },
+    "usageChart": {
+      "eyebrow": "사용량",
+      "title": "유형별 분석"
+    },
+    "usageType": {
+      "image": "이미지",
+      "video": "영상",
+      "long_video": "장편 영상",
+      "news": "뉴스"
     }
   },
   "detect": {
     "eyebrow": "워크스페이스 · 탐지",
     "title": "딥페이크 및 AI 생성 미디어 탐지",
-    "subtitle": "이미지와 영상을 함께 드롭하세요. 파일 유형을 자동으로 인식하고 선택한 모델을 하나의 판정으로 통합합니다.",
+    "subtitle": "이미지와 영상을 함께 올리세요. 각 파일을 자동으로 분석해 근거와 함께 하나의 종합 판정을 제공합니다.",
     "step1": "파일",
-    "step2": "탐지 모델",
-    "step3": "검토",
+    "step2": "확인 및 제출",
     "filesTitle": "이미지 또는 영상 추가",
     "filesHint": "드래그 앤 드롭, 클릭하여 탐색하거나 클립보드에서 붙여넣기. 배치당 최대 50개 파일.",
     "dropLabel": "이미지 또는 영상 업로드",
@@ -321,49 +328,23 @@
     "uploadFailed": "업로드에 실패했습니다.",
     "retryUpload": "업로드 재시도",
     "removeFile": "파일 제거",
-    "modelsTitle": "분석에 참여할 모델 선택",
-    "modelsHint": "선택된 각 모델은 호환되는 모든 파일을 분석하며, 하나의 통합 판정을 제공합니다. (모델별 점수는 상세 정보에서 확인 가능)",
-    "recommended": "추천",
-    "selectAll": "모두 선택",
-    "clearSelection": "선택 해제",
-    "selectedCount": "{count}개 선택됨",
-    "family": {
-      "deepfake": "얼굴 조작 (딥페이크)",
-      "ai_generated": "완전 AI 생성",
-      "general": "일반 목적"
-    },
-    "needsFace": "얼굴 필요",
-    "needsFaceHint": "이 모델은 얼굴을 분석합니다. 얼굴이 없는 파일은 해당 비용이 청구되지 않습니다.",
-    "hasXai": "설명 가능성 히트맵",
-    "locked": "현재 계정에서 사용 불가",
-    "imageOnly": "이미지 전용",
-    "videoOnly": "영상 전용",
-    "auditTitle": "감사 체인",
-    "auditHint": "탐지 주위의 추가 검사. 메타데이터 및 C2PA 출처는 항상 실행됩니다.",
-    "alwaysOn": "항상 실행",
     "summaryTitle": "요약 및 비용",
     "filesReady": "준비된 파일",
-    "modelsSelected": "모델",
-    "auditSelected": "감사 단계",
     "total": "합계",
     "creditsN": "{count, plural, one {크레딧 #개} other {크레딧 #개}}",
     "balanceAfter": "이 배치 후 잔액 {balance} → {after}",
-    "flatPriceHint": "선택한 모델 수와 관계없이 파일당 가격입니다.",
-    "quoteHint": "파일을 업로드하고 모델을 선택하면 가격을 확인할 수 있습니다.",
+    "flatPriceHint": "요금은 파일당 부과됩니다.",
+    "quoteHint": "파일을 올리면 요금이 표시됩니다.",
     "quoteFailed": "이 요청의 가격을 계산할 수 없습니다.",
     "notEnough": "이 배치에 사용할 충분한 크레딧이 없습니다.",
     "buyCredits": "크레딧 구매",
-    "noModelFor": "다음 형식을 지원하는 모델을 최소 1개 이상 선택하세요: {types}",
     "submit": "분석 시작",
     "submitHint": "작업은 즉시 대기열에 추가됩니다. 이 페이지를 떠나 결과에서 진행 상황을 추적할 수 있습니다.",
     "queuedToast": "{count, plural, one {대기열에 추가됨 — 분석 시작} other {파일 #개 대기열에 추가됨}}",
     "queuedToastHint": "결과에서 실시간으로 진행 상황을 추적하세요.",
     "track": "추적",
     "insufficient": "크레딧 부족",
-    "submitFailed": "분석을 시작할 수 없습니다",
-    "collapseAll": "모두 접기",
-    "expandAll": "모두 펼치기",
-    "selectGroup": "{group} 전체 선택"
+    "submitFailed": "분석을 시작할 수 없습니다"
   },
   "results": {
     "eyebrow": "워크스페이스 · 결과",
@@ -454,34 +435,9 @@
     "notCharged": "청구되지 않음",
     "expires": "미디어 {when} 만료",
     "stages": "처리 단계",
-    "stage": {
-      "queued": "대기열",
-      "analyzing": "분석 중",
-      "aggregating": "집계 중",
-      "done": "완료"
-    },
-    "taskKind": {
-      "model": "모델",
-      "audit": "감사",
-      "long_video": "스캐너",
-      "news": "에이전트"
-    },
-    "simulated": "시뮬레이션",
-    "attempt": "시도 {n}",
-    "fallbackUsed": "폴백: {model}",
-    "taskProgress": "{name} 진행률",
-    "scoreFake": "딥페이크 {pct}%",
-    "noFace": "얼굴 없음",
-    "log": "로그",
-    "toggleLog": "{name} 실시간 로그 표시",
-    "liveLog": "실시간 처리 로그",
-    "logWaiting": "워커 대기 중…",
-    "logEmpty": "로그 줄이 없습니다.",
     "processing": {
       "eyebrow": "백스테이지",
-      "title": "현재 진행 상황",
-      "models": "탐지 모델",
-      "audit": "감사 체인"
+      "title": "지금 진행 중인 작업"
     },
     "timeline": {
       "eyebrow": "타임라인",
@@ -491,7 +447,7 @@
       "eyebrow": "미디어",
       "original": "원본",
       "overlayAlt": "{label} 오버레이",
-      "explainability": "설명 가능성 오버레이",
+      "explainability": "히트맵 겹쳐 보기",
       "opacity": "불투명도",
       "expired": "미디어가 만료되어 삭제되었습니다.",
       "unavailable": "미디어를 사용할 수 없습니다.",
@@ -499,7 +455,12 @@
       "timeline": "시간별 점수",
       "timelineHint": "차트를 클릭하면 해당 시점으로 플레이어 이동합니다.",
       "streamPreview": "미리보기 프레임",
-      "streamNotStored": "스트리밍 스캔: 영상 자체는 저장되지 않았습니다."
+      "streamNotStored": "스트리밍 스캔: 영상 자체는 저장되지 않았습니다.",
+      "artifact": {
+        "heatmap": "히트맵 {n}",
+        "face": "얼굴 {n}",
+        "video": "분석 영상 {n}"
+      }
     },
     "verdict": {
       "eyebrow": "판정",
@@ -508,26 +469,21 @@
       "failed": "분석에 실패했습니다. 요금이 청구되지 않았습니다.",
       "canceled": "이 작업이 취소되었습니다. 예약된 크레딧이 반환되었습니다.",
       "expired": "이 작업이 만료되었습니다.",
-      "pending": "모델이 완료되는 대로 결과가 여기에 표시됩니다.",
-      "partial": "일부 모델이 실패하여 완료된 모델의 결과를 판정에 사용했습니다.",
-      "simulated": "서버에 실제 모델 환경이 설치되지 않아 일부 점수는 시뮬레이션되었습니다.",
-      "details": "모델별 상세 정보",
-      "model": "모델",
-      "fakePct": "딥페이크 %",
-      "weight": "가중치",
-      "time": "소요 시간",
-      "failedShort": "실패"
+      "pending": "분석이 끝나는 대로 결과가 여기에 표시됩니다.",
+      "partial": "일부 분석 단계를 완료하지 못했으며, 완료된 단계의 결과로 판정했습니다."
     },
     "reason": {
-      "model_consensus": "선택된 모델들의 가중치 합의",
       "metadata_ai_indicator": "메타데이터 또는 콘텐츠 자격 증명에서 AI 생성 표시 확인",
-      "no_face": "얼굴 기반 모델에 사용할 얼굴이 발견되지 않음",
-      "news_agent": "검증 에이전트 평가"
+      "no_face": "파일에서 얼굴을 찾지 못했습니다",
+      "news_agent": "검증 에이전트 평가",
+      "analysis": "자동 분석의 종합 결과",
+      "metadata_hint": "메타데이터에 AI 생성 흔적이 있으며 분석 결과와 일치합니다",
+      "stopped_early": "선택한 구간이 끝나기 전에 분석이 중지되었습니다"
     },
     "disclaimer": "점수는 확률적 추정치이며 오류가 있을 수 있습니다. 전문가의 판단을 대체하지 않고 보조하는 용도로만 사용하십시오. 법적 증거로 사용할 수 없습니다.",
     "provenance": {
       "eyebrow": "출처",
-      "title": "메타데이터 및 감사",
+      "title": "메타데이터 및 검사",
       "aiFound": "AI 생성 표시 발견",
       "noneFound": "메타데이터에 AI 표시 없음",
       "confidence": {
@@ -544,13 +500,13 @@
         "tool_unavailable": "확인되지 않음",
         "error": "읽기 실패"
       },
-      "audit": "감사 단계",
-      "completed": "완료"
+      "hintFound": "메타데이터에 약한 AI 생성 흔적",
+      "checks": "추가 검사"
     },
     "explain": {
       "eyebrow": "AI 분석가",
       "title": "판정 이유 설명",
-      "subtitle": "추론 모델이 파일, 히트맵, 점수 및 메타데이터를 분석하여 판정을 쉬운 언어로 설명합니다.",
+      "subtitle": "AI 분석가가 파일, 히트맵, 메타데이터를 살펴보고 판정 이유를 쉬운 말로 설명합니다.",
       "ask": "판정 이유 설명",
       "again": "다시 질문",
       "cost": "{count} 크레딧",
@@ -579,18 +535,42 @@
       "reserved": "예약됨",
       "trial": "무료 체험 — 크레딧 사용 없음."
     },
-    "taskError": {
-      "GPU_OOM": "이 모델을 실행하는 중 GPU 메모리가 부족했습니다.",
-      "GPU_UNSUPPORTED": "할당된 하드웨어에서 이 모델을 일시적으로 사용할 수 없습니다.",
-      "TIMEOUT": "모델 실행 시간이 너무 길어 중단되었습니다.",
-      "WORKER_LOST": "이 모델을 실행하던 워커가 응답하지 않습니다.",
-      "QUEUE_TIMEOUT": "제한 시간 내에 이 작업을 처리할 워커가 없었습니다.",
-      "RUNTIME_ERROR": "모델 실행 중 오류가 발생했습니다.",
-      "PARSE_ERROR": "모델이 점수를 출력하지 않고 종료되었습니다.",
-      "CONFIG_ERROR": "이 모델의 설정이 올바르지 않습니다.",
-      "INFRA_ERROR": "일시적인 시스템 오류가 발생했습니다.",
-      "AGENT_ERROR": "AI 에이전트가 작업을 완료하지 못했습니다.",
-      "INVALID_MEDIA": "이 모델이 파일을 읽을 수 없습니다."
+    "step": {
+      "queued": "대기열에서 기다리는 중",
+      "checks": "파일 확인 중(메타데이터, 출처)",
+      "analysis": "{media, select, image {이미지 분석 중} video {영상 분석 중} attachments {첨부 미디어 분석 중} other {파일 분석 중}}",
+      "verification": "기사 내용과 출처 검증 중",
+      "results": "결과 준비 중"
+    },
+    "stepStatus": {
+      "pending": "대기",
+      "running": "진행 중",
+      "done": "완료",
+      "failed": "실패",
+      "canceled": "취소됨",
+      "expired": "만료됨",
+      "skipped": "건너뜀"
+    },
+    "check": {
+      "name": {
+        "face": "얼굴 탐지",
+        "safety": "유해성 검사",
+        "fas": "얼굴 생체 확인"
+      },
+      "facesFound": "얼굴 발견",
+      "noFace": "얼굴 없음",
+      "sensitive": "민감한 콘텐츠 감지",
+      "notSensitive": "민감한 콘텐츠 없음",
+      "spoof": "위변조 시도 의심",
+      "live": "위변조 시도 없음",
+      "status": {
+        "pending": "대기",
+        "running": "진행 중",
+        "done": "완료",
+        "failed": "완료하지 못함",
+        "canceled": "취소됨",
+        "skipped": "건너뜀"
+      }
     }
   },
   "admin": {
@@ -740,7 +720,10 @@
       "retry": "작업 재시도",
       "retried": "작업이 대기열에 다시 추가되었습니다",
       "failed": "처리가 실패했습니다.",
-      "openAsUser": "결과 페이지 열기"
+      "openAsUser": "결과 페이지 열기",
+      "showLog": "{task} 실시간 로그 보기",
+      "log": "작업 로그",
+      "logEmpty": "로그가 없습니다."
     },
     "queues": {
       "eyebrow": "관리자 · 운영",
@@ -768,10 +751,9 @@
     "models": {
       "eyebrow": "관리자 · 모델",
       "title": "탐지 모델",
-      "subtitle": "모델을 활성화하거나 비활성화하고, 통합 판정에서의 가중치를 설정하며 기본값을 선택합니다.",
+      "subtitle": "모든 이미지와 영상에 실행할 탐지 모델, 가중치, 모든 작업에 함께 실행할 항목을 정합니다. 사용자에게는 표시되지 않습니다.",
       "model": "모델",
       "enabled": "활성화됨",
-      "default": "기본값",
       "trial": "시범",
       "weight": "가중치",
       "consumers": "워커",
@@ -779,7 +761,31 @@
       "envs": "Conda 환경",
       "saved": "모델이 업데이트되었습니다",
       "failed": "모델을 업데이트할 수 없습니다.",
-      "legend": "24시간 실행 = 완료 / 실패 / 대기. 워커가 없는 모델은 워커가 시작될 때까지 작업이 대기 상태에 유지됩니다."
+      "legend": "실행 = 최근 24시간: 실행 / 실패 / 대기. 소비자 = 모델 큐를 처리하는 워커 수. 가중치는 종합 판정에서 각 모델의 비중입니다.",
+      "media": {
+        "image": "이미지",
+        "video": "영상"
+      },
+      "runOnFor": "{media}에 {model} 실행",
+      "runsSummary": "{count, plural, =0 {실행되는 탐지 모델 없음 — 이 유형의 작업은 거부됩니다} one {모든 작업에 탐지 모델 #개 실행} other {모든 작업에 탐지 모델 #개 실행}}",
+      "setup": {
+        "checksTitle": "모든 작업에 실행할 검사",
+        "checksHint": "모든 이미지와 영상에 탐지 모델과 함께 실행합니다. 메타데이터/C2PA 검사는 항상 실행됩니다.",
+        "always": "항상 실행",
+        "longVideoTitle": "장편 영상 탐지 모델",
+        "longVideoHint": "모든 장편 영상 분석에 이 모델을 사용합니다. 사용자는 구간과 방식만 선택합니다.",
+        "streamOffline": "장편 영상 서비스에 연결할 수 없어 모델 목록을 표시할 수 없습니다.",
+        "detector": "탐지 모델",
+        "automatic": "자동(사용 가능한 첫 모델)",
+        "unavailable": "사용 불가",
+        "faceCrop": "점수 계산 전 얼굴 영역으로 자르기",
+        "faceCropDefault": "모델 기본값",
+        "faceCropOn": "켜짐",
+        "faceCropOff": "꺼짐",
+        "faceCropFixed": "이 모델은 얼굴 자르기를 직접 결정합니다.",
+        "saved": "저장했습니다",
+        "failed": "처리하지 못했습니다."
+      }
     },
     "pricing": {
       "eyebrow": "관리자 · 요금제",
@@ -1365,18 +1371,11 @@
     "replace": "다른 영상 선택",
     "tooBig": "이 파일은 {size}보다 큽니다.",
     "settingsTitle": "스캔 설정",
-    "model": "탐지 모델",
-    "unavailable": "현재 사용할 수 없음",
-    "faceCropSupport": {
-      "always": "항상 가장 큰 얼굴을 분석",
-      "optional": "얼굴 크롭 선택 가능",
-      "none": "전체 프레임 분석"
-    },
     "mode": "모드",
     "modeIntervals": "타임라인 (구간별)",
     "modeWhole": "전체 영상 (단일 판정)",
     "modeIntervalsHint": "선택한 범위의 모든 구간을 점수화하여 의심스러운 지점으로 바로 이동할 수 있습니다.",
-    "modeWholeHint": "선택한 범위에 대해 탐지 모델이 전체 클립을 판정하도록 설계된 방식으로 하나의 점수를 계산합니다.",
+    "modeWholeHint": "선택한 구간 전체에 대해 하나의 점수를 냅니다.",
     "interval": "구간 길이",
     "seconds": "{count}초",
     "intervalHint": "구간이 짧을수록 타임라인이 세밀해지지만 시간이 더 걸립니다.",
@@ -1384,8 +1383,6 @@
     "setStart": "현재 위치에서 시작",
     "setEnd": "현재 위치에서 종료",
     "wholeRange": "전체 영상",
-    "faceCrop": "얼굴 크롭",
-    "faceCropHint": "전체 프레임 대신 각 프레임에서 가장 큰 얼굴을 분석합니다.",
     "summary": "요약",
     "selected": "선택한 길이",
     "maxCost": "최대 비용",
@@ -1442,7 +1439,7 @@
       "media": "이미지 또는 영상 (최대 10개)",
       "submit": "케이스 검증",
       "cost": "케이스당 {count} 크레딧",
-      "duration": "먼저 각 파일에 탐지기가 실행된 후, 에이전트가 케이스를 조사합니다. 보통 몇 분 정도 소요됩니다."
+      "duration": "첨부한 파일을 먼저 분석한 뒤 사례를 조사합니다. 보통 몇 분 정도 걸립니다."
     },
     "category": {
       "conflict": "분쟁",
@@ -1491,7 +1488,7 @@
     "free": {
       "title": "무료 제공량",
       "trial": "하루 {count}회 무료 이미지 검사",
-      "trialBody": "홈페이지에서 탐지기를 사용해 보세요. 계정 없이도 가능합니다.",
+      "trialBody": "계정 없이 홈페이지에서 무료로 분석해 보세요.",
       "bonus": "{count} 환영 크레딧",
       "bonusBody": "이메일 인증 시 추가됩니다. {days}일 동안 유효합니다.",
       "daily": "매일 {count} 무료 크레딧",
@@ -1506,7 +1503,7 @@
       "news": "뉴스 검증 — 건당 {count} 크레딧",
       "explain": "설명 보기(AI 분석가) — {count} 크레딧",
       "reports": "PDF / HWP / CSV 보고서 — 무료",
-      "flat": "탐지 모델 선택 개수와 무관하게 파일당 가격입니다. 분석에 실패한 파일은 절대 청구되지 않습니다."
+      "flat": "요금은 파일당 부과됩니다. 분석에 실패한 파일은 차감되지 않습니다."
     },
     "plans": {
       "eyebrow": "구독",
@@ -1525,8 +1522,8 @@
         "a": "일일 무료 크레딧은 매일 초기화되고, 환영 보너스는 30일간, 구독 크레딧은 청구 월 종료까지, 구매한 크레딧은 12개월간 유효합니다. 항상 가장 먼저 만료되는 크레딧부터 사용하도록 처리됩니다."
       },
       "models": {
-        "q": "모델을 더 선택하면 비용이 더 드나요?",
-        "a": "아니요. 가격은 파일당이며, 계정에서 허용하는 만큼 탐지 모델을 조합하여 하나의 판정에 사용할 수 있습니다."
+        "q": "더 정밀하게 분석하면 요금이 더 드나요?",
+        "a": "아니요. 모든 파일은 유형에 맞는 전체 분석을 받으며 같은 정액 요금이 부과됩니다."
       },
       "refund": {
         "q": "환불이 가능한가요?",

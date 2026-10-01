@@ -65,8 +65,9 @@ def create_trial_job(media: MediaObject, *, device: str, ip: str | None, locale:
         models = [m for m in (cfg.guest_trial_models or reg.trial_selection()) if reg.get(m) and reg.get(m).enabled]
         if not models:
             models = reg.default_selection("image")[:3]
-        req = job_services.JobRequest(media=media, models=models, locale=locale)
-        prepared = job_services.PreparedJob(req, models, list(job_services.ALWAYS_AUDIT), pricing.Quote())
+        req = job_services.JobRequest(media=media, locale=locale)
+        checks = [s.id for s in reg.audit_steps.values() if s.builtin]
+        prepared = job_services.PreparedJob(req, models, checks, pricing.Quote())
         job = job_services._create_job(None, prepared, source=Job.Source.TRIAL, guest_token=device)
         job.expires_at = timezone.now() + timedelta(days=1)
         job.save(update_fields=["expires_at"])

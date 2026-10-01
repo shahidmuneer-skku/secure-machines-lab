@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Cpu, RotateCw, Search, Thermometer } from "lucide-react"
+import { Cpu, RotateCw, Search, Terminal, Thermometer } from "lucide-react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { useMemo, useState } from "react"
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -132,7 +133,7 @@ export function AdminJobs() {
                   <TableCell><span className="font-medium">{j.title}</span><span className="block font-mono text-[10px] text-muted-foreground">{j.id}</span></TableCell>
                   <TableCell className="text-xs">{j.kind} · {j.source}</TableCell>
                   <TableCell><StatusChip status={j.status} /></TableCell>
-                  <TableCell>{j.status === "succeeded" ? <VerdictBadge verdict={j.verdict} probability={j.fake_probability} size="sm" /> :
+                  <TableCell>{j.status === "succeeded" ? <VerdictBadge verdict={j.verdict} aiGenerated={j.ai_generated} probability={j.fake_probability} size="sm" /> :
                     j.status === "running" ? <Progress value={j.progress} className="h-1.5 w-24" /> : j.error_code || "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{j.credits_charged}</TableCell>
                   <TableCell className="text-xs">{formatRelative(j.created_at, locale)}</TableCell>
@@ -160,11 +161,12 @@ function AdminJobSheet({ id, onClose }: { id: string | null; onClose: () => void
   const retry = useMutation({ mutationFn: async (taskId: string) => data(await api.POST("/api/v1/admin/tasks/{id}/retry", { params: { path: { id: taskId } } })),
     onSuccess: () => { toast.success(t("retried")); qc.invalidateQueries({ queryKey: ["admin"] }) },
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")) })
+  const [logFor, setLogFor] = useState<string | null>(null)
   const tasks = (job?.tasks_internal ?? []) as { id: string; target: string; status: string; worker: string; gpu: string; attempt: number;
     error_code: string; error_message: string; error_detail: string; duration_ms: number | null }[]
   return (
     <Sheet open={!!id} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader><SheetTitle>{job?.title}</SheetTitle></SheetHeader>
         {job && (
           <div className="space-y-4 px-4 pb-6 text-sm">
@@ -184,17 +186,44 @@ function AdminJobSheet({ id, onClose }: { id: string | null; onClose: () => void
                     <TableCell><StatusChip status={task.status} /></TableCell>
                     <TableCell className="text-xs">{task.worker || "—"}{task.gpu ? ` · GPU ${task.gpu}` : ""} · #{task.attempt}</TableCell>
                     <TableCell className="text-xs">{task.duration_ms ? formatDuration(task.duration_ms / 1000) : "—"}</TableCell>
-                    <TableCell>{canQueues && task.status === "failed" && !["succeeded", "failed", "canceled", "expired"].includes(job.status) && (
-                      <Button size="icon" variant="ghost" aria-label={t("retry")} onClick={() => retry.mutate(task.id)}><RotateCw className="size-4" /></Button>)}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Button size="icon" variant="ghost" aria-label={t("showLog", { task: task.target })} aria-expanded={logFor === task.id}
+                        onClick={() => setLogFor(logFor === task.id ? null : task.id)}><Terminal className="size-4" /></Button>
+                      {canQueues && task.status === "failed" && !["succeeded", "failed", "canceled", "expired"].includes(job.status) && (
+                        <Button size="icon" variant="ghost" aria-label={t("retry")} onClick={() => retry.mutate(task.id)}><RotateCw className="size-4" /></Button>)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            {logFor && <AdminTaskLog jobId={job.id} taskId={logFor} running={tasks.find((x) => x.id === logFor)?.status === "running"} />}
             <Button asChild variant="link" className="px-0"><Link href={`/app/results/${job.id}`} target="_blank">{t("openAsUser")}</Link></Button>
           </div>
         )}
       </SheetContent>
     </Sheet>
+  )
+}
+
+/** Operator view of one task's live log (detector output, GPU admission). Never shown to users. */
+function AdminTaskLog({ jobId, taskId, running }: { jobId: string; taskId: string; running: boolean }) {
+  const t = useTranslations("admin.jobs")
+  const { data: log } = useQuery({
+    queryKey: qk.admin("jobs", jobId, "log", taskId), refetchInterval: running ? 2000 : false,
+    queryFn: async () => data(await api.GET("/api/v1/admin/jobs/{id}/tasks/{task_id}/log", {
+      params: { path: { id: jobId, task_id: taskId } } })),
+  })
+  const lines = log?.lines ?? []
+  return (
+    <div className="max-h-64 overflow-auto rounded-md border bg-black/40 p-3 font-mono text-xs leading-relaxed text-[#b8f5ff]"
+      role="log" aria-live="polite" aria-label={t("log")}>
+      {lines.length ? lines.map((l, i) => (
+        <div key={i} className="flex gap-3">
+          <span className="shrink-0 text-muted-foreground">{new Date(l.at).toLocaleTimeString()}</span>
+          <span className="break-all">{l.message}</span>
+        </div>
+      )) : <span className="text-muted-foreground">{t("logEmpty")}</span>}
+    </div>
   )
 }
 
@@ -277,13 +306,28 @@ export function AdminModels() {
     onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")),
   })
   if (isLoading) return <Loading />
+  const runs = (media: "image" | "video") => (models ?? []).filter((m) => m.enabled && m.run_on.includes(media)).length
+  const mediaSwitch = (m: NonNullable<typeof models>[number], media: "image" | "video") => m.media.includes(media) ? (
+    <Switch checked={m.run_on.includes(media)} disabled={!canEdit || !m.enabled}
+      onCheckedChange={(v) => patch.mutate({ model_id: m.id, [`run_on_${media}`]: v })}
+      aria-label={t("runOnFor", { media: t(`media.${media}`), model: m.name })} />
+  ) : <span className="text-xs text-muted-foreground">—</span>
   return (
     <div className="space-y-5">
       <PageHeader eyebrow={t("eyebrow")} index={6} title={t("title")} description={t("subtitle")} />
       <AdminError error={error} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(["image", "video"] as const).map((media) => (
+          <HudCard key={media} className="gap-1 py-4"><CardContent className="px-4">
+            <p className="mono-label text-muted-foreground">{t(`media.${media}`)}</p>
+            <p className={runs(media) ? "text-sm" : "text-sm text-warn"}>{t("runsSummary", { count: runs(media) })}</p>
+          </CardContent></HudCard>
+        ))}
+      </div>
       <HudCard><CardContent className="overflow-x-auto pt-4">
         <Table>
-          <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("enabled")}</TableHead><TableHead>{t("default")}</TableHead>
+          <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("enabled")}</TableHead>
+            <TableHead>{t("media.image")}</TableHead><TableHead>{t("media.video")}</TableHead>
             <TableHead>{t("trial")}</TableHead><TableHead>{t("weight")}</TableHead><TableHead className="text-right">{t("consumers")}</TableHead>
             <TableHead className="text-right">{t("runs")}</TableHead><TableHead>{t("envs")}</TableHead></TableRow></TableHeader>
           <TableBody>
@@ -291,7 +335,8 @@ export function AdminModels() {
               <TableRow key={m.id}>
                 <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id} · {m.media.join("/")} · {m.family}</span></TableCell>
                 <TableCell><Switch checked={m.enabled} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, enabled: v })} aria-label={t("enabled")} /></TableCell>
-                <TableCell><Switch checked={m.default_selected} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, default_selected: v })} aria-label={t("default")} /></TableCell>
+                <TableCell>{mediaSwitch(m, "image")}</TableCell>
+                <TableCell>{mediaSwitch(m, "video")}</TableCell>
                 <TableCell><Switch checked={m.trial} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, trial: v })} aria-label={t("trial")} /></TableCell>
                 <TableCell><Input type="number" step="0.1" min="0" max="10" defaultValue={m.weight} disabled={!canEdit} className="h-8 w-20"
                   onBlur={(e) => Number(e.target.value) !== m.weight && patch.mutate({ model_id: m.id, weight: Number(e.target.value) })} aria-label={t("weight")} /></TableCell>
@@ -304,6 +349,80 @@ export function AdminModels() {
         </Table>
         <p className="pt-3 text-xs text-muted-foreground">{t("legend")}</p>
       </CardContent></HudCard>
+      <DetectionSetup />
+    </div>
+  )
+}
+
+/** Extra checks on every job, and the long-form detector (Admin → Models). Users never see these. */
+function DetectionSetup() {
+  const t = useTranslations("admin.models.setup")
+  const qc = useQueryClient()
+  const canEdit = useCan("manage_models")
+  const { data: setup, error } = useQuery({ queryKey: qk.admin("models", "setup"),
+    queryFn: async () => data(await api.GET("/api/v1/admin/models/setup")) })
+  const save = useMutation({
+    mutationFn: async (body: { audit_steps?: string[]; long_video_model?: string; long_video_face_crop?: boolean | null }) =>
+      data(await api.PATCH("/api/v1/admin/models/setup", { body })),
+    onSuccess: (next) => { qc.setQueryData(qk.admin("models", "setup"), next); toast.success(t("saved")) },
+    onError: (e) => toast.error(isApiError(e) ? e.detail : t("failed")),
+  })
+  if (!setup) return <AdminError error={error} />
+  const enabledChecks = setup.checks.filter((c) => c.enabled && !c.always).map((c) => c.id)
+  const lv = setup.long_video
+  const chosen = lv.models.find((m) => m.model_id === lv.model)
+  const faceCropFixed = chosen ? chosen.face_crop !== "optional" : false
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      <HudCard>
+        <CardHeader><CardTitle className="text-base">{t("checksTitle")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t("checksHint")}</p></CardHeader>
+        <CardContent className="space-y-2">
+          {setup.checks.map((c) => (
+            <label key={c.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
+              <span><span className="font-medium">{c.name}</span>
+                <span className="block text-xs text-muted-foreground">{c.always ? t("always") : c.description}</span></span>
+              <Switch checked={c.enabled} disabled={!canEdit || c.always || save.isPending}
+                onCheckedChange={(on) => save.mutate({ audit_steps: on ? [...enabledChecks, c.id] : enabledChecks.filter((x) => x !== c.id) })} />
+            </label>
+          ))}
+        </CardContent>
+      </HudCard>
+      <HudCard>
+        <CardHeader><CardTitle className="text-base">{t("longVideoTitle")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{lv.online ? t("longVideoHint") : t("streamOffline")}</p></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="lv-model">{t("detector")}</Label>
+            <Select value={lv.model || "auto"} disabled={!canEdit || !lv.online || save.isPending}
+              onValueChange={(v) => save.mutate({ long_video_model: v === "auto" ? "" : v })}>
+              <SelectTrigger id="lv-model" className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">{t("automatic")}</SelectItem>
+                {lv.models.map((m) => (
+                  <SelectItem key={m.model_id} value={m.model_id} disabled={!m.available}>
+                    {m.name}{m.available ? "" : ` (${m.reason || t("unavailable")})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="lv-face">{t("faceCrop")}</Label>
+            <Select value={lv.face_crop == null ? "default" : lv.face_crop ? "on" : "off"}
+              disabled={!canEdit || faceCropFixed || save.isPending}
+              onValueChange={(v) => save.mutate({ long_video_face_crop: v === "default" ? null : v === "on" })}>
+              <SelectTrigger id="lv-face" className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">{t("faceCropDefault")}</SelectItem>
+                <SelectItem value="on">{t("faceCropOn")}</SelectItem>
+                <SelectItem value="off">{t("faceCropOff")}</SelectItem>
+              </SelectContent>
+            </Select>
+            {faceCropFixed && <p className="text-xs text-muted-foreground">{t("faceCropFixed")}</p>}
+          </div>
+        </CardContent>
+      </HudCard>
     </div>
   )
 }

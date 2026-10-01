@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.db.models import Prefetch, Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
@@ -14,7 +14,6 @@ from rest_framework.views import APIView
 
 from sml import api_schemas as schemas
 from sml.apikeys.permissions import require_scope
-from sml.catalog.registry import registry
 from sml.core.exceptions import ApiError
 from sml.core.idempotency import idempotent
 from sml.core.permissions import require
@@ -24,8 +23,7 @@ from sml.media import services as media_services
 from sml.media.models import MediaObject
 from sml.media.views import serve_object
 
-from . import explain, services
-from .live import task_log
+from . import explain, public, services
 from .models import Artifact, Job, JobTask
 from .serializers import (
     ExplanationSerializer,
@@ -54,12 +52,8 @@ def _requests_from(request: Request, data: dict) -> list[services.JobRequest]:
     if missing:
         raise ApiError(f"Unknown media: {', '.join(missing)}", extra={"media_ids": missing})
     locale = data.get("locale") or getattr(request.user, "locale", "en")
-    return [
-        services.JobRequest(media=found[str(i)], module=data["module"], models=data.get("models") or None,
-                            audit_steps=data.get("audit_steps") or [], options=data.get("options") or {},
-                            locale=locale)
-        for i in ids
-    ]
+    return [services.JobRequest(media=found[str(i)], module=data["module"], options=data.get("options") or {},
+                                locale=locale) for i in ids]
 
 
 class JobFilter(filters.FilterSet):
@@ -68,7 +62,6 @@ class JobFilter(filters.FilterSet):
     verdict = filters.MultipleChoiceFilter(choices=Job.Verdict.choices)
     media_type = filters.ChoiceFilter(choices=[("image", "image"), ("video", "video")])
     source = filters.ChoiceFilter(choices=Job.Source.choices)
-    model = filters.CharFilter(method="filter_model")
     q = filters.CharFilter(method="filter_q")
     created_after = filters.IsoDateTimeFilter(field_name="created_at", lookup_expr="gte")
     created_before = filters.IsoDateTimeFilter(field_name="created_at", lookup_expr="lt")
@@ -77,9 +70,6 @@ class JobFilter(filters.FilterSet):
     class Meta:
         model = Job
         fields: list[str] = []
-
-    def filter_model(self, qs, name, value):  # type: ignore[no-untyped-def]
-        return qs.filter(models_selected__contains=[value])
 
     def filter_q(self, qs, name, value):  # type: ignore[no-untyped-def]
         cond = Q(title__icontains=value)
@@ -144,22 +134,13 @@ class QuoteView(APIView):
         ser = JobCreateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         reqs = _requests_from(request, ser.validated_data)
-        api_key = getattr(request, "auth", None)
-        prepared = [services.prepare(request.user, r, api_key=api_key) for r in reqs]
+        prepared = [services.prepare(request.user, r) for r in reqs]
         total = sum(p.quote.credits for p in prepared)
         lines = [{"label": f"{p.request.media.original_name}: {ln.label}", "credits": ln.credits}
                  for p in prepared for ln in p.quote.lines]
-        reg = registry()
-        lang = getattr(request.user, "locale", "en")
-        model_ids = prepared[0].models if prepared else []
         balance = get_balance(request.user)
-        return Response({
-            "credits": total, "lines": lines,
-            "models": [{"id": m, "name": (reg.get(m) or reg.long_video_models.get(m)).name(lang)}
-                       for m in model_ids if reg.get(m) or reg.long_video_models.get(m)],
-            "audit_steps": prepared[0].audit_steps if prepared else [],
-            "balance": balance.balance, "affordable": balance.unlimited or balance.balance >= total,
-        })
+        return Response({"credits": total, "lines": lines, "balance": balance.balance,
+                         "affordable": balance.unlimited or balance.balance >= total})
 
 
 class DetectView(APIView):
@@ -173,8 +154,6 @@ class DetectView(APIView):
         tags=["jobs"],
         request={"multipart/form-data": {"type": "object", "required": ["file"], "properties": {
             "file": {"type": "string", "format": "binary"},
-            "models": {"type": "string", "description": "Comma-separated model ids (optional)"},
-            "audit_steps": {"type": "string", "description": "Comma-separated: face,safety,fas (optional)"},
             "module": {"type": "string", "enum": ["detect", "long_video"]},
         }}},
         responses={202: JobListSerializer},
@@ -187,11 +166,8 @@ class DetectView(APIView):
         if upload is None:
             raise ApiError("Send the file in a multipart field named 'file'.")
         media = media_services.ingest_file(upload, original_name=upload.name, owner=request.user)
-        split = lambda v: [x.strip() for x in (v or "").split(",") if x.strip()]  # noqa: E731
-        req = services.JobRequest(
-            media=media, module=request.data.get("module") or "detect", models=split(request.data.get("models")),
-            audit_steps=split(request.data.get("audit_steps")), locale=getattr(request.user, "locale", "en"),
-        )
+        req = services.JobRequest(media=media, module=request.data.get("module") or "detect",
+                                  locale=getattr(request.user, "locale", "en"))
         job = services.create_job(request.user, req, source=_source(request), api_key=getattr(request, "auth", None))
         return Response(JobListSerializer(job, context={"request": request}).data, status=status.HTTP_202_ACCEPTED)
 
@@ -239,27 +215,17 @@ class JobRerunView(APIView):
         return Response(JobListSerializer(new, context={"request": request}).data, status=status.HTTP_202_ACCEPTED)
 
 
-class TaskLogView(APIView):
-    permission_classes = [IsAuthenticated, require_scope("jobs:read")]
-
-    @extend_schema(tags=["jobs"], responses=schemas.TaskLogSerializer,
-                   summary="Live processing log for one task (what the worker is doing now)")
-    def get(self, request: Request, pk: str, task_id: str) -> Response:
-        job = get_object_or_404(user_jobs(request), pk=pk)
-        task = get_object_or_404(job.tasks, pk=task_id)
-        return Response({"task_id": str(task.pk), "status": task.status, "lines": task_log(str(task.pk))})
-
-
 class ArtifactContentView(APIView):
     permission_classes = [IsAuthenticated, require_scope("jobs:read")]
 
     @extend_schema(tags=["jobs"], responses={(200, "application/octet-stream"): OpenApiTypes.BINARY},
-                   summary="Download an artifact (XAI map, face crop, annotated video, ...)")
+                   summary="Download a heatmap, face crop or annotated video listed in the job's artifacts")
     def get(self, request: Request, pk: str, artifact_id: str) -> HttpResponse:
         job = get_object_or_404(user_jobs(request), pk=pk)
         art = get_object_or_404(Artifact, pk=artifact_id, job=job)
-        name = art.storage_key.rsplit("/", 1)[-1]
-        return serve_object(art.storage_key, content_type=art.content_type, filename=name)
+        if not public.is_downloadable(job, art):
+            raise Http404
+        return serve_object(art.storage_key, content_type=art.content_type, filename=public.artifact_filename(art))
 
 
 class ExplainView(APIView):

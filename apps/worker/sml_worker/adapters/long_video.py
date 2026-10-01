@@ -72,7 +72,7 @@ class LongVideoAdapter:
                     ctx.progress(min(95, pct), f"Interval {len(intervals)}"
                                  + (f"/{expected}" if expected else "")
                                  + f": {float(item['fake_prob'] or 0) * 100:.0f}% fake")
-                    ctx._publish("task.interval", {"job_id": ctx.job_id, "task_id": ctx.task_id, "interval": item})
+                    ctx._publish("task.interval", {"job_id": ctx.job_id, "interval": item})
                 elif ev.get("type") == "done":
                     done = ev
         except Canceled:
@@ -108,7 +108,7 @@ class SimulatedLongVideoAdapter:
                     "fake_prob": round(max(0.0, min(1.0, prob)), 4)}
             intervals.append(item)
             ctx.progress(95 * (i + 1) / n, f"Interval {i + 1}/{n}")
-            ctx._publish("task.interval", {"job_id": ctx.job_id, "task_id": ctx.task_id, "interval": item})
+            ctx._publish("task.interval", {"job_id": ctx.job_id, "interval": item})
             time.sleep(0.15)
         avg = sum(i["fake_prob"] for i in intervals) / len(intervals)
         return ModelResult(fake_prob=round(avg, 6), intervals=intervals, simulated=True)

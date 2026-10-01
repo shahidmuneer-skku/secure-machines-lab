@@ -44,6 +44,19 @@ class PlatformSettings(models.Model):
         help_text="Model variant ids used for guest trials. Empty = the default image set.",
     )
 
+    # What runs on every detection job (users never choose). Detectors per media type are set on
+    # Admin → Models (catalog.ModelOverride); the metadata/C2PA check always runs.
+    audit_steps = models.JSONField(
+        default=list, blank=True, help_text="Extra checks run on every detection job: face, safety, fas.",
+    )
+    long_video_model = models.CharField(
+        max_length=64, blank=True, default="",
+        help_text="Stream-service detector for long-form scans. Empty = the first available one.",
+    )
+    long_video_face_crop = models.BooleanField(
+        null=True, blank=True, help_text="Crop to faces before long-form scoring. Empty = the detector's default.",
+    )
+
     # Free credits
     signup_bonus_credits = models.PositiveIntegerField(default=50)
     signup_bonus_expiry_days = models.PositiveIntegerField(default=30)

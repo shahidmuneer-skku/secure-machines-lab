@@ -35,7 +35,6 @@ class ApiKey(TimeStampedModel):
     last_four = models.CharField(max_length=4)
     scopes = models.JSONField(default=list)
     allowed_ips = models.JSONField(default=list, blank=True, help_text="CIDR list; empty = any IP.")
-    allowed_models = models.JSONField(null=True, blank=True, help_text="Model ids; null = all the user may use.")
     rate_limit_per_minute = models.PositiveIntegerField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
@@ -71,9 +70,6 @@ class ApiKey(TimeStampedModel):
             return False
         addr = ipaddress.ip_address(ip)
         return any(addr in ipaddress.ip_network(cidr, strict=False) for cidr in self.allowed_ips)
-
-    def model_allowed(self, model_id: str) -> bool:
-        return self.allowed_models is None or model_id in self.allowed_models
 
 
 class ApiKeyUsageDaily(models.Model):

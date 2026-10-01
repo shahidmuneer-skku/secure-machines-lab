@@ -12,21 +12,22 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import type { JobDetail, TaskView } from "@/lib/api/types"
+import type { JobArtifact, JobDetail, TimelinePoint } from "@/lib/api/types"
 
-type Artifact = JobDetail["artifacts"][number]
-
-export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] }) {
+export function MediaViewer({ job }: { job: JobDetail }) {
   const t = useTranslations("job")
-  const xai = job.artifacts.filter((a: Artifact) => (a.kind === "xai" || a.kind === "face") && a.content_type.startsWith("image/"))
+  const xai = job.artifacts
+    .filter((a: JobArtifact) => (a.kind === "heatmap" || a.kind === "face") && a.content_type.startsWith("image/"))
+    .sort((a: JobArtifact, b: JobArtifact) => Number(a.kind === "face") - Number(b.kind === "face"))
   const [overlay, setOverlay] = useState<string>("none")
   const [opacity, setOpacity] = useState(60)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const current = xai.find((a: Artifact) => a.id === overlay)
+  const current = xai.find((a: JobArtifact) => a.id === overlay)
   const mediaUrl = job.media?.content_url
-  // Streamed long-form scans keep no video, only a preview frame.
-  const streamPreview = job.artifacts.find((a: Artifact) => (a.meta as { preview?: boolean } | null)?.preview)
-  const taskName = (id: string | null | undefined) => tasks.find((x) => x.id === id)?.name ?? ""
+  // Streamed long-form scans keep no video, only a preview frame (served as the thumbnail).
+  const streamPreview = job.options?.stream ? job.thumbnail_url : null
+  // Unlabelled evidence: "Heatmap 1, 2, …" (users are not told which detector produced which map).
+  const label = (a: JobArtifact) => t(`media.artifact.${a.kind}`, { n: xai.filter((x) => x.kind === a.kind).indexOf(a) + 1 })
 
   return (
     <HudCard>
@@ -40,7 +41,7 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
         {!mediaUrl && streamPreview ? (
           <figure className="space-y-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={streamPreview.url} alt={t("media.streamPreview")}
+            <img src={streamPreview} alt={t("media.streamPreview")}
               className="mx-auto max-h-[360px] w-auto rounded-lg border object-contain" />
             <figcaption className="text-center text-xs text-muted-foreground">{t("media.streamNotStored")}</figcaption>
           </figure>
@@ -54,7 +55,7 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
             <img src={mediaUrl} alt={t("media.original")} className="mx-auto max-h-[520px] w-auto object-contain" />
             {current && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={current.url} alt={t("media.overlayAlt", { label: current.label })}
+              <img src={current.url} alt={t("media.overlayAlt", { label: label(current) })}
                 className="absolute inset-0 mx-auto h-full max-h-[520px] w-auto object-contain mix-blend-normal"
                 style={{ opacity: opacity / 100 }} />
             )}
@@ -70,8 +71,8 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
               <ToggleGroup type="single" value={overlay} onValueChange={(v) => setOverlay(v || "none")} variant="outline"
                 size="sm" className="flex-wrap justify-start">
                 <ToggleGroupItem value="none">{t("media.original")}</ToggleGroupItem>
-                {xai.map((a: Artifact) => (
-                  <ToggleGroupItem key={a.id} value={a.id}>{taskName(a.task)} · {a.label}</ToggleGroupItem>
+                {xai.map((a: JobArtifact) => (
+                  <ToggleGroupItem key={a.id} value={a.id}>{label(a)}</ToggleGroupItem>
                 ))}
               </ToggleGroup>
             </div>
@@ -85,14 +86,14 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
             )}
           </div>
         )}
-        {job.media_type === "video" && <VideoTimeline job={job} tasks={tasks} videoRef={videoRef} />}
+        {job.media_type === "video" && <VideoTimeline job={job} videoRef={videoRef} />}
         {xai.length > 0 && job.media_type === "video" && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {xai.slice(0, 6).map((a: Artifact) => (
+            {xai.slice(0, 6).map((a: JobArtifact) => (
               <figure key={a.id} className="space-y-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={a.url} alt={a.label} className="aspect-square w-full rounded-md border object-cover" loading="lazy" />
-                <figcaption className="truncate text-xs text-muted-foreground">{taskName(a.task)} · {a.label}</figcaption>
+                <img src={a.url} alt={label(a)} className="aspect-square w-full rounded-md border object-cover" loading="lazy" />
+                <figcaption className="truncate text-xs text-muted-foreground">{label(a)}</figcaption>
               </figure>
             ))}
           </div>
@@ -102,28 +103,15 @@ export function MediaViewer({ job, tasks }: { job: JobDetail; tasks: TaskView[] 
   )
 }
 
-/** Per-frame / per-interval fake probability across models; click to seek. */
-function VideoTimeline({ job, tasks, videoRef }: { job: JobDetail; tasks: TaskView[];
-  videoRef: React.RefObject<HTMLVideoElement | null> }) {
+/** Combined fake probability over time (live intervals while a scan runs); click to seek. */
+function VideoTimeline({ job, videoRef }: { job: JobDetail; videoRef: React.RefObject<HTMLVideoElement | null> }) {
   const t = useTranslations("job")
-  const { data: liveIntervals } = useQuery<{ index: number; start_sec: number; end_sec: number; fake_prob: number }[]>({
+  const { data: liveIntervals } = useQuery<TimelinePoint[]>({
     queryKey: ["jobs", "intervals", job.id], queryFn: () => [], enabled: false, staleTime: Infinity })
   const series = useMemo(() => {
-    const longTask = tasks.find((x) => x.kind === "long_video")
-    const intervals = longTask?.result?.intervals?.length ? longTask.result.intervals : liveIntervals ?? []
-    if (intervals.length) {
-      return intervals.map((i) => ({ x: i.start_sec, fake: Math.round((i.fake_prob ?? 0) * 1000) / 10 }))
-    }
-    const primary = tasks.find((x) => x.kind === "model" && (x.result?.per_frame?.length ?? 0) > 0)
-    const duration = job.media?.duration_seconds ?? 0
-    const frames = primary?.result?.per_frame ?? []
-    const fps = job.media?.fps || 25
-    return frames.map((f, idx) => {
-      const n = Number(f.frame)
-      const x = Number.isFinite(n) ? n / fps : (duration * idx) / Math.max(1, frames.length)
-      return { x: Math.round(x * 10) / 10, fake: Math.round(f.fake_prob * 1000) / 10 }
-    })
-  }, [tasks, liveIntervals, job.media])
+    const points = job.timeline.length ? job.timeline : liveIntervals ?? []
+    return points.map((i) => ({ x: i.start_sec, fake: Math.round((i.fake_prob ?? 0) * 1000) / 10 }))
+  }, [job.timeline, liveIntervals])
   const config = { fake: { label: t("media.fakePct"), color: "var(--viz-fake)" } } satisfies ChartConfig
   if (!series.length) return null
   return (

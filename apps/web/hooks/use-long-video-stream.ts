@@ -16,13 +16,12 @@ export interface StreamInterval {
   fake_probability: number
 }
 
+/** What the user chooses; the detector (and face cropping) is the administrator's setting. */
 export interface StreamSettings {
-  modelId: string
   startSec: number
   endSec: number | null
   intervalSec: number
   wholeVideo: boolean
-  faceCrop: boolean | null
   locale: string
 }
 
@@ -89,9 +88,9 @@ export function useLongVideoStream() {
     try {
       session = data(await api.POST("/api/v1/long-video/sessions", {
         body: {
-          model_id: settings.modelId, file_name: file.name, file_size: file.size, duration_seconds: durationSec,
+          file_name: file.name, file_size: file.size, duration_seconds: durationSec,
           start_seconds: settings.startSec, end_seconds: settings.endSec, interval_seconds: settings.intervalSec,
-          whole_video: settings.wholeVideo, face_crop: settings.faceCrop, locale: settings.locale as "en",
+          whole_video: settings.wholeVideo, locale: settings.locale as "en",
         },
       }))
     } catch (e) {

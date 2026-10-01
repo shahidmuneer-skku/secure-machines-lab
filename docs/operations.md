@@ -124,6 +124,30 @@ so a restore can reference files that no longer exist; affected jobs show as pur
 
 ## Runbooks
 
+**Choosing what runs.** Admin → Models: per detector, *Images* and *Videos* switch whether it runs
+on every job of that type (the cards above the table show how many run; a type with none is
+refused with a generic message). The cards below choose the extra checks every job runs (face
+detection, content safety, anti-spoofing; metadata / C2PA always runs) and the long-form detector
+and face cropping. Users never see detector names, counts or logs (ADR 0011); per-task results,
+logs and errors are in Admin → Jobs → the job.
+
+**AI-generation markers.** A definite marker in the file's metadata (C2PA / IPTC declaration,
+embedded Stable Diffusion / ComfyUI parameters, a generator in the Software tag) labels the file
+"Likely AI-generated" whatever the detectors say; a weak hint (a generator merely mentioned in the
+metadata) does so only when the detectors judged the file fake. Invisible pixel watermarks are not
+decoded.
+
+**Anti-spoofing check fails with CONFIG_ERROR.** The `CVPR24-FAS` code and weights are not on this
+server (`run_fas_analysis.py` looks in `fakedetector/fakedetector/CVPR24-FAS`). Leave the check off
+in Admin → Models until they are copied there.
+
+**Video detectors fail right after starting.** Usually the environment: a conda env copied from
+another machine (`SSL: CERTIFICATE_VERIFY_FAILED`; the worker sets `SSL_CERT_FILE` to the env's
+own bundle), dlib missing `libopenblas.so.0` / `libcublas.so.12` (add the env to `conda_envs` in
+`config/models.yaml` with `LD_LIBRARY_PATH: "{env_prefix}/lib"`), or weights a script downloads at
+first use (`auxillary/*.pth`, `insightface/models/antelopev2/models/buffalo_l/*.onnx` in the models
+root). The task's `error_detail` in Admin → Jobs shows the last stderr lines.
+
 **Jobs wait in the queue for a long time.** Admin → Queues: if a model queue has messages but
 0 consumers, check `systemctl status sml-worker@<gpu>` and `nvidia-smi`. Running tasks whose
 worker stopped sending heartbeats fail after the model's timeout plus five minutes and are

@@ -13,13 +13,11 @@ class ApiKeySerializer(serializers.ModelSerializer):
     status = serializers.CharField(read_only=True)
     scopes = serializers.ListField(child=serializers.ChoiceField(choices=Scope.choices), allow_empty=False)
     allowed_ips = serializers.ListField(child=serializers.CharField(max_length=64), required=False)
-    allowed_models = serializers.ListField(child=serializers.CharField(max_length=64), required=False,
-                                           allow_null=True)
     rate_limit_per_minute = serializers.IntegerField(min_value=1, max_value=6000, required=False, allow_null=True)
 
     class Meta:
         model = ApiKey
-        fields = ["id", "name", "display_key", "status", "scopes", "allowed_ips", "allowed_models",
+        fields = ["id", "name", "display_key", "status", "scopes", "allowed_ips",
                   "rate_limit_per_minute", "expires_at", "created_at", "last_used_at", "last_used_ip",
                   "revoked_at"]
         read_only_fields = ["id", "display_key", "status", "created_at", "last_used_at", "last_used_ip",
@@ -38,16 +36,6 @@ class ApiKeySerializer(serializers.ModelSerializer):
         if value is not None and value <= timezone.now():
             raise serializers.ValidationError("Expiry must be in the future.")
         return value
-
-    def validate_allowed_models(self, value):  # type: ignore[no-untyped-def]
-        if value is None:
-            return None
-        from sml.catalog.registry import registry
-
-        unknown = [m for m in value if registry().get(m) is None]
-        if unknown:
-            raise serializers.ValidationError(f"Unknown models: {', '.join(unknown)}")
-        return sorted(set(value))
 
 
 class ApiKeyCreatedSerializer(ApiKeySerializer):

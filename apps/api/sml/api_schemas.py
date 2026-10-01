@@ -13,7 +13,7 @@ from sml.accounts.serializers import MeSerializer
 from sml.apikeys.serializers import ApiKeyUsageDailySerializer, ApiRequestLogSerializer
 from sml.billing.models import Provider
 from sml.billing.serializers import CreditPackSerializer, PlanSerializer
-from sml.jobs.serializers import JobDetailSerializer, JobListSerializer
+from sml.jobs.serializers import AdminJobDetailSerializer, JobDetailSerializer, JobListSerializer
 
 # --- accounts ------------------------------------------------------------------------
 
@@ -62,41 +62,6 @@ class IdLabelSerializer(serializers.Serializer):
 
 
 # --- catalog ---------------------------------------------------------------------------
-
-class ModelInfoSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    description = serializers.CharField(allow_blank=True)
-    family = serializers.ChoiceField(choices=["deepfake", "ai_generated", "general"])
-    media = serializers.ListField(child=serializers.ChoiceField(choices=["image", "video"]))
-    face_required = serializers.BooleanField()
-    xai = serializers.CharField()
-    default_selected = serializers.BooleanField()
-    variant_of = serializers.CharField(allow_null=True)
-    enabled = serializers.BooleanField()
-    allowed = serializers.BooleanField(required=False)
-
-
-class LongVideoModelInfoSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    description = serializers.CharField(allow_blank=True)
-    default_selected = serializers.BooleanField()
-
-
-class AuditStepInfoSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    description = serializers.CharField(allow_blank=True)
-    always_on = serializers.BooleanField()
-    allowed = serializers.BooleanField()
-
-
-class ModelCatalogSerializer(serializers.Serializer):
-    models = ModelInfoSerializer(many=True)
-    long_video_models = LongVideoModelInfoSerializer(many=True)
-    audit_steps = AuditStepInfoSerializer(many=True)
-
 
 class ModuleInfoSerializer(serializers.Serializer):
     id = serializers.ChoiceField(choices=AccessPolicy.MODULES)
@@ -222,10 +187,9 @@ class JobsByDaySerializer(serializers.Serializer):
     other = serializers.IntegerField()
 
 
-class UsageByModelSerializer(serializers.Serializer):
-    target = serializers.CharField()
-    runs = serializers.IntegerField()
-    ok = serializers.IntegerField()
+class UsageByTypeSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["image", "video", "long_video", "news"])
+    jobs = serializers.IntegerField()
 
 
 class CreditsByDaySerializer(serializers.Serializer):
@@ -248,7 +212,7 @@ class ApiUsageTotalsSerializer(serializers.Serializer):
 class DashboardSummarySerializer(serializers.Serializer):
     kpis = DashboardKpisSerializer()
     jobs_by_day = JobsByDaySerializer(many=True)
-    usage_by_model = UsageByModelSerializer(many=True)
+    usage_by_type = UsageByTypeSerializer(many=True)
     credits_by_day = CreditsByDaySerializer(many=True)
     queue_wait_by_day = QueueWaitSerializer(many=True)
     api_usage = ApiUsageTotalsSerializer()
@@ -398,7 +362,8 @@ class AdminModelSerializer(serializers.Serializer):
     media = serializers.ListField(child=serializers.CharField())
     enabled = serializers.BooleanField()
     weight = serializers.FloatField()
-    default_selected = serializers.BooleanField()
+    run_on = serializers.ListField(child=serializers.ChoiceField(choices=["image", "video"]),
+                                   help_text="Media types this detector runs on in every job.")
     trial = serializers.BooleanField()
     gpu_mem_mb = serializers.IntegerField()
     queue = serializers.CharField()
@@ -439,12 +404,12 @@ class AdminApiUsageSerializer(serializers.Serializer):
     active_keys = serializers.IntegerField()
 
 
-class AdminJobDetailSerializer(JobDetailSerializer):
+class AdminJobViewSerializer(AdminJobDetailSerializer):
     user_email = serializers.EmailField(allow_null=True)
     tasks_internal = serializers.ListField(child=serializers.DictField())
 
-    class Meta(JobDetailSerializer.Meta):
-        fields = [*JobDetailSerializer.Meta.fields, "user_email", "tasks_internal"]
+    class Meta(AdminJobDetailSerializer.Meta):
+        fields = [*AdminJobDetailSerializer.Meta.fields, "user_email", "tasks_internal"]
 
 
 class CreditAdjustResultSerializer(serializers.Serializer):
@@ -456,3 +421,37 @@ class CreditAdjustResultSerializer(serializers.Serializer):
 class CountSerializer(serializers.Serializer):
     removed = serializers.IntegerField(required=False)
     revoked = serializers.IntegerField(required=False)
+
+
+class SetupCheckSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    always = serializers.BooleanField(help_text="Runs on every job and cannot be turned off (metadata / C2PA).")
+    enabled = serializers.BooleanField()
+
+
+class SetupStreamModelSerializer(serializers.Serializer):
+    model_id = serializers.CharField()
+    name = serializers.CharField()
+    available = serializers.BooleanField()
+    reason = serializers.CharField(allow_blank=True)
+    face_crop = serializers.ChoiceField(choices=["always", "optional", "none"])
+
+
+class SetupLongVideoSerializer(serializers.Serializer):
+    online = serializers.BooleanField()
+    model = serializers.CharField(allow_blank=True, help_text="Empty = the first available detector.")
+    face_crop = serializers.BooleanField(allow_null=True, help_text="Empty = the detector's default.")
+    models = SetupStreamModelSerializer(many=True)
+
+
+class DetectionSetupSerializer(serializers.Serializer):
+    checks = SetupCheckSerializer(many=True)
+    long_video = SetupLongVideoSerializer()
+
+
+class DetectionSetupUpdateSerializer(serializers.Serializer):
+    audit_steps = serializers.ListField(child=serializers.CharField(max_length=32), required=False)
+    long_video_model = serializers.CharField(max_length=64, allow_blank=True, required=False)
+    long_video_face_crop = serializers.BooleanField(allow_null=True, required=False)

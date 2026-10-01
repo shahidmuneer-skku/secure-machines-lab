@@ -69,6 +69,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jobs/{id}/tasks/{task_id}/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live processing log of one task (detector output, GPU admission) */
+        get: operations["admin_jobs_tasks_log_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/models": {
         parameters: {
             query?: never;
@@ -84,6 +101,27 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["admin_models_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/models/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Extra checks run on every job and the long-form video detector
+         * @description What every job runs besides the per-media detectors: extra checks and the long-form detector.
+         */
+        get: operations["admin_models_setup_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description What every job runs besides the per-media detectors: extra checks and the long-form detector. */
+        patch: operations["admin_models_setup_partial_update"];
         trace?: never;
     };
     "/api/v1/admin/overview": {
@@ -753,23 +791,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalog/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Detection models available to the caller */
-        get: operations["catalog_models_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/catalog/modules": {
         parameters: {
             query?: never;
@@ -779,26 +800,6 @@ export interface paths {
         };
         /** Modules (detect / long-form video / news) and whether you can use them */
         get: operations["catalog_modules_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/catalog/public-models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Public model catalog
-         * @description Public model list for marketing/docs pages.
-         */
-        get: operations["catalog_public_models_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -975,7 +976,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download an artifact (XAI map, face crop, annotated video, ...) */
+        /** Download a heatmap, face crop or annotated video listed in the job's artifacts */
         get: operations["jobs_artifacts_content_retrieve"];
         put?: never;
         post?: never;
@@ -1054,23 +1055,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/jobs/{id}/tasks/{task_id}/log": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Live processing log for one task (what the worker is doing now) */
-        get: operations["jobs_tasks_log_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/jobs/quote": {
         parameters: {
             query?: never;
@@ -1088,15 +1072,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/long-video/models": {
+    "/api/v1/long-video/config": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Detectors available for long-form streaming, with the price per minute */
-        get: operations["long_video_models_retrieve"];
+        /** Whether long-form scans are available, the price per minute and the size limits */
+        get: operations["long_video_config_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1484,7 +1468,53 @@ export interface components {
             keys: components["schemas"]["ApiUsageRow"][];
             active_keys: number;
         };
-        AdminJobDetail: {
+        AdminArtifact: {
+            /** Format: uuid */
+            readonly id: string;
+            kind: components["schemas"]["ArtifactKindEnum"];
+            label: string;
+            content_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            meta: unknown;
+            /** Format: uuid */
+            task: string | null;
+            readonly url: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        AdminExplanation: {
+            /** Format: uuid */
+            readonly id: string;
+            status: components["schemas"]["ExplanationStatusEnum"];
+            engine: string;
+            model_name: string;
+            locale: string;
+            content: string;
+            progress_log: unknown;
+            credits_charged: number;
+            error_message: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        AdminJobEvent: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            level: components["schemas"]["LevelEnum"];
+            code: string;
+            message: string;
+            public_message: string;
+            /** Format: uuid */
+            task: string | null;
+            data: unknown;
+        };
+        /** @description Operator view: detectors, checks and raw results. Admin endpoints only. */
+        AdminJobList: {
             /** Format: uuid */
             readonly id: string;
             /** Format: date-time */
@@ -1503,6 +1533,78 @@ export interface components {
             audit_steps: unknown;
             verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
             verdict_label: string;
+            readonly ai_generated: boolean;
+            /** Format: double */
+            fake_probability: number | null;
+            /** @description Some models failed but a verdict was produced. */
+            partial: boolean;
+            credits_quoted: number;
+            credits_charged: number;
+            readonly queue: components["schemas"]["QueueInfo"] | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            /** Format: date-time */
+            expires_at: string | null;
+            /** Format: uuid */
+            readonly batch_id: string | null;
+            run_number: number;
+            error_code: string;
+            error_message: string;
+        };
+        AdminJobTask: {
+            /** Format: uuid */
+            readonly id: string;
+            kind: components["schemas"]["TaskKindEnum"];
+            /** @description Model id or audit step id. */
+            target: string;
+            readonly name: string;
+            status: components["schemas"]["TaskStatusEnum"];
+            status_label: string;
+            attempt: number;
+            /** Format: double */
+            progress: number;
+            stage_message: string;
+            /** Format: date-time */
+            dispatched_at: string | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            duration_ms: number | null;
+            gpu: string;
+            error_code: string;
+            error_message: string;
+            /** Format: uuid */
+            fallback_for: string | null;
+            readonly live: components["schemas"]["LiveProgress"] | null;
+            readonly queue_info: components["schemas"]["QueueInfo"] | null;
+            readonly result: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Operator view: detectors, checks and raw results. Admin endpoints only. */
+        AdminJobView: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            kind: components["schemas"]["JobKindEnum"];
+            source: components["schemas"]["JobSourceEnum"];
+            status: components["schemas"]["JobStatusEnum"];
+            stage: string;
+            /** Format: double */
+            progress: number;
+            /** @description File name or case title. */
+            title: string;
+            media_type: string;
+            readonly thumbnail_url: string;
+            readonly models: components["schemas"]["ModelRef"][];
+            audit_steps: unknown;
+            verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
+            verdict_label: string;
+            readonly ai_generated: boolean;
             /** Format: double */
             fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
@@ -1527,10 +1629,10 @@ export interface components {
             summary: unknown;
             verdict_reasons: unknown;
             quote_lines: unknown;
-            readonly tasks: components["schemas"]["JobTask"][];
-            readonly events: components["schemas"]["JobEvent"][];
-            readonly artifacts: components["schemas"]["Artifact"][];
-            readonly explanations: components["schemas"]["Explanation"][];
+            readonly tasks: components["schemas"]["AdminJobTask"][];
+            readonly events: components["schemas"]["AdminJobEvent"][];
+            readonly artifacts: components["schemas"]["AdminArtifact"][];
+            readonly explanations: components["schemas"]["AdminExplanation"][];
             readonly reports: components["schemas"]["Report"][];
             /** Format: uuid */
             parent: string | null;
@@ -1551,7 +1653,8 @@ export interface components {
             enabled: boolean;
             /** Format: double */
             weight: number;
-            default_selected: boolean;
+            /** @description Media types this detector runs on in every job. */
+            run_on: components["schemas"]["RunOnEnum"][];
             trial: boolean;
             gpu_mem_mb: number;
             queue: string;
@@ -1645,7 +1748,6 @@ export interface components {
             readonly status: string;
             scopes: components["schemas"]["ScopesEnum"][];
             allowed_ips: string[];
-            allowed_models: string[] | null;
             rate_limit_per_minute: number | null;
             /** Format: date-time */
             expires_at: string | null;
@@ -1665,7 +1767,6 @@ export interface components {
             readonly status: string;
             scopes: components["schemas"]["ScopesEnum"][];
             allowed_ips: string[];
-            allowed_models: string[] | null;
             rate_limit_per_minute: number | null;
             /** Format: date-time */
             expires_at: string | null;
@@ -1683,7 +1784,6 @@ export interface components {
             name: string;
             scopes: components["schemas"]["ScopesEnum"][];
             allowed_ips?: string[];
-            allowed_models?: string[] | null;
             rate_limit_per_minute?: number | null;
             /** Format: date-time */
             expires_at?: string | null;
@@ -1736,18 +1836,14 @@ export interface components {
         };
         Artifact: {
             /** Format: uuid */
-            readonly id: string;
-            kind: components["schemas"]["ArtifactKindEnum"];
-            label: string;
+            id: string;
+            kind: components["schemas"]["EvidenceKindEnum"];
+            label: components["schemas"]["EvidenceKindEnum"];
             content_type: string;
-            /** Format: int64 */
             size_bytes: number;
-            meta: unknown;
-            /** Format: uuid */
-            task: string | null;
-            readonly url: string;
+            url: string;
             /** Format: date-time */
-            readonly created_at: string;
+            created_at: string;
         };
         /**
          * @description * `xai` - Explainability map
@@ -1777,20 +1873,6 @@ export interface components {
             user_agent: string;
             request_id: string;
         };
-        AuditStepInfo: {
-            id: string;
-            name: string;
-            description: string;
-            always_on: boolean;
-            allowed: boolean;
-        };
-        /**
-         * @description * `face` - face
-         *     * `safety` - safety
-         *     * `fas` - fas
-         * @enum {string}
-         */
-        AuditStepsEnum: "face" | "safety" | "fas";
         Balance: {
             balance: number;
             /** @description Credits reserved by jobs still running. */
@@ -1825,6 +1907,21 @@ export interface components {
             media_type: string;
             thumbnail_url: string | null;
         };
+        Check: {
+            id: components["schemas"]["CheckIdEnum"];
+            status: string;
+            /** @description faces_found, sensitive_content or spoof_detected */
+            result: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * @description * `face` - face
+         *     * `safety` - safety
+         *     * `fas` - fas
+         * @enum {string}
+         */
+        CheckIdEnum: "face" | "safety" | "fas";
         CheckoutRequest: {
             product: components["schemas"]["ProductEnum"];
             /** Format: uuid */
@@ -1941,7 +2038,7 @@ export interface components {
         DashboardSummary: {
             kpis: components["schemas"]["DashboardKpis"];
             jobs_by_day: components["schemas"]["JobsByDay"][];
-            usage_by_model: components["schemas"]["UsageByModel"][];
+            usage_by_type: components["schemas"]["UsageByType"][];
             credits_by_day: components["schemas"]["CreditsByDay"][];
             queue_wait_by_day: components["schemas"]["QueueWait"][];
             api_usage: components["schemas"]["ApiUsageTotals"];
@@ -1952,15 +2049,28 @@ export interface components {
             /** @description Type "DELETE" to confirm. */
             confirm: string;
         };
+        DetectionSetup: {
+            checks: components["schemas"]["SetupCheck"][];
+            long_video: components["schemas"]["SetupLongVideo"];
+        };
+        Evidence: {
+            source: string;
+            detail: string;
+            strength: string;
+        };
+        /**
+         * @description * `heatmap` - heatmap
+         *     * `face` - face
+         *     * `video` - video
+         * @enum {string}
+         */
+        EvidenceKindEnum: "heatmap" | "face" | "video";
         Explanation: {
             /** Format: uuid */
             readonly id: string;
             status: components["schemas"]["ExplanationStatusEnum"];
-            engine: string;
-            model_name: string;
             locale: string;
             content: string;
-            progress_log: unknown;
             credits_charged: number;
             error_message: string;
             /** Format: date-time */
@@ -1978,17 +2088,13 @@ export interface components {
          * @enum {string}
          */
         ExplanationStatusEnum: "queued" | "running" | "succeeded" | "failed";
-        FaceCrop: {
-            support: components["schemas"]["SupportEnum"];
-            default: boolean;
-        };
         /**
-         * @description * `deepfake` - deepfake
-         *     * `ai_generated` - ai_generated
-         *     * `general` - general
+         * @description * `always` - always
+         *     * `optional` - optional
+         *     * `none` - none
          * @enum {string}
          */
-        FamilyEnum: "deepfake" | "ai_generated" | "general";
+        FaceCropEnum: "always" | "optional" | "none";
         FreeAllowance: {
             guest_trial_images_per_day: number;
             signup_bonus_credits: number;
@@ -2003,22 +2109,20 @@ export interface components {
             temp_c: number;
         };
         HealthCheck: {
-            status: components["schemas"]["StatusA3dEnum"];
+            status: components["schemas"]["ServiceStatusEnum"];
             latency_ms: number;
         };
         IdLabel: {
             id: string;
             label: string;
         };
+        /** @description Detectors and checks are chosen by the administrator, not by the caller. */
         JobCreateRequest: {
             /** Format: uuid */
             media_id?: string;
             media_ids?: string[];
             /** @default detect */
             module: components["schemas"]["ModuleEnum"];
-            /** @description Model ids from GET /catalog/models. Empty = default selection. */
-            models?: string[];
-            audit_steps?: components["schemas"]["AuditStepsEnum"][];
             locale?: components["schemas"]["LocaleEnum"];
             batch_name?: string;
             options?: {
@@ -2043,17 +2147,17 @@ export interface components {
             title: string;
             media_type: string;
             readonly thumbnail_url: string;
-            readonly models: components["schemas"]["ModelRef"][];
-            audit_steps: unknown;
             verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
-            verdict_label: string;
+            readonly verdict_label: string;
+            /** @description True when AI-generation markers in the file's metadata flag it as likely AI-generated. */
+            readonly ai_generated: boolean;
             /** Format: double */
             fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
             partial: boolean;
             credits_quoted: number;
             credits_charged: number;
-            readonly queue: components["schemas"]["QueueInfo"] | null;
+            readonly queue: components["schemas"]["PublicQueue"] | null;
             /** Format: date-time */
             started_at: string | null;
             /** Format: date-time */
@@ -2066,12 +2170,20 @@ export interface components {
             error_code: string;
             error_message: string;
             readonly media: components["schemas"]["MediaSummary"];
-            options: unknown;
+            readonly options: {
+                [key: string]: unknown;
+            };
             locale: string;
-            summary: unknown;
-            verdict_reasons: unknown;
+            readonly verdict_reasons: {
+                [key: string]: unknown;
+            }[];
             quote_lines: unknown;
-            readonly tasks: components["schemas"]["JobTask"][];
+            readonly steps: components["schemas"]["JobStep"][];
+            readonly provenance: components["schemas"]["Provenance"] | null;
+            readonly checks: components["schemas"]["Check"][];
+            readonly timeline: components["schemas"]["TimelinePoint"][];
+            readonly long_video: components["schemas"]["LongVideoSummary"] | null;
+            readonly news: components["schemas"]["NewsReport"] | null;
             readonly events: components["schemas"]["JobEvent"][];
             readonly artifacts: components["schemas"]["Artifact"][];
             readonly explanations: components["schemas"]["Explanation"][];
@@ -2083,15 +2195,15 @@ export interface components {
             purged_at: string | null;
         };
         JobEvent: {
-            readonly id: number;
+            id: number;
             /** Format: date-time */
-            readonly created_at: string;
-            level: components["schemas"]["LevelEnum"];
+            created_at: string;
+            level: string;
             code: string;
             message: string;
-            /** Format: uuid */
-            task: string | null;
-            data: unknown;
+            data: {
+                [key: string]: unknown;
+            };
         };
         /**
          * @description * `detect` - Detection
@@ -2115,17 +2227,17 @@ export interface components {
             title: string;
             media_type: string;
             readonly thumbnail_url: string;
-            readonly models: components["schemas"]["ModelRef"][];
-            audit_steps: unknown;
             verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
-            verdict_label: string;
+            readonly verdict_label: string;
+            /** @description True when AI-generation markers in the file's metadata flag it as likely AI-generated. */
+            readonly ai_generated: boolean;
             /** Format: double */
             fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
             partial: boolean;
             credits_quoted: number;
             credits_charged: number;
-            readonly queue: components["schemas"]["QueueInfo"] | null;
+            readonly queue: components["schemas"]["PublicQueue"] | null;
             /** Format: date-time */
             started_at: string | null;
             /** Format: date-time */
@@ -2155,37 +2267,21 @@ export interface components {
          * @enum {string}
          */
         JobStatusEnum: "queued" | "running" | "succeeded" | "failed" | "canceled" | "expired";
-        JobTask: {
-            /** Format: uuid */
-            readonly id: string;
-            kind: components["schemas"]["TaskKindEnum"];
-            /** @description Model id or audit step id. */
-            target: string;
-            readonly name: string;
-            status: components["schemas"]["TaskStatusEnum"];
-            status_label: string;
-            attempt: number;
+        JobStep: {
+            id: components["schemas"]["JobStepEnum"];
+            status: string;
             /** Format: double */
             progress: number;
-            stage_message: string;
-            /** Format: date-time */
-            dispatched_at: string | null;
-            /** Format: date-time */
-            started_at: string | null;
-            /** Format: date-time */
-            finished_at: string | null;
-            duration_ms: number | null;
-            gpu: string;
-            error_code: string;
-            error_message: string;
-            /** Format: uuid */
-            fallback_for: string | null;
-            readonly live: components["schemas"]["LiveProgress"] | null;
-            readonly queue_info: components["schemas"]["QueueInfo"] | null;
-            readonly result: {
-                [key: string]: unknown;
-            };
         };
+        /**
+         * @description * `queued` - queued
+         *     * `checks` - checks
+         *     * `analysis` - analysis
+         *     * `verification` - verification
+         *     * `results` - results
+         * @enum {string}
+         */
+        JobStepEnum: "queued" | "checks" | "analysis" | "verification" | "results";
         JobsByDay: {
             /** Format: date */
             date: string;
@@ -2249,11 +2345,15 @@ export interface components {
          * @enum {string}
          */
         LocaleEnum: "en" | "ko" | "de";
-        LongVideoModelInfo: {
-            id: string;
-            name: string;
-            description: string;
-            default_selected: boolean;
+        LongVideoSummary: {
+            status: string;
+            /** Format: double */
+            analysed_seconds: number | null;
+            /** Format: double */
+            range_seconds: number | null;
+            /** Format: double */
+            duration_seconds: number | null;
+            range: (number | null)[] | null;
         };
         Me: {
             /** Format: uuid */
@@ -2315,12 +2415,6 @@ export interface components {
             readonly created_at: string;
         };
         /**
-         * @description * `image` - image
-         *     * `video` - video
-         * @enum {string}
-         */
-        MediaEnum: "image" | "video";
-        /**
          * @description * `uploading` - Uploading
          *     * `ready` - Ready
          *     * `rejected` - Rejected
@@ -2357,24 +2451,6 @@ export interface components {
          * @enum {string}
          */
         MediaTypeEnum: "image" | "video";
-        ModelCatalog: {
-            models: components["schemas"]["ModelInfo"][];
-            long_video_models: components["schemas"]["LongVideoModelInfo"][];
-            audit_steps: components["schemas"]["AuditStepInfo"][];
-        };
-        ModelInfo: {
-            id: string;
-            name: string;
-            description: string;
-            family: components["schemas"]["FamilyEnum"];
-            media: components["schemas"]["MediaEnum"][];
-            face_required: boolean;
-            xai: string;
-            default_selected: boolean;
-            variant_of: string | null;
-            enabled: boolean;
-            allowed?: boolean;
-        };
         ModelRef: {
             id: string;
             name: string;
@@ -2428,17 +2504,17 @@ export interface components {
             title: string;
             media_type: string;
             readonly thumbnail_url: string;
-            readonly models: components["schemas"]["ModelRef"][];
-            audit_steps: unknown;
             verdict: components["schemas"]["VerdictEnum"] | components["schemas"]["BlankEnum"];
-            verdict_label: string;
+            readonly verdict_label: string;
+            /** @description True when AI-generation markers in the file's metadata flag it as likely AI-generated. */
+            readonly ai_generated: boolean;
             /** Format: double */
             fake_probability: number | null;
             /** @description Some models failed but a verdict was produced. */
             partial: boolean;
             credits_quoted: number;
             credits_charged: number;
-            readonly queue: components["schemas"]["QueueInfo"] | null;
+            readonly queue: components["schemas"]["PublicQueue"] | null;
             /** Format: date-time */
             started_at: string | null;
             /** Format: date-time */
@@ -2451,12 +2527,20 @@ export interface components {
             error_code: string;
             error_message: string;
             readonly media: components["schemas"]["MediaSummary"];
-            options: unknown;
+            readonly options: {
+                [key: string]: unknown;
+            };
             locale: string;
-            summary: unknown;
-            verdict_reasons: unknown;
+            readonly verdict_reasons: {
+                [key: string]: unknown;
+            }[];
             quote_lines: unknown;
-            readonly tasks: components["schemas"]["JobTask"][];
+            readonly steps: components["schemas"]["JobStep"][];
+            readonly provenance: components["schemas"]["Provenance"] | null;
+            readonly checks: components["schemas"]["Check"][];
+            readonly timeline: components["schemas"]["TimelinePoint"][];
+            readonly long_video: components["schemas"]["LongVideoSummary"] | null;
+            readonly news: components["schemas"]["NewsReport"] | null;
             readonly events: components["schemas"]["JobEvent"][];
             readonly artifacts: components["schemas"]["Artifact"][];
             readonly explanations: components["schemas"]["Explanation"][];
@@ -2487,8 +2571,30 @@ export interface components {
          * @enum {string}
          */
         NewsEngineEnum: "openclaude" | "claude";
+        NewsReport: {
+            status: string | null;
+            /** Format: double */
+            confidence: number | null;
+            report_markdown: string;
+            meta: {
+                [key: string]: unknown;
+            };
+        };
         Ok: {
             ok: boolean;
+        };
+        PaginatedAdminJobListList: {
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
+             */
+            next: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+             */
+            previous: string | null;
+            results: components["schemas"]["AdminJobList"][];
         };
         PaginatedAdminUserList: {
             /**
@@ -2609,7 +2715,6 @@ export interface components {
             name?: string;
             scopes?: components["schemas"]["ScopesEnum"][];
             allowed_ips?: string[];
-            allowed_models?: string[] | null;
             rate_limit_per_minute?: number | null;
             /** Format: date-time */
             expires_at?: string | null;
@@ -2628,6 +2733,11 @@ export interface components {
             highlight?: boolean;
             active?: boolean;
             sort_order?: number;
+        };
+        PatchedDetectionSetupUpdateRequest: {
+            audit_steps?: string[];
+            long_video_model?: string;
+            long_video_face_crop?: boolean | null;
         };
         PatchedMeRequest: {
             display_name?: string;
@@ -2739,6 +2849,13 @@ export interface components {
          * @enum {string}
          */
         PaymentKindEnum: "pack" | "subscription" | "renewal";
+        /**
+         * @description * `off` - off
+         *     * `test` - test
+         *     * `live` - live
+         * @enum {string}
+         */
+        PaymentModeEnum: "off" | "test" | "live";
         /**
          * @description * `pending` - Pending
          *     * `paid` - Paid
@@ -2864,6 +2981,15 @@ export interface components {
          * @enum {string}
          */
         ProductEnum: "pack" | "plan";
+        Provenance: {
+            ai_generated: boolean;
+            confidence: string;
+            c2pa_status: string;
+            camera: string | null;
+            software: string | null;
+            evidence: components["schemas"]["Evidence"][];
+            notes: string[];
+        };
         /**
          * @description * `toss` - Toss Payments
          *     * `stripe` - Stripe
@@ -2891,6 +3017,11 @@ export interface components {
             languages: string[];
             guest_trial_enabled: boolean;
         };
+        PublicQueue: {
+            position: number;
+            eta_seconds: number;
+            workers_online: boolean;
+        };
         QueueInfo: {
             position: number;
             consumers: number;
@@ -2907,10 +3038,6 @@ export interface components {
             lines: {
                 [key: string]: unknown;
             }[];
-            models: {
-                [key: string]: unknown;
-            }[];
-            audit_steps: string[];
             balance: number;
             affordable: boolean;
         };
@@ -3010,6 +3137,12 @@ export interface components {
             readonly members: number;
         };
         /**
+         * @description * `image` - image
+         *     * `video` - video
+         * @enum {string}
+         */
+        RunOnEnum: "image" | "video";
+        /**
          * @description * `detect:write` - Submit detection jobs
          *     * `jobs:read` - Read jobs and results
          *     * `jobs:write` - Cancel, re-run and delete jobs
@@ -3024,16 +3157,41 @@ export interface components {
          *     * `error` - error
          * @enum {string}
          */
-        StatusA3dEnum: "ok" | "error";
+        ServiceStatusEnum: "ok" | "error";
+        SetupCheck: {
+            id: string;
+            name: string;
+            description: string;
+            /** @description Runs on every job and cannot be turned off (metadata / C2PA). */
+            always: boolean;
+            enabled: boolean;
+        };
+        SetupLongVideo: {
+            online: boolean;
+            /** @description Empty = the first available detector. */
+            model: string;
+            /** @description Empty = the detector's default. */
+            face_crop: boolean | null;
+            models: components["schemas"]["SetupStreamModel"][];
+        };
+        SetupStreamModel: {
+            model_id: string;
+            name: string;
+            available: boolean;
+            reason: string;
+            face_crop: components["schemas"]["FaceCropEnum"];
+        };
         /**
          * @description * `s3` - s3
          *     * `local` - local
          * @enum {string}
          */
         StorageEnum: "s3" | "local";
-        StreamCatalog: {
+        StreamConfig: {
+            /** @description The long-form service is reachable. */
             online: boolean;
-            models: components["schemas"]["StreamModel"][];
+            /** @description Long-form scans can be started right now. */
+            available: boolean;
             price_per_minute: number;
             max_bytes: number;
             max_seconds: number;
@@ -3044,13 +3202,6 @@ export interface components {
             mem_used_mb: number;
             mem_total_mb: number;
             util: number;
-        };
-        StreamModel: {
-            model_id: string;
-            name: string;
-            available: boolean;
-            reason: string;
-            face_crop: components["schemas"]["FaceCrop"];
         };
         StreamSession: {
             /** Format: uuid */
@@ -3063,8 +3214,8 @@ export interface components {
             /** Format: double */
             reserved_seconds: number;
         };
+        /** @description The detector is the administrator's choice; the caller only picks the range and mode. */
         StreamSessionRequestRequest: {
-            model_id: string;
             file_name: string;
             file_size: number;
             /** Format: double */
@@ -3083,16 +3234,8 @@ export interface components {
             interval_seconds: number;
             /** @default false */
             whole_video: boolean;
-            face_crop?: boolean | null;
             locale?: components["schemas"]["LocaleEnum"];
         };
-        /**
-         * @description * `off` - off
-         *     * `test` - test
-         *     * `live` - live
-         * @enum {string}
-         */
-        StripeEnum: "off" | "test" | "live";
         Subscription: {
             /** Format: uuid */
             readonly id: string;
@@ -3119,15 +3262,8 @@ export interface components {
          * @enum {string}
          */
         SubscriptionStatusEnum: "incomplete" | "active" | "past_due" | "canceled" | "expired";
-        /**
-         * @description * `always` - always
-         *     * `optional` - optional
-         *     * `none` - none
-         * @enum {string}
-         */
-        SupportEnum: "always" | "optional" | "none";
         SystemAgents: {
-            status: components["schemas"]["StatusA3dEnum"];
+            status: components["schemas"]["ServiceStatusEnum"];
             loaded: components["schemas"]["LoadedLlm"][];
             running: number;
             waiting: number;
@@ -3139,8 +3275,8 @@ export interface components {
             email: string;
             storage: components["schemas"]["StorageEnum"];
             captcha: boolean;
-            toss: components["schemas"]["TossEnum"];
-            stripe: components["schemas"]["StripeEnum"];
+            toss: components["schemas"]["PaymentModeEnum"];
+            stripe: components["schemas"]["PaymentModeEnum"];
         };
         SystemGpu: {
             host: string;
@@ -3156,7 +3292,7 @@ export interface components {
             waiting: number;
         };
         SystemStream: {
-            status: components["schemas"]["StatusA3dEnum"];
+            status: components["schemas"]["ServiceStatusEnum"];
             busy: boolean;
             waiting: number;
             model_loaded: boolean;
@@ -3197,6 +3333,14 @@ export interface components {
          * @enum {string}
          */
         TaskStatusEnum: "pending" | "dispatched" | "running" | "succeeded" | "failed" | "canceled" | "skipped";
+        TimelinePoint: {
+            /** Format: double */
+            start_sec: number;
+            /** Format: double */
+            end_sec: number;
+            /** Format: double */
+            fake_prob: number;
+        };
         TossBillingConfirmRequest: {
             auth_key: string;
             customer_key: string;
@@ -3207,13 +3351,6 @@ export interface components {
             order_id: string;
             amount: number;
         };
-        /**
-         * @description * `off` - off
-         *     * `test` - test
-         *     * `live` - live
-         * @enum {string}
-         */
-        TossEnum: "off" | "test" | "live";
         TrialDetectResponse: {
             /** Format: uuid */
             job_id: string;
@@ -3226,13 +3363,20 @@ export interface components {
             captcha_required: boolean;
             captcha_site_key: string;
         };
+        /**
+         * @description * `image` - image
+         *     * `video` - video
+         *     * `long_video` - long_video
+         *     * `news` - news
+         * @enum {string}
+         */
+        TypeEnum: "image" | "video" | "long_video" | "news";
         Url: {
             url: string;
         };
-        UsageByModel: {
-            target: string;
-            runs: number;
-            ok: number;
+        UsageByType: {
+            type: components["schemas"]["TypeEnum"];
+            jobs: number;
         };
         /**
          * @description * `fake` - Likely manipulated / AI-generated
@@ -3366,7 +3510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedJobListList"];
+                    "application/json": components["schemas"]["PaginatedAdminJobListList"];
                 };
             };
         };
@@ -3387,7 +3531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminJobDetail"];
+                    "application/json": components["schemas"]["AdminJobView"];
                 };
             };
         };
@@ -3408,7 +3552,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobList"];
+                    "application/json": components["schemas"]["AdminJobList"];
+                };
+            };
+        };
+    };
+    admin_jobs_tasks_log_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskLog"];
                 };
             };
         };
@@ -3445,7 +3611,8 @@ export interface operations {
                     model_id?: string;
                     enabled?: boolean;
                     weight?: number;
-                    default_selected?: boolean;
+                    run_on_image?: boolean;
+                    run_on_video?: boolean;
                     trial?: boolean;
                     note?: string;
                 };
@@ -3458,6 +3625,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+        };
+    };
+    admin_models_setup_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectionSetup"];
+                };
+            };
+        };
+    };
+    admin_models_setup_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDetectionSetupUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedDetectionSetupUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDetectionSetupUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectionSetup"];
                 };
             };
         };
@@ -4738,28 +4949,6 @@ export interface operations {
             };
         };
     };
-    catalog_models_retrieve: {
-        parameters: {
-            query?: {
-                lang?: "de" | "en" | "ko";
-                media?: "image" | "video";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModelCatalog"];
-                };
-            };
-        };
-    };
     catalog_modules_list: {
         parameters: {
             query?: never;
@@ -4775,25 +4964,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModuleInfo"][];
-                };
-            };
-        };
-    };
-    catalog_public_models_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModelInfo"][];
                 };
             };
         };
@@ -4950,10 +5120,6 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: binary */
                     file: string;
-                    /** @description Comma-separated model ids (optional) */
-                    models?: string;
-                    /** @description Comma-separated: face,safety,fas (optional) */
-                    audit_steps?: string;
                     /** @enum {string} */
                     module?: "detect" | "long_video";
                 };
@@ -4991,7 +5157,6 @@ export interface operations {
                  *     * `video` - video
                  */
                 media_type?: "image" | "video";
-                model?: string;
                 q?: string;
                 /**
                  * @description * `web` - Web app
@@ -5235,28 +5400,6 @@ export interface operations {
             };
         };
     };
-    jobs_tasks_log_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskLog"];
-                };
-            };
-        };
-    };
     jobs_quote_create: {
         parameters: {
             query?: never;
@@ -5282,7 +5425,7 @@ export interface operations {
             };
         };
     };
-    long_video_models_retrieve: {
+    long_video_config_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -5296,7 +5439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StreamCatalog"];
+                    "application/json": components["schemas"]["StreamConfig"];
                 };
             };
         };

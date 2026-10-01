@@ -55,3 +55,30 @@ def test_frame_csv_progress_and_total(tmp_path: Path):
     assert progress == 100.0
     assert total == pytest.approx(0.6)
     assert parsers.read_frame_csv(tmp_path / "none.csv") == ([], None, None)
+
+
+def test_missing_anti_spoofing_code_is_a_failure_not_a_result():
+    from sml_worker.adapters.audit import _raise_if_fas_unavailable
+    from sml_worker.adapters.base import AdapterError
+
+    broken = {"success": True, "fas_results": [{"label": "ERROR", "error": "CVPR24-FAS directory not found"}]}
+    with pytest.raises(AdapterError) as err:
+        _raise_if_fas_unavailable(broken)
+    assert err.value.code == "CONFIG_ERROR"
+    _raise_if_fas_unavailable({"fas_results": [{"label": "REAL"}, {"label": "ERROR"}]})  # partial result is kept
+    _raise_if_fas_unavailable({"fas_results": []})
+
+
+def test_prompts_never_name_detectors():
+    from sml_worker.agents.explain import build_prompt as explain_prompt
+    from sml_worker.agents.news import build_prompt as news_prompt
+
+    context = {"verdict": "fake", "fake_probability": 0.9, "media_type": "image",
+               "provenance": {"ai_generated": True, "evidence": [{"source": "C2PA", "detail": "AI"}]},
+               "checks": [{"id": "face", "status": "done", "result": {"faces_found": True}}],
+               "summary": {"models": [{"name": "Xception", "fake_prob": 0.9}]}}
+    text = explain_prompt(context, "media.png", ["heatmap_1.png"], "en")
+    assert "Xception" not in text and "How the detectors agree" not in text and "Confidential" in text
+    news = news_prompt({"title": "x"}, [("a.png", "image")],
+                       [{"file": "a.png", "fake_prob": 0.8, "model": "skku-aigc"}], "en")
+    assert "skku-aigc" not in news and "fake probability 80.0%" in news

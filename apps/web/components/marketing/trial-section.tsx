@@ -51,7 +51,6 @@ export function TrialSection({ language }: { language: Language }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [captcha, setCaptcha] = useState("")
-  const [live, setLive] = useState<{ progress: number; message: string }>({ progress: 0, message: "" })
   const status = useQuery({ queryKey: qk.trialStatus, queryFn: async () => data(await api.GET("/api/v1/trial/status")) })
   const job = useQuery({
     queryKey: qk.trialJob(jobId ?? ""), enabled: !!jobId,
@@ -63,11 +62,9 @@ export function TrialSection({ language }: { language: Language }) {
   useEffect(() => {
     if (!jobId) return
     const es = new EventSource(`/api/v1/trial/jobs/${jobId}/stream`)
-    es.addEventListener("task.progress", (e) => {
-      const d = JSON.parse((e as MessageEvent).data).data as { progress: number; message: string }
-      setLive((prev) => ({ progress: Math.max(prev.progress, d.progress ?? 0), message: d.message || prev.message }))
-    })
-    es.addEventListener("job.updated", () => qc.invalidateQueries({ queryKey: qk.trialJob(jobId) }))
+    const refresh = () => qc.invalidateQueries({ queryKey: qk.trialJob(jobId) })
+    es.addEventListener("job.updated", refresh)
+    es.addEventListener("job.activity", refresh)
     return () => es.close()
   }, [jobId, qc])
 
@@ -76,7 +73,6 @@ export function TrialSection({ language }: { language: Language }) {
     if (!file) return
     setBusy(true)
     setError(null)
-    setLive({ progress: 0, message: "" })
     try {
       const form = new FormData()
       form.append("file", file)
@@ -97,7 +93,7 @@ export function TrialSection({ language }: { language: Language }) {
   const s = status.data
   const j = job.data
   const running = j && (j.status === "queued" || j.status === "running")
-  const aiMeta = (j?.verdict_reasons as { code: string }[] | undefined)?.some((r) => r.code === "metadata_ai_indicator")
+  const aiMeta = !!j?.ai_generated
 
   return (
     <section id="trial" className="relative z-10 mx-auto max-w-6xl px-6 py-24">
@@ -140,24 +136,16 @@ export function TrialSection({ language }: { language: Language }) {
                   <p className="truncate font-medium">{j?.title}</p>
                   {running ? (
                     <div className="mt-2 space-y-1">
-                      <Progress value={Math.max(live.progress, j?.progress ?? 0)} className="h-1.5" />
-                      <p className="text-xs text-[var(--sml-ink-dim)]">{live.message || (j?.status === "queued" ? c.queued : c.analyzing)}</p>
+                      <Progress value={j?.progress ?? 0} className="h-1.5" />
+                      <p className="text-xs text-[var(--sml-ink-dim)]">{j?.status === "queued" ? c.queued : c.analyzing}</p>
                     </div>
-                  ) : j?.status === "succeeded" ? <VerdictBadge verdict={j.verdict} className="mt-2" /> : null}
+                  ) : j?.status === "succeeded" ? <VerdictBadge verdict={j.verdict} aiGenerated={j.ai_generated} className="mt-2" /> : null}
                 </div>
               </div>
               {j?.status === "succeeded" && (
                 <>
                   <ProbabilityGauge value={j.fake_probability} label={c.fake} />
                   {aiMeta && <p className="flex items-center gap-2 text-sm text-[var(--sml-accent-2)]"><Sparkles className="size-4" />{c.metadata}</p>}
-                  <ul className="grid grid-cols-2 gap-2 text-xs">
-                    {(j.summary as { models?: { name: string; fake_prob: number | null; no_face: boolean }[] }).models?.map((m) => (
-                      <li key={m.name} className="flex justify-between rounded-md border border-[var(--sml-line)] px-2 py-1">
-                        <span>{m.name}</span>
-                        <span className="font-mono">{m.no_face ? "—" : m.fake_prob != null ? `${(m.fake_prob * 100).toFixed(0)}%` : "—"}</span>
-                      </li>
-                    ))}
-                  </ul>
                   <p className="text-xs text-[var(--sml-ink-faint)]">{c.disclaimer}</p>
                 </>
               )}

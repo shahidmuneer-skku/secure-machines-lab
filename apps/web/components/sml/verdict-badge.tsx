@@ -1,26 +1,32 @@
 "use client"
 
-import { AlertTriangle, CircleHelp, ScanFace, ShieldCheck } from "lucide-react"
+import { AlertTriangle, CircleHelp, FileBadge2, ScanFace, ShieldCheck } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { cn } from "@/lib/utils"
 
 const STYLE = {
   fake: { icon: AlertTriangle, cls: "border-fake/40 bg-fake/10 text-fake" },
+  ai_generated: { icon: FileBadge2, cls: "border-fake/40 bg-fake/10 text-fake" },
   real: { icon: ShieldCheck, cls: "border-real/40 bg-real/10 text-real" },
   no_face: { icon: ScanFace, cls: "border-warn/40 bg-warn/10 text-warn" },
   inconclusive: { icon: CircleHelp, cls: "border-border bg-muted text-muted-foreground" },
 } as const
 
-/** Plain-language verdict with icon + text (WCAG: not color alone). */
-export function VerdictBadge({ verdict, probability, size = "md", className }: {
+/**
+ * Plain-language verdict with icon + text (WCAG: not color alone). `aiGenerated` marks a fake verdict
+ * that metadata markers (C2PA, IPTC, generator tags) identify as AI-generated.
+ */
+export function VerdictBadge({ verdict, aiGenerated, probability, size = "md", className }: {
   verdict?: string | null
+  aiGenerated?: boolean
   probability?: number | null
   size?: "sm" | "md" | "lg"
   className?: string
 }) {
   const t = useTranslations("verdict")
-  const key = (verdict && verdict in STYLE ? verdict : "inconclusive") as keyof typeof STYLE
+  const shown = aiGenerated && verdict === "fake" ? "ai_generated" : verdict
+  const key = (shown && shown in STYLE ? shown : "inconclusive") as keyof typeof STYLE
   const { icon: Icon, cls } = STYLE[key]
   const pct = probability != null ? ` · ${(probability * 100).toFixed(1)}%` : ""
   return (

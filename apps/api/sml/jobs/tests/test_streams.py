@@ -40,7 +40,7 @@ def fund(user, amount: int = 100) -> None:  # type: ignore[no-untyped-def]
 
 
 def request(**overrides):  # type: ignore[no-untyped-def]
-    data = {"model_id": "skku-aigc", "file_name": "interview.mp4", "file_size": 50_000_000,
+    data = {"file_name": "interview.mp4", "file_size": 50_000_000,
             "duration_seconds": 600.0, "start_seconds": 60.0, "end_seconds": 360.0, "interval_seconds": 5.0}
     return streams.StreamRequest(**{**data, **overrides})
 
@@ -69,12 +69,39 @@ def test_session_reserves_the_selected_range_per_started_minute(user):
     assert job.hold.amount == 20 and job.media is None and job.options["stream"] is True
     task = job.tasks.get()
     assert (task.kind, task.status, task.queue) == (JobTask.Kind.LONG_VIDEO, JobTask.Status.DISPATCHED, "stream")
-    assert token.count(".") == 1
+    assert task.target == "skku-aigc"  # the first available detector, chosen by the admin (empty setting)
+    body = base64.urlsafe_b64decode(token.split(".")[0] + "==").decode()
+    assert "skku" not in body.lower() and str(session.pk) in body  # the browser's token names the session only
+
+
+def test_the_admin_chooses_the_long_form_detector(user, platform):
+    fund(user)
+    platform.long_video_model = "skku-p2"  # offered but unavailable (missing env)
+    platform.long_video_face_crop = True
+    platform.save()
+    with pytest.raises(ApiError, match="not available right now"):
+        streams.create_session(user, request())
+    CATALOG[1]["available"] = True
+    try:
+        session, _ = streams.create_session(user, request())
+    finally:
+        CATALOG[1]["available"] = False
+    assert (session.model_id, session.face_crop) == ("skku-p2", True)
+
+
+def test_a_session_is_claimed_once_by_the_stream_service(user, client_for):
+    fund(user)
+    session, _ = streams.create_session(user, request())
+    url = f"/api/internal/streams/{session.pk}/claim"
+    service = client_for()
+    assert service.post(url, format="json").status_code == 403
+    first = service.post(url, format="json", HTTP_X_STREAM_KEY="test-stream-secret")
+    assert first.status_code == 200, first.content
+    assert first.json()["model"] == "skku-aigc" and first.json()["max_seconds"] == 300.0
+    assert service.post(url, format="json", HTTP_X_STREAM_KEY="test-stream-secret").status_code == 409
 
 
 @pytest.mark.parametrize(("overrides", "message"), [
-    ({"model_id": "skku-p2"}, "not available"),
-    ({"model_id": "xception"}, "not available"),
     ({"start_seconds": 700.0}, "start time"),
     ({"end_seconds": 30.0}, "end time"),
     ({"interval_seconds": 0.1}, "interval"),
@@ -198,14 +225,14 @@ def test_internal_endpoint_requires_the_service_key(user, client_for):
 def test_session_endpoint_returns_a_token_for_the_browser(api, user):
     fund(user)
     res = api.post("/api/v1/long-video/sessions", {
-        "model_id": "skku-aigc", "file_name": "clip.mp4", "file_size": 1_000_000, "duration_seconds": 42.0},
-        format="json")
+        "file_name": "clip.mp4", "file_size": 1_000_000, "duration_seconds": 42.0}, format="json")
     assert res.status_code == 201, res.content
     body = res.json()
     assert body["ws_url"] == "ws://stream.test/stream/ws" and body["credits_reserved"] == 4
-    catalog = api.get("/api/v1/long-video/models").json()
-    assert catalog["online"] is True and catalog["price_per_minute"] == 4
-    assert [m["model_id"] for m in catalog["models"]] == ["skku-aigc", "skku-p2"]
+    config = api.get("/api/v1/long-video/config").json()
+    assert config == {"online": True, "available": True, "price_per_minute": 4, "max_bytes": config["max_bytes"],
+                      "max_seconds": config["max_seconds"]}
+    assert api.get("/api/v1/long-video/models").status_code == 404  # detectors are not listed to users
 
 
 def test_stale_sessions_are_refunded(user):

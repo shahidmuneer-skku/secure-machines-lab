@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from sml.accounts.models import User
 from sml.apikeys.permissions import require_scope
+from sml.core.exceptions import ApiError
 from sml.core.idempotency import idempotent
 from sml.core.permissions import require
 from sml.core.throttling import JobCreateThrottle
@@ -23,29 +24,17 @@ from . import streams
 TAG = ["long-video"]
 
 
-class FaceCropSerializer(serializers.Serializer):
-    support = serializers.ChoiceField(choices=["always", "optional", "none"])
-    default = serializers.BooleanField()
-
-
-class StreamModelSerializer(serializers.Serializer):
-    model_id = serializers.CharField()
-    name = serializers.CharField()
-    available = serializers.BooleanField()
-    reason = serializers.CharField(allow_blank=True)
-    face_crop = FaceCropSerializer()
-
-
-class StreamCatalogSerializer(serializers.Serializer):
-    online = serializers.BooleanField()
-    models = StreamModelSerializer(many=True)
+class StreamConfigSerializer(serializers.Serializer):
+    online = serializers.BooleanField(help_text="The long-form service is reachable.")
+    available = serializers.BooleanField(help_text="Long-form scans can be started right now.")
     price_per_minute = serializers.IntegerField()
     max_bytes = serializers.IntegerField()
     max_seconds = serializers.IntegerField()
 
 
 class StreamSessionRequestSerializer(serializers.Serializer):
-    model_id = serializers.CharField(max_length=64)
+    """The detector is the administrator's choice; the caller only picks the range and mode."""
+
     file_name = serializers.CharField(max_length=255)
     file_size = serializers.IntegerField(min_value=1)
     duration_seconds = serializers.FloatField(min_value=0.1)
@@ -53,7 +42,6 @@ class StreamSessionRequestSerializer(serializers.Serializer):
     end_seconds = serializers.FloatField(required=False, allow_null=True, default=None)
     interval_seconds = serializers.FloatField(default=5.0)
     whole_video = serializers.BooleanField(default=False)
-    face_crop = serializers.BooleanField(required=False, allow_null=True, default=None)
     locale = serializers.ChoiceField(choices=User.Locale.choices, required=False)
 
 
@@ -66,23 +54,21 @@ class StreamSessionSerializer(serializers.Serializer):
     reserved_seconds = serializers.FloatField()
 
 
-class StreamModelsView(APIView):
+class StreamConfigView(APIView):
     permission_classes = [IsAuthenticated, require_scope("detect:write")]
 
-    @extend_schema(tags=TAG, responses=StreamCatalogSerializer,
-                   summary="Detectors available for long-form streaming, with the price per minute")
+    @extend_schema(tags=TAG, responses=StreamConfigSerializer,
+                   summary="Whether long-form scans are available, the price per minute and the size limits")
     def get(self, request: Request) -> Response:
         try:
-            models, online = streams.available_models(), True
+            streams.configured_model()
+            online = available = True
         except streams.StreamServiceUnavailable:
-            models, online = [], False
+            online = available = False
+        except ApiError:
+            online, available = True, False
         return Response({
-            "online": online,
-            "models": [{"model_id": m["model_id"], "name": m.get("name") or m["model_id"],
-                        "available": bool(m.get("available")), "reason": m.get("reason") or "",
-                        "face_crop": {"support": (m.get("face_crop") or {}).get("support", "none"),
-                                      "default": bool((m.get("face_crop") or {}).get("default", False))}}
-                       for m in models],
+            "online": online, "available": available,
             "price_per_minute": pricing.price(pricing.Key.LONG_VIDEO_PER_MINUTE),
             "max_bytes": settings.UPLOAD_MAX_VIDEO_BYTES,
             "max_seconds": settings.UPLOAD_MAX_VIDEO_SECONDS,
@@ -101,9 +87,9 @@ class StreamSessionCreateView(APIView):
         ser.is_valid(raise_exception=True)
         d = ser.validated_data
         req = streams.StreamRequest(
-            model_id=d["model_id"], file_name=d["file_name"], file_size=d["file_size"],
+            file_name=d["file_name"], file_size=d["file_size"],
             duration_seconds=d["duration_seconds"], start_seconds=d["start_seconds"], end_seconds=d["end_seconds"],
-            interval_seconds=d["interval_seconds"], whole_video=d["whole_video"], face_crop=d["face_crop"],
+            interval_seconds=d["interval_seconds"], whole_video=d["whole_video"],
             locale=d.get("locale") or getattr(request.user, "locale", "en"),
         )
         session, token = streams.create_session(request.user, req)
@@ -124,3 +110,17 @@ class StreamEventView(APIView):
         if not streams.verify_service_key(request.headers.get("X-Stream-Key")):
             raise PermissionDenied("Invalid stream service key.")
         return Response(streams.handle_event(str(pk), request.data))
+
+
+class StreamClaimView(APIView):
+    """Internal: the stream service fetches what a session paid for (once), keyed by the token's sid."""
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_classes: list = []
+
+    @extend_schema(exclude=True)
+    def post(self, request: Request, pk: str) -> Response:
+        if not streams.verify_service_key(request.headers.get("X-Stream-Key")):
+            raise PermissionDenied("Invalid stream service key.")
+        return Response(streams.claim_session(str(pk)))

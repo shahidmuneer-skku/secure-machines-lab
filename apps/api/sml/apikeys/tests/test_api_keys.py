@@ -124,15 +124,20 @@ def test_one_call_detect_over_the_api(user, png_upload):
     assert bearer(issued.plaintext).get(f"/api/v1/jobs/{job.pk}").status_code == 200
 
 
-def test_key_model_allowlist_is_enforced(user, make_media):
+def test_api_callers_cannot_choose_or_see_detectors(user, make_media, use_detectors):
+    import json
+
     from sml.catalog.registry import registry
+    from sml.jobs.models import Job
 
     credits.grant(user, 5, source=CreditSource.PURCHASE, kind=LedgerKind.PURCHASE)
-    allowed, blocked = [m.id for m in registry().enabled_for("image")][:2]
-    raw = issue(user, allowed_models=[allowed]).plaintext
-    media = make_media(user)
-    ok = bearer(raw).post("/api/v1/jobs", {"media_id": str(media.pk), "models": [allowed]}, format="json")
-    assert ok.status_code == 202, ok.content
-    denied = bearer(raw).post("/api/v1/jobs", {"media_id": str(make_media(user).pk), "models": [blocked]},
-                              format="json")
-    assert denied.status_code in (400, 403)
+    chosen, other = [m.id for m in registry().enabled_for("image")][:2]
+    use_detectors([chosen])
+    raw = issue(user).plaintext
+    res = bearer(raw).post("/api/v1/jobs", {"media_id": str(make_media(user).pk), "models": [other],
+                                            "audit_steps": ["fas"]}, format="json")
+    assert res.status_code == 202, res.content
+    job = Job.objects.get(pk=res.json()["jobs"][0]["id"])
+    assert job.models_selected == [chosen] and job.audit_steps == ["metadata"]  # the admin's set, not the caller's
+    detail = json.dumps(bearer(raw).get(f"/api/v1/jobs/{job.pk}").json())
+    assert chosen not in detail and other not in detail and "models" not in res.json()["jobs"][0]

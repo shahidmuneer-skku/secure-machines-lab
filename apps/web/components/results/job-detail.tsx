@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
-import type { JobDetail as JobDetailT, TaskView, TimelineEvent } from "@/lib/api/types"
+import type { JobDetail as JobDetailT } from "@/lib/api/types"
 import { formatDateTime, formatRelative } from "@/lib/format"
 
 import { ExplainCard, ReportsCard } from "./explain-reports"
@@ -55,8 +55,6 @@ export function JobDetailView({ id }: { id: string }) {
         </EmptyContent></Empty>
     )
   }
-  const tasks = job.tasks as unknown as TaskView[]
-  const events = job.events as unknown as TimelineEvent[]
   const active = job.status === "queued" || job.status === "running"
   const finished = ["succeeded", "failed", "canceled"].includes(job.status)
   return (
@@ -91,16 +89,16 @@ export function JobDetailView({ id }: { id: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
-          <MediaViewer job={job} tasks={tasks} />
-          <ProcessingPanel jobId={job.id} tasks={tasks} stage={job.stage} status={job.status} />
+          <MediaViewer job={job} />
+          <ProcessingPanel job={job} />
           <ExplainCard job={job} />
         </div>
         <div className="space-y-5">
-          <VerdictPanel job={job} tasks={tasks} />
-          <ProvenanceCard tasks={tasks} />
+          <VerdictPanel job={job} />
+          <ProvenanceCard job={job} />
           <ReportsCard job={job} />
           <CreditsCard job={job} />
-          <Timeline events={events} />
+          <Timeline events={job.events} />
         </div>
       </div>
     </div>

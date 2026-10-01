@@ -60,10 +60,10 @@ class ReportData:
     verdict: str
     fake_probability: float | None
     partial: bool
-    reasons: list[dict[str, Any]]
-    models: list[dict[str, Any]]
-    audit: dict[str, Any]
-    ai_indicators: dict[str, Any]
+    ai_generated: bool  # flagged by AI-generation markers in the metadata
+    reasons: list[dict[str, Any]]  # sml.jobs.public.reasons: never names detectors
+    checks: list[dict[str, Any]]  # sml.jobs.public.checks
+    provenance: dict[str, Any] | None  # sml.jobs.public.provenance
     media: dict[str, Any]
     created_at: datetime
     finished_at: datetime | None
@@ -93,6 +93,8 @@ def _pct(v: float | None) -> str:
 
 
 def _verdict_text(d: ReportData, t: dict[str, str]) -> str:
+    if d.ai_generated:
+        return t["ai_generated"]
     return t.get(d.verdict or "inconclusive", t["inconclusive"])
 
 
@@ -105,6 +107,19 @@ def _fmt_size(n: int | None) -> str:
             return f"{size:.1f} {unit}"
         size /= 1024
     return f"{size:.1f} TB"
+
+
+def _check_text(check: dict[str, Any], t: dict[str, str]) -> str:
+    if check.get("status") != "done":
+        return t["check_failed"] if check.get("status") == "failed" else t.get(check.get("status", ""), "—")
+    r = check.get("result") or {}
+    if "faces_found" in r:
+        return t["faces_found"] if r["faces_found"] else t["faces_none"]
+    if "sensitive_content" in r:
+        return t["sensitive_yes"] if r["sensitive_content"] else t["sensitive_no"]
+    if "spoof_detected" in r:
+        return t["spoof_yes"] if r["spoof_detected"] else t["spoof_no"]
+    return t["completed"]
 
 
 def _esc(text: str) -> str:
@@ -171,17 +186,8 @@ def render_pdf(d: ReportData) -> bytes:
              [t["completed"], d.finished_at.strftime("%Y-%m-%d %H:%M UTC") if d.finished_at else "—"]]
     story += [*section(2, t["file"]), _kv_table(info, font, mono)]
 
-    rows = [[t["model"], t["score"], t["weight"], t["status"]]]
-    for row in d.models:
-        status = "no face" if row.get("no_face") else row.get("status", "")
-        if row.get("fallback"):
-            status += f" (fallback: {row['fallback'].get('model')})"
-        rows.append([row.get("name", row.get("model")), _pct(row.get("fake_prob")), f"{row.get('weight', 1):g}",
-                     status])
-    story += [*section(3, t["models"]), _grid(rows, font, mono, [70 * mm, 30 * mm, 25 * mm, 49 * mm])]
-
-    ind = d.ai_indicators or {}
-    story += section(4, t["provenance"])
+    ind = d.provenance or {}
+    story += section(3, t["provenance"])
     evidence = ind.get("evidence") or []
     if evidence:
         story.append(Paragraph(f"<b>{_esc(t['ai_indicators'])}</b>", body))
@@ -191,20 +197,15 @@ def render_pdf(d: ReportData) -> bytes:
         story.append(Paragraph(_esc(t["none_found"]), body))
     for key in ("camera", "software", "c2pa_status"):
         if ind.get(key):
-            story.append(Paragraph(f"<font color='#5b6170'>{_esc(key)}</font>: {_esc(str(ind[key]))}", small))
+            story.append(Paragraph(f"<font color='#5b6170'>{_esc(t[key])}</font>: {_esc(str(ind[key]))}", small))
 
-    audits = {k: v for k, v in (d.audit or {}).items() if k != "metadata"}
-    if audits:
-        rows = [[t["audit"], t["status"], ""]]
-        for step, info_ in audits.items():
-            result = info_.get("result") or {}
-            detail = result.get("summary") or ", ".join(f"{k}={v}" for k, v in list(result.items())[:3]
-                                                       if not isinstance(v, (dict, list)))
-            rows.append([step, info_.get("status", ""), str(detail)[:80]])
-        story += [*section(5, t["audit"]), _grid(rows, font, mono, [40 * mm, 30 * mm, 104 * mm])]
+    if d.checks:
+        rows = [[t["check"], t["result"]]]
+        rows += [[t.get(f"check_{c['id']}", c["id"]), _check_text(c, t)] for c in d.checks]
+        story += [*section(4, t["checks"]), _grid(rows, font, mono, [70 * mm, 104 * mm])]
 
     if d.xai_images:
-        story += section(6, t["xai"])
+        story += section(5, t["xai"])
         cells = []
         for label, data in d.xai_images[:6]:
             try:
@@ -212,7 +213,7 @@ def render_pdf(d: ReportData) -> bytes:
                 iw, ih = img.getSize()
                 scale = min(52 * mm / iw, 52 * mm / ih)
                 cells.append([Image(io.BytesIO(data), width=iw * scale, height=ih * scale),
-                              Paragraph(_esc(label), small)])
+                              Paragraph(_esc(t.get(label, label)), small)])
             except Exception:  # skip unreadable heatmaps, keep the rest of the report
                 logger.debug("Skipping unreadable artifact image %s", label, exc_info=True)
         grid = [cells[i:i + 3] for i in range(0, len(cells), 3)]
@@ -221,7 +222,7 @@ def render_pdf(d: ReportData) -> bytes:
             story.append(Table([flat], colWidths=[58 * mm] * len(flat)))
 
     if d.explanation:
-        story += section(7, t["explanation"])
+        story += section(6, t["explanation"])
         for para in d.explanation.split("\n\n")[:30]:
             story.append(Paragraph(_esc(para).replace("\n", "<br/>"), body))
 
@@ -314,17 +315,17 @@ def render_hwp(d: ReportData) -> bytes:
     for k, v in [(t["file_name"], d.title), (t["type"], d.media_type), (t["size"], _fmt_size(m.get("size_bytes"))),
                  (t["sha256"], m.get("sha256") or "—"), (t["job_id"], d.job_id)]:
         lines.append(_rtf_escape(f"{k}: {v}") + r"\par")
-    lines.append(r"\par{\b " + _rtf_escape(t["models"]) + r"}\par")
-    for row in d.models:
-        state = "no face" if row.get("no_face") else row.get("status", "")
-        lines.append(_rtf_escape(f"• {row.get('name')}: {_pct(row.get('fake_prob'))} ({state})") + r"\par")
     lines.append(r"\par{\b " + _rtf_escape(t["provenance"]) + r"}\par")
-    evidence = (d.ai_indicators or {}).get("evidence") or []
+    evidence = (d.provenance or {}).get("evidence") or []
     if evidence:
         for ev in evidence:
             lines.append(_rtf_escape(f"• {ev.get('source', '')}: {ev.get('detail', '')}") + r"\par")
     else:
         lines.append(_rtf_escape(t["none_found"]) + r"\par")
+    if d.checks:
+        lines.append(r"\par{\b " + _rtf_escape(t["checks"]) + r"}\par")
+        for c in d.checks:
+            lines.append(_rtf_escape(f"• {t.get('check_' + c['id'], c['id'])}: {_check_text(c, t)}") + r"\par")
     if d.explanation:
         lines.append(r"\par{\b " + _rtf_escape(t["explanation"]) + r"}\par")
         lines.append(_rtf_escape(d.explanation[:20000]) + r"\par")
@@ -340,12 +341,21 @@ def render_csv(d: ReportData) -> bytes:
     w.writerow(["job_id", "run", "file_name", "media_type", "verdict", "fake_probability", "partial"])
     w.writerow([d.job_id, d.run_number, d.title, d.media_type, d.verdict,
                 "" if d.fake_probability is None else f"{d.fake_probability:.6f}", d.partial])
+    ind = d.provenance or {}
     w.writerow([])
-    w.writerow(["model", "status", "fake_probability", "weight", "no_face", "fallback"])
-    for row in d.models:
-        fp = row.get("fake_prob")
-        w.writerow([row.get("model"), row.get("status"), "" if fp is None else f"{fp:.6f}", row.get("weight"),
-                    row.get("no_face"), (row.get("fallback") or {}).get("model", "")])
+    w.writerow(["metadata_ai_generated", "c2pa_status", "camera", "software"])
+    w.writerow([ind.get("ai_generated", ""), ind.get("c2pa_status", ""), ind.get("camera") or "",
+                ind.get("software") or ""])
+    if ind.get("evidence"):
+        w.writerow([])
+        w.writerow(["evidence_source", "evidence_detail", "strength"])
+        for ev in ind["evidence"]:
+            w.writerow([ev.get("source", ""), ev.get("detail", ""), ev.get("strength", "")])
+    if d.checks:
+        w.writerow([])
+        w.writerow(["check", "status", "result"])
+        for c in d.checks:
+            w.writerow([c["id"], c.get("status", ""), ";".join(f"{k}={v}" for k, v in (c.get("result") or {}).items())])
     return ("﻿" + buf.getvalue()).encode("utf-8")  # BOM so Excel opens Korean correctly
 
 
@@ -356,8 +366,8 @@ def render_zip(d: ReportData, artifacts: list[tuple[str, bytes]]) -> bytes:
         zf.writestr("report.csv", render_csv(d))
         zf.writestr("summary.json", json.dumps({
             "job_id": d.job_id, "run": d.run_number, "file_name": d.title, "verdict": d.verdict,
-            "fake_probability": d.fake_probability, "models": d.models, "ai_indicators": d.ai_indicators,
-            "audit": d.audit, "reasons": d.reasons,
+            "fake_probability": d.fake_probability, "provenance": d.provenance, "checks": d.checks,
+            "reasons": d.reasons,
         }, indent=2, ensure_ascii=False, default=str))
         for name, data in artifacts:
             zf.writestr(f"artifacts/{name}", data)

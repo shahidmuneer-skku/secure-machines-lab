@@ -1,19 +1,19 @@
 # Secure Machines Lab platform
 
 Deepfake and AI-generated media detection as a service: users upload images and videos,
-choose which detection models contribute, watch the analysis run live, and get one combined
-verdict with explainability, provenance metadata and downloadable reports. Credits are bought
+watch the analysis run live, and get one combined verdict with heatmaps, provenance metadata and
+downloadable reports. Administrators choose which detectors run; users never see them (ADR 0011). Credits are bought
 with Toss Payments or Stripe and spent per file; administrators set prices, packages, free
 allowances and access per user.
 
 | Module | What it does |
 | --- | --- |
-| Detect | Images and videos in one drop zone; user-selected models; weighted verdict; EXIF / XMP / C2PA AI indicators; Grad-CAM and face maps |
+| Detect | Images and videos in one drop zone; admin-chosen detectors per media type; weighted verdict; EXIF / XMP / C2PA markers flag AI generation; heatmaps and face maps |
 | Long-form video | Interval-by-interval scoring of long videos |
 | News verification | An agent investigates a news item (image/video + claim) and writes a sourced case report |
 | Explain why | On-demand AI reasoning over a finished result |
 | Reports | PDF, HWP (RTF) and CSV reports, ZIP bundles, in EN/KO/DE |
-| Queue & history | Position, ETA, per-model progress and a live processing log; full job history with retention per plan |
+| Queue & history | Position, ETA and progress in generic steps; full job history with retention per plan (detector logs for staff only) |
 | Credits & billing | Wallet with expiring buckets and an append-only ledger; packs and subscriptions; refunds by policy |
 | API | Scoped, IP-restrictable API keys; OpenAPI docs at `/api/docs` |
 | Guest trial | A few free image checks per day before signing up |

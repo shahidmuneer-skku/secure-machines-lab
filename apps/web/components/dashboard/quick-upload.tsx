@@ -6,24 +6,17 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Dropzone } from "@/components/detect/dropzone"
 import { UploadList } from "@/components/detect/upload-list"
-import { useCatalog } from "@/hooks/use-catalog"
 import { useSubmitJobs } from "@/hooks/use-submit-jobs"
 import { useUploads } from "@/hooks/use-uploads"
 
-/** Drop files → recommended models → queued. The full flow lives on /app/detect. */
+/** Drop files → queued. The full flow (with the price) lives on /app/detect. */
 export function QuickUpload() {
   const t = useTranslations("dashboard.quick")
   const uploads = useUploads()
-  const catalog = useCatalog()
   const submit = useSubmitJobs()
-  const models = catalog.data?.models ?? []
-  const recommended = models.filter((m) => m.default_selected && m.allowed !== false).map((m) => m.id)
 
   const send = async () => {
-    await submit.mutateAsync({
-      media: uploads.ready.map((r) => r.media!), models: recommended,
-      catalog: models.map((m) => ({ id: m.id, media: m.media })), auditSteps: [],
-    })
+    await submit.mutateAsync({ media: uploads.ready.map((r) => r.media!) })
     uploads.clear()
   }
 

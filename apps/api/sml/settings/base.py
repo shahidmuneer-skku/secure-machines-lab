@@ -327,6 +327,12 @@ SPECTACULAR_SETTINGS = {
         "TaskKindEnum": "sml.jobs.models.JobTask.Kind",
         "ExplanationStatusEnum": "sml.jobs.models.Explanation.Status",
         "ArtifactKindEnum": "sml.jobs.models.Artifact.Kind",
+        # What users see of artifacts and checks (sml.jobs.public); distinct from the admin enums.
+        "EvidenceKindEnum": ["heatmap", "face", "video"],
+        "JobStepEnum": ["queued", "checks", "analysis", "verification", "results"],
+        "CheckIdEnum": ["face", "safety", "fas"],
+        "ServiceStatusEnum": ["ok", "error"],
+        "PaymentModeEnum": ["off", "test", "live"],
         "PaymentStatusEnum": "sml.billing.models.Payment.Status",
         "PaymentKindEnum": "sml.billing.models.Payment.Kind",
         "SubscriptionStatusEnum": "sml.billing.models.Subscription.Status",

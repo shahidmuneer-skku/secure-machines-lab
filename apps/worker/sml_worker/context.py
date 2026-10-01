@@ -29,7 +29,8 @@ USER_CHANNEL = "sml:events:user:{}"
 JOB_CHANNEL = "sml:events:job:{}"
 TTL_SECONDS = 24 * 3600
 PUBLISH_INTERVAL = 0.75
-# Absolute filesystem paths (not URLs or fractions): the live log is shown to users.
+ACTIVITY_INTERVAL = 2.0
+# Absolute filesystem paths (not URLs or fractions) are shortened even in the operators' live log.
 _PATH = re.compile(r"(?<![\w:/.])(?:/[^\s/'\"`:,;()\[\]{}<>]+){2,}")
 
 
@@ -70,6 +71,7 @@ class TaskContext:
         self.gpu = gpu
         self.artifacts: list[ArtifactOut] = []
         self._last_publish = 0.0
+        self._last_activity = 0.0
         self._last_cancel_check = 0.0
         self._progress = 0.0
         self._redis: redis.Redis | None = None
@@ -109,12 +111,15 @@ class TaskContext:
                 self._redis.expire(key, TTL_SECONDS)
             except redis.RedisError:
                 pass
-        self._publish("task.progress", {"job_id": self.job_id, "task_id": self.task_id,
-                                        "progress": round(self._progress, 1), "message": message or ""})
+        # Users must not learn which detectors run: subscribers only hear that the job moved on and
+        # refetch its user-safe view. Progress values and messages stay in Redis for the API/admin.
+        if now - self._last_activity >= ACTIVITY_INTERVAL:
+            self._last_activity = now
+            self._publish("job.activity", {"job_id": self.job_id})
         self.check_canceled()
 
     def log(self, message: str) -> None:
-        """A human-readable line for the live 'what is happening' console."""
+        """A line for the task's live log (admin console only; users see generic job steps)."""
         logger.info("[%s] %s", self.task_id[:8], message.strip()[:1000])
         message = redact_paths(message.strip())[:300]
         if not message:
@@ -127,7 +132,6 @@ class TaskContext:
                 self._redis.expire(key, TTL_SECONDS)
             except redis.RedisError:
                 pass
-        self._publish("task.log", {"job_id": self.job_id, "task_id": self.task_id, "message": message})
         self.progress(self._progress, message, force=True)
 
     # --- cancellation -----------------------------------------------------------------

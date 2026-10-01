@@ -54,13 +54,13 @@ models:
   - id: my-detector                 # lowercase; becomes queue sml.model.my-detector
     display_name: {en: My Detector, ko: 마이 디텍터, de: Mein Detektor}
     description:
-      en: One line for the model picker.
-      ko: 모델 선택 화면에 표시되는 한 줄 설명.
-      de: Eine Zeile für die Modellauswahl.
+      en: One line for operators (admin console only; users never see detectors).
+      ko: 운영자용 한 줄 설명(관리 콘솔 전용, 사용자에게는 표시되지 않음).
+      de: Eine Zeile für Betreiber (nur Admin-Konsole; Nutzer sehen keine Detektoren).
     family: deepfake                # deepfake | ai_generated | general
     face_required: true             # enables "no face" handling
     xai: gradcam                    # gradcam | attention | none (shown as a badge)
-    default_selected: false         # part of the recommended selection
+    default_selected: false         # runs on every job of each supported media type (until Admin → Models overrides it)
     trial: false                    # used for guest trial checks
     weight: 1.0                     # weight in the combined verdict
     gpu_mem_mb: 6000                # informational, for capacity planning
@@ -106,14 +106,15 @@ billing.
    ```
 
 3. In **Admin → Models** check that the model is listed with its queue and consumers. The same
-   page can disable it, change its weight, or add/remove it from the recommended and trial
-   selections at runtime (stored as overrides; `models.yaml` is untouched).
+   page turns it on or off for every image job and every video job, changes its weight, or adds it
+   to the trial selection at runtime (stored as overrides; `models.yaml` is untouched).
 
 ## 4. Verify
 
-- Run one image and one video through **Detect** with only the new model selected, and watch
-  the processing log on the job page. Failures show the exit code and the last lines of stderr
-  there and in the worker log (`journalctl -u sml-worker@<gpu>`).
+- Switch the new model on (and the others off) in **Admin → Models**, run one image and one video
+  through **Detect**, and open the job in **Admin → Jobs**: each task has its live log (the button
+  next to it), and failures show the exit code and the last lines of stderr there and in the worker
+  log (`journalctl -u sml-worker@<gpu>`). Users only see generic steps.
 - A parser test next to the existing ones (`apps/worker/tests/test_parsers.py`) with a real line
   of your script's output keeps future changes honest. `test_subprocess_adapter.py` shows how to
   run an adapter end to end with a stand-in script.

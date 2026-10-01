@@ -12,6 +12,9 @@ os.environ["STREAM_SHARED_SECRET"] = "test-stream-secret"
 os.environ["API_INTERNAL_URL"] = "http://api.test"
 os.environ["STREAM_PRELOAD_MODEL"] = "0"
 
+# Sessions "paid for" through the API in a test: session id → what the claim endpoint returns.
+PAID: dict[str, dict[str, Any]] = {}
+
 
 def make_video(path: Path, seconds: int = 4, fps: int = 10) -> Path:
     import av
@@ -55,7 +58,8 @@ def service(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         import time
 
         count = max(1, int((end - start) // interval))
-        yield {"type": "meta", "num_intervals": count, "summary_statistic": "mean"}
+        yield {"type": "meta", "num_intervals": count, "summary_statistic": "mean", "model": "SKKU-AIGC",
+               "checkpoint": "/home/ops/videoCheckpoint.pt", "device": "cuda:0"}
         for i in range(count):
             if should_stop():
                 raise RuntimeError("Processing cancelled by user")
@@ -66,8 +70,17 @@ def service(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
                    "end_sec": start + (i + 1) * interval, "fake_probability": engine_.interval_prob, "frames_used": 8}
         yield {"type": "done", "average_fake_probability": engine_.interval_prob}
 
+    def fake_claim(session_id: str) -> dict[str, Any]:
+        """The API hands out a session's paid parameters once (see the Django claim endpoint)."""
+        from sml_stream.reporter import ApiRefused
+
+        if session_id not in PAID:
+            raise ApiRefused("already claimed")
+        return PAID.pop(session_id)
+
+    PAID.clear()
     monkeypatch.setattr(app_module, "report", fake_report)
+    monkeypatch.setattr(app_module, "claim", fake_claim)
     monkeypatch.setattr(engines, "resolve", lambda model_id: engine if model_id == "skku-aigc" else None)
     monkeypatch.setattr(engines, "run", fake_run)
-    app_module._used_sessions.clear()
     return {"reports": reports, "engine": engine, "tmp": tmp_path}

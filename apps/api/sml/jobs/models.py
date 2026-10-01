@@ -189,7 +189,12 @@ class Artifact(TimeStampedModel):
 
 
 class JobEvent(models.Model):
-    """Human-readable processing timeline shown on the job page."""
+    """Processing timeline.
+
+    `message` is the operator's view (detector names, GPUs, errors) shown only in the admin
+    console. Users see an event only when it has a `public_message`, which never names the
+    detectors or describes how the analysis works.
+    """
 
     class Level(models.TextChoices):
         INFO = "info", "Info"
@@ -203,6 +208,7 @@ class JobEvent(models.Model):
     level = models.CharField(max_length=8, choices=Level.choices, default=Level.INFO)
     code = models.CharField(max_length=48)
     message = models.CharField(max_length=500)
+    public_message = models.CharField(max_length=500, blank=True, default="")
     data = models.JSONField(default=dict, blank=True)
 
     class Meta:
@@ -272,6 +278,8 @@ class StreamSession(TimeStampedModel):
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     last_event_at = models.DateTimeField(null=True, blank=True)
+    # Set when the stream service fetches the scan parameters; a session can be claimed once.
+    claimed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

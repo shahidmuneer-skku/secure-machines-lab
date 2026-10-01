@@ -1,4 +1,4 @@
-"""drf-spectacular post-processing hooks."""
+"""drf-spectacular hooks."""
 
 from __future__ import annotations
 
@@ -6,9 +6,19 @@ from typing import Any
 
 # Response properties that really can be absent from a payload.
 OPTIONAL_RESPONSE_FIELDS = {
-    "ModelInfo": {"allowed"},
     "Count": {"removed", "revoked"},
 }
+
+ADMIN_PREFIX = "/api/v1/admin/"
+
+
+def exclude_admin_endpoints(endpoints: list[Any], **kwargs: Any) -> list[Any]:
+    """The published API reference (/api/openapi.json) documents the user API only.
+
+    The admin console's endpoints describe how detection is configured, which users must not
+    learn; the web app's contract (manage.py spectacular) still includes them.
+    """
+    return [e for e in endpoints if not e[0].startswith(ADMIN_PREFIX)]
 
 
 def require_response_fields(result: dict[str, Any], generator: Any, request: Any, public: bool) -> dict[str, Any]:

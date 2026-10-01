@@ -41,7 +41,7 @@
     "creditsCount": "{count, plural, one {# Credit} other {# Credits}}",
     "simulated": "Simuliert",
     "simulatedHint": "Die echte Modellumgebung ist noch nicht installiert; diese Punktzahl ist simuliert und dient nur Testzwecken.",
-    "disclaimer": "Punktzahlen sind probabilistische Schätzungen von Machine-Learning-Modellen und können falsch sein. Verwenden Sie sie zur Unterstützung, nicht zur Ersetzung, von Expertenurteilen.",
+    "disclaimer": "Die Werte sind probabilistische Schätzungen einer automatischen Analyse und können falsch sein. Nutzen Sie sie zur Unterstützung, nicht als Ersatz für Expertenurteile.",
     "notFound": "Seite nicht gefunden",
     "notFoundBody": "Die gesuchte Seite existiert nicht oder Sie haben keinen Zugriff darauf.",
     "goHome": "Zum Dashboard",
@@ -110,7 +110,8 @@
     "real": "Wahrscheinlich authentisch",
     "no_face": "Kein Gesicht erkannt",
     "inconclusive": "Kein eindeutiges Ergebnis",
-    "aiMetadata": "KI-Generierungsindikator in Metadaten"
+    "aiMetadata": "KI-Generierungsindikator in Metadaten",
+    "ai_generated": "Wahrscheinlich KI-generiert"
   },
   "queue": {
     "position": "Platz {position} in der Warteschlange · ~{eta}",
@@ -134,7 +135,7 @@
     "NOT_FOUND": "Nicht gefunden.",
     "RATE_LIMITED": "Zu viele Anfragen. Bitte drosseln Sie die Anfragen.",
     "INSUFFICIENT_CREDITS": "Nicht genügend Credits.",
-    "MODEL_NOT_ALLOWED": "Eines der ausgewählten Modelle ist für Sie nicht verfügbar.",
+    "MODEL_NOT_ALLOWED": "Dieser Dateityp kann für Ihr Konto derzeit nicht analysiert werden.",
     "MODULE_NOT_ALLOWED": "Dieses Modul ist für Ihr Konto nicht aktiviert.",
     "INVALID_MEDIA": "Diese Datei ist kein unterstütztes Bild oder Video.",
     "MFA_REQUIRED": "Für diesen Bereich ist eine Sitzung erforderlich, die mit der Zwei-Faktor-Authentifizierung verifiziert wurde.",
@@ -258,15 +259,12 @@
       "added": "Hinzugefügt",
       "spent": "Verbraucht",
       "runs": "Läufe",
-      "wait": "Ø Wartezeit"
+      "wait": "Ø Wartezeit",
+      "jobs": "Analysen"
     },
     "jobsChart": {
       "eyebrow": "Ergebnisse",
       "title": "Aufträge nach Ergebnis im Zeitverlauf"
-    },
-    "modelChart": {
-      "eyebrow": "Modelle",
-      "title": "Nutzung nach Modell"
     },
     "creditsChart": {
       "eyebrow": "Credits",
@@ -279,7 +277,7 @@
     "quick": {
       "eyebrow": "Schnellstart",
       "title": "Datei ablegen",
-      "subtitle": "Führt die empfohlenen Modelle aus. Verwenden Sie „Erkennen“ für volle Kontrolle.",
+      "subtitle": "Dateien ablegen und sofort analysieren. Unter „Erkennen“ sehen Sie vorher den Preis.",
       "analyze": "{count, plural, =0 {Analysieren} one {# Datei analysieren} other {# Dateien analysieren}}"
     },
     "recent": {
@@ -294,15 +292,24 @@
       "jobs": "{count} Aufträge",
       "credits": "{count} Credits",
       "manage": "API-Schlüssel verwalten"
+    },
+    "usageChart": {
+      "eyebrow": "Nutzung",
+      "title": "Analysen nach Typ"
+    },
+    "usageType": {
+      "image": "Bilder",
+      "video": "Videos",
+      "long_video": "Langvideo",
+      "news": "Nachrichten"
     }
   },
   "detect": {
     "eyebrow": "Arbeitsbereich · Erkennen",
     "title": "Deepfakes & KI-generierte Medien erkennen",
-    "subtitle": "Legen Sie Bilder und Videos zusammen ab. Wir erkennen jeden Dateityp automatisch und kombinieren die von Ihnen gewählten Modelle zu einem einzigen Ergebnis.",
+    "subtitle": "Bilder und Videos gemeinsam ablegen. Jede Datei wird automatisch analysiert, und Sie erhalten ein Gesamtergebnis mit Belegen.",
     "step1": "Dateien",
-    "step2": "Detektoren",
-    "step3": "Prüfen",
+    "step2": "Prüfen & absenden",
     "filesTitle": "Bilder oder Videos hinzufügen",
     "filesHint": "Ziehen und Ablegen, klicken zum Durchsuchen oder Einfügen aus der Zwischenablage. Bis zu 50 Dateien pro Batch.",
     "dropLabel": "Bilder oder Videos hochladen",
@@ -321,49 +328,23 @@
     "uploadFailed": "Hochladen fehlgeschlagen.",
     "retryUpload": "Upload wiederholen",
     "removeFile": "Datei entfernen",
-    "modelsTitle": "Wählen Sie die Modelle aus, die zur Analyse beitragen",
-    "modelsHint": "Jedes ausgewählte Modell analysiert jede kompatible Datei; Sie erhalten ein kombiniertes Ergebnis (die Modell-Scores finden Sie unter Details).",
-    "recommended": "Empfohlen",
-    "selectAll": "Alle auswählen",
-    "clearSelection": "Leeren",
-    "selectedCount": "{count} ausgewählt",
-    "family": {
-      "deepfake": "Gesichtsmanipulation (Deepfakes)",
-      "ai_generated": "Vollständig KI-generiert",
-      "general": "Allgemein"
-    },
-    "needsFace": "Benötigt ein Gesicht",
-    "needsFaceHint": "Dieses Modell analysiert Gesichter. Für Dateien ohne Gesicht fallen keine Kosten an.",
-    "hasXai": "Erklärbarkeits-Heatmap",
-    "locked": "Nicht auf Ihrem Konto verfügbar",
-    "imageOnly": "nur Bilder",
-    "videoOnly": "nur Videos",
-    "auditTitle": "Prüfkette",
-    "auditHint": "Zusätzliche Prüfungen rund um die Erkennung. Metadaten & C2PA-Herkunft werden immer ausgeführt.",
-    "alwaysOn": "immer aktiv",
     "summaryTitle": "Zusammenfassung & Kosten",
     "filesReady": "Dateien bereit",
-    "modelsSelected": "Modelle",
-    "auditSelected": "Prüfschritte",
     "total": "Gesamt",
     "creditsN": "{count, plural, one {# Credit} other {# Credits}}",
     "balanceAfter": "Saldo {balance} → {after} nach diesem Batch",
-    "flatPriceHint": "Der Preis gilt pro Datei, unabhängig davon, wie viele Modelle Sie auswählen.",
-    "quoteHint": "Laden Sie Dateien hoch und wählen Sie Modelle aus, um den Preis zu sehen.",
+    "flatPriceHint": "Der Preis gilt pro Datei.",
+    "quoteHint": "Laden Sie Dateien hoch, um den Preis zu sehen.",
     "quoteFailed": "Diesen Auftrag konnte nicht kalkuliert werden.",
     "notEnough": "Sie haben nicht genügend Credits für diesen Batch.",
     "buyCredits": "Credits kaufen",
-    "noModelFor": "Wählen Sie mindestens ein Modell, das Folgendes unterstützt: {types}",
     "submit": "Analyse starten",
     "submitHint": "Aufträge werden sofort in die Warteschlange gestellt – Sie können diese Seite verlassen und den Fortschritt in den Ergebnissen verfolgen.",
     "queuedToast": "{count, plural, one {In Warteschlange – Analyse gestartet} other {# Dateien in Warteschlange}}",
     "queuedToastHint": "Verfolgen Sie den Fortschritt live in den Ergebnissen.",
     "track": "Verfolgen",
     "insufficient": "Nicht genügend Credits",
-    "submitFailed": "Die Analyse konnte nicht gestartet werden",
-    "collapseAll": "Alle einklappen",
-    "expandAll": "Alle ausklappen",
-    "selectGroup": "Alle in {group} auswählen"
+    "submitFailed": "Die Analyse konnte nicht gestartet werden"
   },
   "results": {
     "eyebrow": "Arbeitsbereich · Ergebnisse",
@@ -454,34 +435,9 @@
     "notCharged": "Nicht berechnet",
     "expires": "Medien laufen ab am {when}",
     "stages": "Verarbeitungsstufen",
-    "stage": {
-      "queued": "In Warteschlange",
-      "analyzing": "Analyse läuft",
-      "aggregating": "Aggregation läuft",
-      "done": "Fertig"
-    },
-    "taskKind": {
-      "model": "Modell",
-      "audit": "Prüfkette",
-      "long_video": "Scanner",
-      "news": "Agent"
-    },
-    "simulated": "Simuliert",
-    "attempt": "Versuch {n}",
-    "fallbackUsed": "Fallback: {model}",
-    "taskProgress": "Fortschritt von {name}",
-    "scoreFake": "{pct} % Deepfake",
-    "noFace": "Kein Gesicht",
-    "log": "Protokoll",
-    "toggleLog": "Live-Protokoll für {name} anzeigen",
-    "liveLog": "Live-Verarbeitungsprotokoll",
-    "logWaiting": "Warten auf den Worker…",
-    "logEmpty": "Keine Protokolleinträge.",
     "processing": {
       "eyebrow": "Hinter den Kulissen",
-      "title": "Was gerade passiert",
-      "models": "Erkennungsmodelle",
-      "audit": "Prüfkette"
+      "title": "Was gerade passiert"
     },
     "timeline": {
       "eyebrow": "Zeitleiste",
@@ -491,7 +447,7 @@
       "eyebrow": "Medien",
       "original": "Original",
       "overlayAlt": "Overlay: {label}",
-      "explainability": "Erklärbarkeits-Overlay",
+      "explainability": "Heatmap-Überlagerung",
       "opacity": "Deckkraft",
       "expired": "Medien abgelaufen und gelöscht.",
       "unavailable": "Medien nicht verfügbar.",
@@ -499,7 +455,12 @@
       "timeline": "Score über die Zeit",
       "timelineHint": "Klicken Sie auf das Diagramm, um den Player zu diesem Zeitpunkt zu springen.",
       "streamPreview": "Vorschaubild",
-      "streamNotStored": "Gestreamter Scan: Das Video selbst wurde nicht gespeichert."
+      "streamNotStored": "Gestreamter Scan: Das Video selbst wurde nicht gespeichert.",
+      "artifact": {
+        "heatmap": "Heatmap {n}",
+        "face": "Gesicht {n}",
+        "video": "Analysiertes Video {n}"
+      }
     },
     "verdict": {
       "eyebrow": "Ergebnis",
@@ -508,26 +469,21 @@
       "failed": "Die Analyse ist fehlgeschlagen. Es wurden keine Gebühren berechnet.",
       "canceled": "Dieser Auftrag wurde storniert. Die reservierten Credits wurden zurückgegeben.",
       "expired": "Dieser Auftrag ist abgelaufen.",
-      "pending": "Die Ergebnisse erscheinen hier, sobald die Modelle fertig sind.",
-      "partial": "Einige Modelle sind fehlgeschlagen; das Ergebnis basiert auf den abgeschlossenen Modellen.",
-      "simulated": "Einige Scores sind simuliert, da die echte Modellumgebung noch nicht auf dem Server installiert ist.",
-      "details": "Details je Modell",
-      "model": "Modell",
-      "fakePct": "Fake %",
-      "weight": "Gewicht",
-      "time": "Zeit",
-      "failedShort": "fehlgeschlagen"
+      "pending": "Das Ergebnis erscheint hier, sobald die Analyse abgeschlossen ist.",
+      "partial": "Einige Analyseschritte konnten nicht abgeschlossen werden; das Ergebnis beruht auf den abgeschlossenen Schritten."
     },
     "reason": {
-      "model_consensus": "Gewichteter Konsens der ausgewählten Modelle",
       "metadata_ai_indicator": "Metadaten oder Content Credentials weisen auf KI-Generierung hin",
-      "no_face": "Kein Gesicht für gesichtsbezogene Modelle gefunden",
-      "news_agent": "Bewertung durch den Verifizierungsagenten"
+      "no_face": "In der Datei wurde kein Gesicht gefunden",
+      "news_agent": "Bewertung durch den Verifizierungsagenten",
+      "analysis": "Gesamtergebnis der automatischen Analyse",
+      "metadata_hint": "Die Metadaten deuten auf KI-Generierung hin, passend zur Analyse",
+      "stopped_early": "Die Analyse wurde vor dem Ende des gewählten Bereichs gestoppt"
     },
     "disclaimer": "Die Werte sind probabilistische Schätzungen und können falsch sein. Verwenden Sie sie zur Unterstützung, nicht zur Ersetzung, von Expertenurteilen; sie sind kein rechtlicher Beweis.",
     "provenance": {
       "eyebrow": "Herkunft",
-      "title": "Metadaten & Prüfung",
+      "title": "Metadaten & Prüfungen",
       "aiFound": "Indikator für KI-Generierung gefunden",
       "noneFound": "Kein KI-Indikator in den Metadaten",
       "confidence": {
@@ -544,13 +500,13 @@
         "tool_unavailable": "Nicht geprüft",
         "error": "Konnte nicht gelesen werden"
       },
-      "audit": "Prüfschritte",
-      "completed": "Abgeschlossen"
+      "hintFound": "Schwacher Hinweis auf KI-Generierung in den Metadaten",
+      "checks": "Zusätzliche Prüfungen"
     },
     "explain": {
       "eyebrow": "KI-Analyst",
       "title": "Erklärung des Ergebnisses",
-      "subtitle": "Ein Reasoning-Modell analysiert die Datei, Heatmaps, Werte und Metadaten und erklärt das Ergebnis in verständlicher Sprache.",
+      "subtitle": "Ein KI-Analyst betrachtet die Datei, die Heatmaps und die Metadaten und erklärt das Ergebnis verständlich.",
       "ask": "Erklären",
       "again": "Erneut fragen",
       "cost": "{count} cr",
@@ -579,18 +535,42 @@
       "reserved": "Reserviert",
       "trial": "Kostenlose Testphase – keine Credits verbraucht."
     },
-    "taskError": {
-      "GPU_OOM": "Beim Ausführen dieses Modells war der GPU-Speicher erschöpft.",
-      "GPU_UNSUPPORTED": "Dieses Modell ist auf der zugewiesenen Hardware vorübergehend nicht verfügbar.",
-      "TIMEOUT": "Das Modell hat zu lange gebraucht und wurde abgebrochen.",
-      "WORKER_LOST": "Der Worker für dieses Modell reagiert nicht mehr.",
-      "QUEUE_TIMEOUT": "Kein Worker hat diese Aufgabe rechtzeitig übernommen.",
-      "RUNTIME_ERROR": "Das Modell wurde mit einem Fehler beendet.",
-      "PARSE_ERROR": "Das Modell wurde ohne Ergebnis beendet.",
-      "CONFIG_ERROR": "Dieses Modell ist nicht korrekt konfiguriert.",
-      "INFRA_ERROR": "Ein vorübergehender Systemfehler ist aufgetreten.",
-      "AGENT_ERROR": "Der KI-Agent konnte die Aufgabe nicht abschließen.",
-      "INVALID_MEDIA": "Die Datei konnte von diesem Modell nicht gelesen werden."
+    "step": {
+      "queued": "Wartet in der Warteschlange",
+      "checks": "Datei wird geprüft (Metadaten, Herkunft)",
+      "analysis": "{media, select, image {Bild wird analysiert} video {Video wird analysiert} attachments {Angehängte Medien werden analysiert} other {Datei wird analysiert}}",
+      "verification": "Meldung und Quellen werden geprüft",
+      "results": "Ergebnis wird erstellt"
+    },
+    "stepStatus": {
+      "pending": "wartet",
+      "running": "läuft",
+      "done": "fertig",
+      "failed": "fehlgeschlagen",
+      "canceled": "abgebrochen",
+      "expired": "abgelaufen",
+      "skipped": "übersprungen"
+    },
+    "check": {
+      "name": {
+        "face": "Gesichtserkennung",
+        "safety": "Inhaltssicherheit",
+        "fas": "Lebenderkennung"
+      },
+      "facesFound": "Gesichter gefunden",
+      "noFace": "Kein Gesicht gefunden",
+      "sensitive": "Sensible Inhalte erkannt",
+      "notSensitive": "Keine sensiblen Inhalte",
+      "spoof": "Täuschungsversuch vermutet",
+      "live": "Kein Täuschungsversuch",
+      "status": {
+        "pending": "Wartet",
+        "running": "Läuft",
+        "done": "Fertig",
+        "failed": "Konnte nicht abgeschlossen werden",
+        "canceled": "Abgebrochen",
+        "skipped": "Übersprungen"
+      }
     }
   },
   "admin": {
@@ -740,7 +720,10 @@
       "retry": "Auftrag erneut ausführen",
       "retried": "Auftrag in Warteschlange zurückgestellt",
       "failed": "Das hat nicht funktioniert.",
-      "openAsUser": "Ergebnisseite öffnen"
+      "openAsUser": "Ergebnisseite öffnen",
+      "showLog": "Live-Log von {task} anzeigen",
+      "log": "Aufgaben-Log",
+      "logEmpty": "Keine Log-Zeilen."
     },
     "queues": {
       "eyebrow": "Admin · Betrieb",
@@ -768,10 +751,9 @@
     "models": {
       "eyebrow": "Admin · Modelle",
       "title": "Erkennungsmodelle",
-      "subtitle": "Modelle aktivieren oder deaktivieren, deren Gewicht im kombinierten Ergebnis festlegen und Standardwerte wählen.",
+      "subtitle": "Legen Sie fest, welche Detektoren auf jedem Bild und Video laufen, ihre Gewichte und was jeder Auftrag zusätzlich ausführt. Nutzer sehen dies nie.",
       "model": "Modell",
       "enabled": "Aktiviert",
-      "default": "Standard",
       "trial": "Test",
       "weight": "Gewicht",
       "consumers": "Worker",
@@ -779,7 +761,31 @@
       "envs": "Conda-Umgebung",
       "saved": "Modell aktualisiert",
       "failed": "Modell konnte nicht aktualisiert werden.",
-      "legend": "24h-Läufe = abgeschlossen / fehlgeschlagen / wartend. Modelle ohne Worker lassen Aufträge warten, bis ein Worker startet."
+      "legend": "Läufe = letzte 24 h: Läufe / fehlgeschlagen / wartend. Consumer = Worker der Modell-Warteschlange. Gewichte bestimmen den Anteil jedes Detektors am Gesamtergebnis.",
+      "media": {
+        "image": "Bilder",
+        "video": "Videos"
+      },
+      "runOnFor": "{model} auf {media} ausführen",
+      "runsSummary": "{count, plural, =0 {Kein Detektor aktiv – Aufträge dieses Typs werden abgelehnt} one {# Detektor läuft bei jedem Auftrag} other {# Detektoren laufen bei jedem Auftrag}}",
+      "setup": {
+        "checksTitle": "Prüfungen bei jedem Auftrag",
+        "checksHint": "Laufen zusätzlich zu den Detektoren bei jedem Bild und Video. Die Metadaten-/C2PA-Prüfung läuft immer.",
+        "always": "Läuft immer",
+        "longVideoTitle": "Detektor für Langvideos",
+        "longVideoHint": "Jede Langvideo-Analyse nutzt diesen Detektor; Nutzer wählen nur Bereich und Modus.",
+        "streamOffline": "Der Langvideo-Dienst ist nicht erreichbar, daher können seine Detektoren nicht aufgelistet werden.",
+        "detector": "Detektor",
+        "automatic": "Automatisch (erster verfügbarer)",
+        "unavailable": "nicht verfügbar",
+        "faceCrop": "Vor der Bewertung auf Gesichter zuschneiden",
+        "faceCropDefault": "Standard des Detektors",
+        "faceCropOn": "An",
+        "faceCropOff": "Aus",
+        "faceCropFixed": "Dieser Detektor entscheidet selbst über den Zuschnitt.",
+        "saved": "Gespeichert",
+        "failed": "Das hat nicht funktioniert."
+      }
     },
     "pricing": {
       "eyebrow": "Admin · Preise",
@@ -1365,18 +1371,11 @@
     "replace": "Anderes Video wählen",
     "tooBig": "Diese Datei ist größer als {size}.",
     "settingsTitle": "Scan-Einstellungen",
-    "model": "Detektor",
-    "unavailable": "Derzeit nicht verfügbar",
-    "faceCropSupport": {
-      "always": "Analysiert immer das größte Gesicht",
-      "optional": "Gesichtsausschnitt optional",
-      "none": "Analysiert ganze Frames"
-    },
     "mode": "Modus",
     "modeIntervals": "Zeitleiste (pro Intervall)",
     "modeWhole": "Ganzes Video (ein Ergebnis)",
     "modeIntervalsHint": "Bewertet jedes Intervall des gewählten Bereichs, sodass Sie zu verdächtigen Stellen springen können.",
-    "modeWholeHint": "Ein Wert für den gewählten Bereich, so berechnet, wie der Detektor einen ganzen Clip beurteilen soll.",
+    "modeWholeHint": "Ein Wert für den gesamten gewählten Bereich.",
     "interval": "Intervalllänge",
     "seconds": "{count} s",
     "intervalHint": "Kürzere Intervalle ergeben eine feinere Zeitleiste und dauern länger.",
@@ -1384,8 +1383,6 @@
     "setStart": "Start an Abspielposition",
     "setEnd": "Ende an Abspielposition",
     "wholeRange": "Ganzes Video",
-    "faceCrop": "Auf Gesichter zuschneiden",
-    "faceCropHint": "Analysiert das größte Gesicht in jedem Frame statt des ganzen Frames.",
     "summary": "Zusammenfassung",
     "selected": "Gewählte Länge",
     "maxCost": "Maximale Kosten",
@@ -1442,7 +1439,7 @@
       "media": "Bilder oder Videos (max. 10)",
       "submit": "Fall prüfen",
       "cost": "{count} Credits pro Fall",
-      "duration": "Die Detektoren werden zuerst auf jeder Datei ausgeführt, dann recherchiert der Agent den Fall. Dies dauert in der Regel mehrere Minuten."
+      "duration": "Jede angehängte Datei wird zuerst analysiert, danach wird der Fall recherchiert. Das dauert meist einige Minuten."
     },
     "category": {
       "conflict": "Konflikt",
@@ -1491,7 +1488,7 @@
     "free": {
       "title": "Kostenlose Kontingente",
       "trial": "{count} kostenlose Bildprüfungen pro Tag",
-      "trialBody": "Testen Sie den Detektor auf der Startseite – kein Konto erforderlich.",
+      "trialBody": "Testen Sie eine kostenlose Analyse auf der Startseite – ohne Konto.",
       "bonus": "{count} Willkommens-Credits",
       "bonusBody": "Wird hinzugefügt, wenn Sie Ihre E-Mail-Adresse bestätigen. Gültig für {days} Tage.",
       "daily": "{count} kostenlose Credits jeden Tag",
@@ -1506,7 +1503,7 @@
       "news": "Nachrichtenprüfung – {count} Credits pro Fall",
       "explain": "Erklärung (KI-Analyst) – {count} Credits",
       "reports": "PDF / HWP / CSV-Berichte – kostenlos",
-      "flat": "Die Preise gelten pro Datei, unabhängig davon, wie viele Erkennungsmodelle Sie auswählen. Für Dateien, bei denen die Analyse fehlschlägt, wird nie berechnet."
+      "flat": "Preise gelten pro Datei. Dateien, deren Analyse fehlschlägt, werden nie berechnet."
     },
     "plans": {
       "eyebrow": "Abos",
@@ -1525,8 +1522,8 @@
         "a": "Tägliche kostenlose Credits werden jeden Tag zurückgesetzt, der Willkommensbonus gilt 30 Tage, Abo-Credits gelten bis zum Ende des Abrechnungsmonats und gekaufte Credits 12 Monate. Wir verbrauchen immer zuerst die Credits, die am nächsten ablaufen."
       },
       "models": {
-        "q": "Kostet es mehr, wenn ich mehr Modelle auswähle?",
-        "a": "Nein. Der Preis gilt pro Datei; Sie können so viele Erkennungsmodelle kombinieren, wie Ihr Konto zulässt, zu einem einzigen Ergebnis."
+        "q": "Kostet eine gründlichere Analyse mehr?",
+        "a": "Nein. Jede Datei erhält die vollständige Analyse für ihren Typ zum gleichen Pauschalpreis."
       },
       "refund": {
         "q": "Kann ich eine Erstattung erhalten?",
