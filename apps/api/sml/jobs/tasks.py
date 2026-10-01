@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from celery import shared_task
 from django.conf import settings
@@ -21,7 +21,11 @@ def dispatch() -> int:
     return dispatch_pending()
 
 
-@shared_task(name="sml.jobs.record_task_event", ignore_result=True, acks_late=True)
+# A worker's result must not be lost to a transient error (database restart, a deploy whose
+# migration ran before this process restarted): retry with backoff for about an hour. Beyond that,
+# requeue_stale replays the copy the worker kept in Redis.
+@shared_task(name="sml.jobs.record_task_event", ignore_result=True, acks_late=True, autoretry_for=(Exception,),
+             retry_backoff=5, retry_backoff_max=600, retry_jitter=True, max_retries=12)
 def record_task_event(payload: dict) -> None:
     from .results import record_task_event as _record
 
@@ -33,6 +37,35 @@ def record_explanation_event(payload: dict) -> None:
     from .explain import record_explanation_event as _record
 
     _record(payload)
+
+
+def replay_kept_results(now: datetime) -> int:
+    """Record results the workers delivered but the API never processed (kept in Redis by workers).
+
+    A worker keeps each final result for 24 h. If its task is still open here a minute later, the
+    message was lost; replaying it is safe because recording ignores stale or repeated events.
+    """
+    from django.utils.dateparse import parse_datetime
+
+    from .live import kept_results
+    from .models import JobTask
+    from .results import record_task_event as _record
+
+    open_tasks = list(JobTask.objects.filter(status__in=[JobTask.Status.RUNNING, JobTask.Status.DISPATCHED])
+                      .exclude(queue=STREAM).values_list("pk", "attempt"))
+    kept = kept_results([str(pk) for pk, _ in open_tasks])
+    count = 0
+    for pk, attempt in open_tasks:
+        payload = kept.get(str(pk))
+        if not payload or int(payload.get("attempt", 0)) != attempt:
+            continue
+        kept_at = parse_datetime(str(payload.get("kept_at", ""))) or now
+        if now - kept_at < timedelta(seconds=60):
+            continue  # the message is probably still on its way
+        logger.warning("Replaying the kept result of task %s (its message was lost)", pk)
+        _record(payload)
+        count += 1
+    return count
 
 
 @shared_task(name="sml.maintenance.requeue_stale", ignore_result=True)
@@ -47,7 +80,7 @@ def requeue_stale() -> int:
 
     now = timezone.now()
     reg = registry()
-    count = 0
+    count = replay_kept_results(now)
     # Streamed long-form scans report through their own channel (sml/jobs/streams.py).
     running = (JobTask.objects.filter(status=JobTask.Status.RUNNING, started_at__lt=now - timedelta(minutes=5))
                .exclude(queue=STREAM))

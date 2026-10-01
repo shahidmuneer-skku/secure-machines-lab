@@ -295,3 +295,52 @@ def test_worker_error_details_reach_staff_but_never_users(user, job_for, worker,
     admin = client_for(make_user(roles=("admin",)), mfa=True)
     staff_view = admin.get(f"/api/v1/admin/jobs/{job.pk}").json()
     assert any("/home/ops" in t["error_detail"] for t in staff_view["tasks_internal"])
+
+
+def test_a_lost_result_is_replayed_from_the_copy_the_worker_kept(user, job_for, worker, monkeypatch):
+    """A result message the API never processed (e.g. a deploy dropped it) is recovered within minutes."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from sml.jobs import live
+    from sml.jobs.tasks import requeue_stale
+
+    fund(user, 5)
+    a, b = image_models()
+    job = job_for(user, [a, b])
+    dispatch_pending()
+    kept = {}
+    for task in job.tasks.all():
+        worker.start(task)
+        result = {"ai_indicators": {}} if task.kind == JobTask.Kind.AUDIT else {"fake_prob": 0.9}
+        payload = {"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
+                   "result": result, "kept_at": (timezone.now() - timedelta(minutes=2)).isoformat()}
+        if task.target == b:
+            kept[str(task.pk)] = payload  # this message never arrived
+        else:
+            worker.succeed(task, result)
+    job.refresh_from_db()
+    assert job.status == Job.Status.RUNNING
+    monkeypatch.setattr(live, "kept_results", lambda ids: {i: kept[i] for i in ids if i in kept})
+    assert requeue_stale() == 1
+    job.refresh_from_db()
+    assert job.status == Job.Status.SUCCEEDED and job.fake_probability == pytest.approx(0.9)
+    assert requeue_stale() == 0  # replaying again is a no-op
+
+
+def test_a_fresh_kept_result_is_left_to_the_message(user, job_for, worker, monkeypatch):
+    from django.utils import timezone
+
+    from sml.jobs import live
+    from sml.jobs.tasks import requeue_stale
+
+    fund(user, 5)
+    job = job_for(user)
+    dispatch_pending()
+    task = job.tasks.filter(kind=JobTask.Kind.MODEL).first()
+    worker.start(task)
+    payload = {"event": "finished", "status": "succeeded", "task_id": str(task.pk), "attempt": 1,
+               "result": {"fake_prob": 0.2}, "kept_at": timezone.now().isoformat()}
+    monkeypatch.setattr(live, "kept_results", lambda ids: {str(task.pk): payload})
+    assert requeue_stale() == 0

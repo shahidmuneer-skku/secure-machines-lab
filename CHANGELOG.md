@@ -65,5 +65,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   old machine had downloaded at runtime were missing. The anti-spoofing check now reports a
   configuration error instead of "completed" when its code is not installed.
 - Development API reloads no longer hang on open live-update connections.
+- Video jobs could stay "running": a worker's result was lost when the API failed to record it (a
+  migration ran before the API worker restarted). Recording now retries, and workers keep each final
+  result in Redis for the stale-task sweep to replay.
+- SKKU (BEYBI) video: dlib loaded CUDA 12.9 cuSOLVER against PyTorch's cuBLAS 12.1; the env now puts
+  PyTorch's CUDA libraries first.
 - Content-Security-Policy with per-request nonces; HSTS; secure cookies; problem-details errors
   without server details.

@@ -32,7 +32,10 @@ conda_envs:
   mixture3:
     LD_LIBRARY_PATH: "{env_prefix}/lib"
   BEYBI:
-    LD_LIBRARY_PATH: "{env_prefix}/lib"
+    # PyTorch (cu121) loads its own cuBLAS 12.1 first; the env's lib/ ships CUDA 12.9 cuSOLVER/cuBLAS
+    # for dlib, which then fails (undefined cublasSetEnvironmentMode). Put PyTorch's matching CUDA
+    # libraries first and keep lib/ for OpenBLAS and the rest.
+    LD_LIBRARY_PATH: "{env_prefix}/lib/python3.8/site-packages/nvidia/cusolver/lib:{env_prefix}/lib/python3.8/site-packages/nvidia/cublas/lib:{env_prefix}/lib/python3.8/site-packages/nvidia/cudnn/lib:{env_prefix}/lib/python3.8/site-packages/nvidia/curand/lib:{env_prefix}/lib"
 
 # What runs: users never choose. `default_selected: true` means "runs on every job of each media type
 # the model supports" until an admin changes it per media type on Admin → Models (ADR 0011).

@@ -146,3 +146,30 @@ def test_a_task_that_cannot_fit_does_not_block_others(fake_gpu, monkeypatch):
     assert ("end", "small") in [(k, t) for k, t, _ in log]
     fake_gpu["external"] = 0
     blocked.join(5)
+
+
+def test_final_results_are_kept_for_the_api_sweep(redis_ok):  # type: ignore[no-untyped-def]
+    """The worker keeps each final result in Redis before sending it (sml/jobs/tasks.replay_kept_results)."""
+    import json
+
+    from sml_worker.context import RESULT_KEY
+    from sml_worker.runner import RESULT_TASK, _send
+
+    sent = []
+
+    class App:
+        def send_task(self, name, args, **kwargs):  # type: ignore[no-untyped-def]
+            sent.append((name, args[0]))
+
+    payload = {"task_id": "test-kept-result", "attempt": 2, "event": "finished", "status": "succeeded",
+               "result": {"fake_prob": 0.4}}
+    r = redis_ok
+    r.delete(RESULT_KEY.format("test-kept-result"))
+    _send(App(), RESULT_TASK, payload)
+    kept = json.loads(r.get(RESULT_KEY.format("test-kept-result")))
+    assert kept["attempt"] == 2 and kept["result"] == {"fake_prob": 0.4} and kept["kept_at"]
+    assert 0 < r.ttl(RESULT_KEY.format("test-kept-result")) <= 24 * 3600
+    _send(App(), RESULT_TASK, {"task_id": "test-started", "attempt": 1, "event": "started"})
+    assert r.get(RESULT_KEY.format("test-started")) is None  # only final results are kept
+    assert [n for n, _ in sent] == [RESULT_TASK, RESULT_TASK]
+    r.delete(RESULT_KEY.format("test-kept-result"))

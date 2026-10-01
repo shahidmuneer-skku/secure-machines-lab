@@ -147,9 +147,22 @@ in Admin → Models until they are copied there.
 **Video detectors fail right after starting.** Usually the environment: a conda env copied from
 another machine (`SSL: CERTIFICATE_VERIFY_FAILED`; the worker sets `SSL_CERT_FILE` to the env's
 own bundle), dlib missing `libopenblas.so.0` / `libcublas.so.12` (add the env to `conda_envs` in
-`config/models.yaml` with `LD_LIBRARY_PATH: "{env_prefix}/lib"`), or weights a script downloads at
+`config/models.yaml` with `LD_LIBRARY_PATH: "{env_prefix}/lib"`), `undefined symbol:
+cublasSetEnvironmentMode` (the env's lib/ has newer CUDA libraries than PyTorch: put PyTorch's
+`site-packages/nvidia/*/lib` folders first, as for BEYBI), or weights a script downloads at
 first use (`auxillary/*.pth`, `insightface/models/antelopev2/models/buffalo_l/*.onnx` in the models
 root). The task's `error_detail` in Admin → Jobs shows the last stderr lines.
+
+**A task stays "running" although the worker finished it.** The API did not record the result
+message (for example a migration ran while the old API Celery worker was still up). Recording
+retries for about an hour, and every minute `requeue_stale` replays the copy the worker keeps in
+Redis (`sml:task-result:<task id>`, 24 h) once it is a minute old, so the job completes on its own.
+Deploy order: migrate, then restart `sml-celery` and the workers straight away (`deploy/release.sh`).
+
+**A video model waits for "20 GB free".** Admission reserves a model's highest observed GPU memory
+for that media type (×1.25, capped at the card): Xception once used 19 GB on a long video, so its
+video runs take the whole card and run alone. To re-measure after a fix:
+`redis-cli HDEL sml:gpu-model-peak model:xception:video`.
 
 **Jobs wait in the queue for a long time.** Admin → Queues: if a model queue has messages but
 0 consumers, check `systemctl status sml-worker@<gpu>` and `nvidia-smi`. Running tasks whose

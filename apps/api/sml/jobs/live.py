@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 from typing import Any
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 PROGRESS_KEY = "sml:task-progress:{}"
 LOG_KEY = "sml:task-log:{}"
 CANCEL_KEY = "sml:cancel:{}"
+RESULT_KEY = "sml:task-result:{}"  # final results kept by workers (sml_worker/runner.py)
 WORKER_KEY_PATTERN = "sml:worker:*"
 
 
@@ -28,6 +30,22 @@ def _redis() -> redis.Redis | None:
 def redis_or_none() -> redis.Redis | None:
     """The Redis holding live state, or None when events are kept in memory (tests)."""
     return _redis()
+
+
+def kept_results(task_ids: list[str]) -> dict[str, dict[str, Any]]:
+    """Final results the workers kept for the given tasks (see tasks.replay_kept_results)."""
+    r = _redis()
+    if r is None or not task_ids:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        for task_id, raw in zip(task_ids, r.mget([RESULT_KEY.format(t) for t in task_ids]), strict=True):
+            if raw:
+                with contextlib.suppress(ValueError):
+                    out[task_id] = json.loads(raw)
+    except redis.RedisError:
+        logger.warning("Redis unavailable for kept results", exc_info=True)
+    return out
 
 
 def task_progress(task_ids: list[str]) -> dict[str, dict[str, Any]]:

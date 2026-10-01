@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import json
 import logging
 import os
 import shutil
@@ -11,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import redis
+
 from . import gpu as gpu_admission
 from .adapters.audit import AuditAdapter, SimulatedAuditAdapter
 from .adapters.base import AdapterError, ModelResult
@@ -18,9 +22,9 @@ from .adapters.long_video import LongVideoAdapter, SimulatedLongVideoAdapter
 from .adapters.metadata import MetadataAdapter
 from .adapters.simulated import SimulatedAdapter
 from .adapters.subprocess_cli import SubprocessAdapter
-from .clients import download
+from .clients import download, redis_client
 from .config import config
-from .context import Canceled, TaskContext
+from .context import RESULT_KEY, RESULT_TTL_SECONDS, Canceled, TaskContext
 from .registry import audit_spec, long_video_spec, model_spec, raw_registry
 
 logger = logging.getLogger(__name__)
@@ -67,7 +71,17 @@ def _adapter(envelope: dict[str, Any]) -> Any:
 
 
 def _send(app: Any, name: str, payload: dict[str, Any]) -> None:
+    if name == RESULT_TASK and payload.get("event") == "finished":
+        keep_result(payload)
     app.send_task(name, args=[payload], queue=RESULTS_QUEUE, routing_key=RESULTS_QUEUE, priority=9)
+
+
+def keep_result(payload: dict[str, Any]) -> None:
+    """Keep the final result in Redis too: if the API loses the message (a restart mid-deploy, a
+    database error), its stale-task sweep replays it instead of re-running the model."""
+    with contextlib.suppress(redis.RedisError):
+        redis_client().set(RESULT_KEY.format(payload["task_id"]), json.dumps({**payload, "kept_at": _now()}),
+                           ex=RESULT_TTL_SECONDS)
 
 
 def _now() -> str:
