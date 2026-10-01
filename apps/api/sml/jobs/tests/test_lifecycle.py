@@ -361,3 +361,25 @@ def test_a_successful_retry_clears_the_previous_error(user, job_for, worker):
     task.refresh_from_db()
     assert (task.status, task.attempt) == (JobTask.Status.SUCCEEDED, 2)
     assert task.error_code == task.error_message == task.error_detail == ""
+
+
+def test_several_jobs_are_canceled_at_once(api, user, make_user, job_for):
+    fund(user, 5)
+    first, second, done = job_for(user), job_for(user), job_for(user)
+    services.cancel_job(done)
+    other = make_user()
+    fund(other, 5)
+    foreign = job_for(other)
+    unknown = "01a0f000-0000-7000-8000-000000000000"
+    res = api.post("/api/v1/jobs/cancel", {"ids": [str(first.pk), str(second.pk), str(done.pk), str(foreign.pk),
+                                                   unknown, str(first.pk)]}, format="json")
+    assert res.status_code == 200, res.content
+    assert res.json() == {"canceled": [str(first.pk), str(second.pk)], "already_finished": [str(done.pk)],
+                          "not_found": [str(foreign.pk), unknown]}  # another user's job is not visible
+    for job in (first, second):
+        job.refresh_from_db()
+        assert job.status == Job.Status.CANCELED
+    foreign.refresh_from_db()
+    assert foreign.status == Job.Status.QUEUED
+    assert credits.get_balance(user).balance == 5  # queued work is refunded
+    assert api.post("/api/v1/jobs/cancel", {"ids": []}, format="json").status_code == 400

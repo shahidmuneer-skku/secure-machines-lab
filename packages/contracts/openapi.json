@@ -4281,7 +4281,7 @@
         },
         "/api/v1/jobs/{id}/cancel": {
             "post": {
-                "operationId": "jobs_cancel_create",
+                "operationId": "jobs_cancel_create_2",
                 "summary": "Cancel: queued work stops immediately (full refund); running work best-effort",
                 "parameters": [
                     {
@@ -4536,6 +4536,62 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/JobList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/jobs/cancel": {
+            "post": {
+                "operationId": "jobs_cancel_create",
+                "description": "Cancel several of your jobs at once (e.g. every job still queued or running).",
+                "summary": "Cancel several jobs: queued work stops at once (refunded); running work best-effort",
+                "tags": [
+                    "jobs"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobBulkCancelRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobBulkCancelRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JobBulkCancelRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JobBulkCancelResult"
                                 }
                             }
                         },
@@ -8611,6 +8667,55 @@
                 "required": [
                     "id",
                     "label"
+                ]
+            },
+            "JobBulkCancelRequest": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 100,
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "ids"
+                ]
+            },
+            "JobBulkCancelResult": {
+                "type": "object",
+                "properties": {
+                    "canceled": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Queued work stopped and refunded; running work is stopping."
+                    },
+                    "already_finished": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "not_found": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                },
+                "required": [
+                    "already_finished",
+                    "canceled",
+                    "not_found"
                 ]
             },
             "JobCreateRequest": {

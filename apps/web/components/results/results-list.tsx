@@ -1,7 +1,7 @@
 "use client"
 
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { ListFilter, Loader2, ScanSearch, Search, Trash2 } from "lucide-react"
+import { Ban, ListChecks, ListFilter, Loader2, ScanSearch, Search, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -9,6 +9,10 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/sml/page-header"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
@@ -68,6 +72,26 @@ export function ResultsList() {
   })
   const jobs = query.data?.pages.flatMap((p) => p.results) ?? []
   const hasFilters = Object.values(filters).some(Boolean)
+  const activeIds = jobs.filter((j) => j.status === "queued" || j.status === "running").map((j) => j.id)
+  const selectedActive = activeIds.filter((id) => selected.has(id))
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [canceling, setCanceling] = useState(false)
+
+  const bulkCancel = async () => {
+    setCanceling(true)
+    try {
+      const res = data(await api.POST("/api/v1/jobs/cancel", { body: { ids: selectedActive } }))
+      if (res.canceled.length) toast.success(t("bulkCanceled", { count: res.canceled.length }))
+      if (res.already_finished.length) toast.info(t("bulkCancelFinished", { count: res.already_finished.length }))
+      setSelected((prev) => { const n = new Set(prev); res.canceled.forEach((id) => n.delete(id)); return n })
+    } catch {
+      toast.error(t("bulkCancelFailed"))
+    } finally {
+      setCanceling(false)
+      setConfirmCancel(false)
+      query.refetch()
+    }
+  }
 
   const bulkDelete = async () => {
     const ids = [...selected]
@@ -101,15 +125,39 @@ export function ResultsList() {
           </Select>
         ))}
         {hasFilters && <Button variant="ghost" size="sm" onClick={() => { setSearch(""); router.replace(pathname) }}>{t("clearFilters")}</Button>}
+        {activeIds.length > 0 && selectedActive.length < activeIds.length && (
+          <Button variant="outline" size="sm" onClick={() => setSelected((prev) => new Set([...prev, ...activeIds]))}>
+            <ListChecks className="size-4" /> {t("selectActive", { count: activeIds.length })}
+          </Button>
+        )}
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
           <span>{t("selectedCount", { count: selected.size })}</span>
+          {selectedActive.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)} disabled={canceling}>
+              <Ban className="size-4" /> {t("cancelSelected", { count: selectedActive.length })}
+            </Button>
+          )}
           <Button size="sm" variant="destructive" onClick={bulkDelete}><Trash2 className="size-4" /> {t("deleteSelected")}</Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{t("clearSelection")}</Button>
         </div>
       )}
+      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("cancelSelectedTitle", { count: selectedActive.length })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("cancelSelectedBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("keepRunning")}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); void bulkCancel() }} disabled={canceling}>
+              {canceling && <Loader2 className="size-4 animate-spin" />} {t("cancelSelected", { count: selectedActive.length })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {query.isLoading ? (
         <div className="space-y-2">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-20" />)}</div>

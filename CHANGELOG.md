@@ -28,6 +28,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- Results page: cancel several queued or running jobs at once ("Select all running", then "Cancel N
+  jobs" with a confirmation); `POST /api/v1/jobs/cancel` does the same for API clients.
 - Administrators see each detector's answer on result pages (admin-only *Detector breakdown*:
   verdict, probability, weight, time, heatmap, per-frame curve), label files with their ground truth,
   and compare each detector's measured accuracy (accuracy, AUC, precision, recall over labelled files)

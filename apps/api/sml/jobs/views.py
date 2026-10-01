@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from sml import api_schemas as schemas
 from sml.apikeys.permissions import require_scope
-from sml.core.exceptions import ApiError
+from sml.core.exceptions import ApiError, Conflict
 from sml.core.idempotency import idempotent
 from sml.core.permissions import require
 from sml.core.throttling import JobCreateThrottle
@@ -199,6 +199,35 @@ class JobCancelView(APIView):
     def post(self, request: Request, pk: str) -> Response:
         job = services.cancel_job(get_object_or_404(user_jobs(request), pk=pk))
         return Response(JobListSerializer(job, context={"request": request}).data)
+
+
+class JobBulkCancelView(APIView):
+    """Cancel several of your jobs at once (e.g. every job still queued or running)."""
+
+    permission_classes = [IsAuthenticated, require_scope("jobs:write")]
+
+    @extend_schema(tags=["jobs"], request=schemas.JobBulkCancelSerializer,
+                   responses=schemas.JobBulkCancelResultSerializer,
+                   summary="Cancel several jobs: queued work stops at once (refunded); running work best-effort")
+    def post(self, request: Request) -> Response:
+        body = schemas.JobBulkCancelSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        ids = list(dict.fromkeys(body.validated_data["ids"]))
+        jobs = {j.pk: j for j in user_jobs(request).filter(pk__in=ids)}
+        out: dict[str, list[str]] = {"canceled": [], "already_finished": [], "not_found": []}
+        for job_id in ids:
+            job = jobs.get(job_id)
+            if job is None:
+                out["not_found"].append(str(job_id))
+            elif job.is_terminal:
+                out["already_finished"].append(str(job_id))
+            else:
+                try:
+                    services.cancel_job(job)
+                    out["canceled"].append(str(job_id))
+                except Conflict:  # finished while we were cancelling the others
+                    out["already_finished"].append(str(job_id))
+        return Response(out)
 
 
 class JobRerunView(APIView):

@@ -415,7 +415,15 @@
     "canceled": "Job canceled",
     "rerunQueued": "Re-run queued",
     "deleted": "Job deleted",
-    "actionFailed": "That didn't work. Please try again."
+    "actionFailed": "That didn't work. Please try again.",
+    "selectActive": "{count, plural, one {Select the running job} other {Select all # running}}",
+    "cancelSelected": "{count, plural, one {Cancel # job} other {Cancel # jobs}}",
+    "cancelSelectedTitle": "{count, plural, one {Cancel # job?} other {Cancel # jobs?}}",
+    "cancelSelectedBody": "Queued work stops now and its credits are returned. Analyses already running stop as soon as they can.",
+    "keepRunning": "Keep running",
+    "bulkCanceled": "{count, plural, one {# job canceled} other {# jobs canceled}}",
+    "bulkCancelFinished": "{count, plural, one {# job had already finished} other {# jobs had already finished}}",
+    "bulkCancelFailed": "Could not cancel the jobs. Try again."
   },
   "job": {
     "eyebrow": "{kind} · run {run}",

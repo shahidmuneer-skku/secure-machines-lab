@@ -415,7 +415,15 @@
     "canceled": "Auftrag abgebrochen",
     "rerunQueued": "Erneute Ausführung in Warteschlange",
     "deleted": "Auftrag gelöscht",
-    "actionFailed": "Das hat nicht funktioniert. Bitte versuchen Sie es erneut."
+    "actionFailed": "Das hat nicht funktioniert. Bitte versuchen Sie es erneut.",
+    "selectActive": "{count, plural, one {Laufenden Auftrag auswählen} other {Alle # laufenden auswählen}}",
+    "cancelSelected": "{count, plural, one {# Auftrag abbrechen} other {# Aufträge abbrechen}}",
+    "cancelSelectedTitle": "{count, plural, one {# Auftrag abbrechen?} other {# Aufträge abbrechen?}}",
+    "cancelSelectedBody": "Wartende Arbeit stoppt sofort und die Credits werden erstattet. Bereits laufende Analysen stoppen so bald wie möglich.",
+    "keepRunning": "Weiterlaufen lassen",
+    "bulkCanceled": "{count, plural, one {# Auftrag abgebrochen} other {# Aufträge abgebrochen}}",
+    "bulkCancelFinished": "{count, plural, one {# Auftrag war bereits fertig} other {# Aufträge waren bereits fertig}}",
+    "bulkCancelFailed": "Die Aufträge konnten nicht abgebrochen werden. Bitte erneut versuchen."
   },
   "job": {
     "eyebrow": "{kind} · Lauf {run}",

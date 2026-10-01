@@ -534,3 +534,14 @@ class DetectionSetupUpdateSerializer(serializers.Serializer):
     long_video_face_crops = serializers.DictField(
         child=serializers.BooleanField(allow_null=True), required=False,
         help_text="{model_id: true|false|null}; null returns the detector to its default.")
+
+
+class JobBulkCancelSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.UUIDField(), min_length=1, max_length=100)
+
+
+class JobBulkCancelResultSerializer(serializers.Serializer):
+    canceled = serializers.ListField(child=serializers.UUIDField(),
+                                     help_text="Queued work stopped and refunded; running work is stopping.")
+    already_finished = serializers.ListField(child=serializers.UUIDField())
+    not_found = serializers.ListField(child=serializers.UUIDField())

@@ -1056,7 +1056,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cancel: queued work stops immediately (full refund); running work best-effort */
-        post: operations["jobs_cancel_create"];
+        post: operations["jobs_cancel_create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1109,6 +1109,26 @@ export interface paths {
         put?: never;
         /** Re-run a finished job with the same settings (charged again) */
         post: operations["jobs_rerun_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel several jobs: queued work stops at once (refunded); running work best-effort
+         * @description Cancel several of your jobs at once (e.g. every job still queued or running).
+         */
+        post: operations["jobs_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2284,6 +2304,15 @@ export interface components {
         IdLabel: {
             id: string;
             label: string;
+        };
+        JobBulkCancelRequest: {
+            ids: string[];
+        };
+        JobBulkCancelResult: {
+            /** @description Queued work stopped and refunded; running work is stopping. */
+            canceled: string[];
+            already_finished: string[];
+            not_found: string[];
         };
         /** @description Detectors and checks are chosen by the administrator, not by the caller. */
         JobCreateRequest: {
@@ -5579,7 +5608,7 @@ export interface operations {
             };
         };
     };
-    jobs_cancel_create: {
+    jobs_cancel_create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5690,6 +5719,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobList"];
+                };
+            };
+        };
+    };
+    jobs_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobBulkCancelRequest"];
+                "multipart/form-data": components["schemas"]["JobBulkCancelRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["JobBulkCancelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobBulkCancelResult"];
                 };
             };
         };

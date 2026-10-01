@@ -415,7 +415,15 @@
     "canceled": "작업 취소됨",
     "rerunQueued": "다시 실행 대기열에 추가됨",
     "deleted": "작업 삭제됨",
-    "actionFailed": "처리가 되지 않았습니다. 다시 시도해 주세요."
+    "actionFailed": "처리가 되지 않았습니다. 다시 시도해 주세요.",
+    "selectActive": "{count, plural, one {진행 중인 작업 선택} other {진행 중인 작업 #개 모두 선택}}",
+    "cancelSelected": "{count, plural, one {작업 #개 취소} other {작업 #개 취소}}",
+    "cancelSelectedTitle": "{count, plural, one {작업 #개를 취소할까요?} other {작업 #개를 취소할까요?}}",
+    "cancelSelectedBody": "대기 중인 작업은 즉시 중단되고 크레딧이 반환됩니다. 이미 실행 중인 분석은 가능한 한 빨리 중단됩니다.",
+    "keepRunning": "계속 진행",
+    "bulkCanceled": "{count, plural, one {작업 #개를 취소했습니다} other {작업 #개를 취소했습니다}}",
+    "bulkCancelFinished": "{count, plural, one {작업 #개는 이미 완료되었습니다} other {작업 #개는 이미 완료되었습니다}}",
+    "bulkCancelFailed": "작업을 취소하지 못했습니다. 다시 시도해 주세요."
   },
   "job": {
     "eyebrow": "{kind} · 실행 {run}",
