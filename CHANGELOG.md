@@ -35,6 +35,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   API clients see the verdict, its evidence and generic progress steps only — no detector names,
   counts, per-detector scores, logs or methods in the app, the API, live events, reports or the AI
   explanations (ADR 0011). Staff keep the full detail in the admin console, including per-task logs.
+- Results are reported per analysis — face swap, AI generation, general — each with its own
+  verdict and probability (no detector counts); the headline is fake when any analysis is fake. The
+  administrator can move a detector to another analysis. Reports, the AI explanation and the news
+  agent use the same split; video timelines show one line per analysis.
 - Heatmaps: the administrator chooses whose heatmap users see (one image per detector; Center by
   default). Face cropping for long-form scans is set per detector.
 - Metadata markers: a definite AI-generation marker labels a file "Likely AI-generated" regardless

@@ -81,31 +81,28 @@ def _news_case(job: Job) -> dict[str, Any] | None:
 
 
 def _forensics(job: Job) -> list[dict[str, Any]]:
-    """One combined detector result per attached file, handed to the news agent as one input.
+    """Per attached file, the result of each analysis (face swap, AI generation, general), handed to
+    the news agent as one input. The agent's report is shown to the user, so it is never told which
+    detectors ran or how many."""
+    from sml.core.models import PlatformSettings
 
-    The agent's report is shown to the user, so it is never told which detectors ran.
-    """
+    from .public import ANALYSIS_IDS
+    from .results import group_results
+
+    threshold = PlatformSettings.load().fake_threshold
     reg = registry()
-    per_file: dict[str, dict[str, Any]] = {}
+    by_file: dict[str, list[JobTask]] = {}
     for t in job.tasks.filter(kind=JobTask.Kind.MODEL).select_related("media"):
-        media = t.media or job.media
-        entry = per_file.setdefault(str(media.pk) if media else "", {
-            "file": media.original_name if media else "", "scores": [], "no_face": False, "xai_keys": []})
-        prob = t.result.get("fake_prob") if t.status == JobTask.Status.SUCCEEDED else None
-        if prob is not None:
-            spec = reg.get(t.target)
-            entry["scores"].append((spec.weight if spec else 1.0, float(prob)))
-        entry["no_face"] = entry["no_face"] or bool(t.result.get("no_face"))
-        if len(entry["xai_keys"]) < 2:
-            entry["xai_keys"] += [a.storage_key for a in t.artifacts.filter(
-                kind="xai", content_type__startswith="image/")[:2 - len(entry["xai_keys"])]]
+        by_file.setdefault(str(t.media_id or job.media_id or ""), []).append(t)
     out = []
-    for entry in per_file.values():
-        scores = entry.pop("scores")
-        total = sum(w for w, _ in scores)
-        entry["fake_prob"] = round(sum(w * p for w, p in scores) / total, 4) if total else None
-        entry["status"] = "succeeded" if scores else ("no_face" if entry["no_face"] else "failed")
-        out.append(entry)
+    for tasks in by_file.values():
+        media = tasks[0].media or job.media
+        xai = [a.storage_key for t in tasks for a in t.artifacts.filter(kind="xai", content_type__startswith="image/")]
+        out.append({"file": media.original_name if media else "",
+                    "analyses": [{"analysis": ANALYSIS_IDS.get(g["group"], "general"), "status": g["status"],
+                                  "fake_prob": g["fake_probability"]}
+                                 for g in group_results(tasks, threshold, reg)],
+                    "xai_keys": xai[:2]})
     return out
 
 

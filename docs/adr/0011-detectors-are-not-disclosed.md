@@ -18,7 +18,10 @@ it fake. Long-form scans use one admin-chosen detector.
   face cropping (`PlatformSettings.long_video_face_crops`; missing = the detector's default). Requests carry files and options
   only; `models` / `audit_steps` fields are ignored.
 - *One projection for users.* `sml/jobs/public.py` builds everything user-facing from a job:
-  generic steps, verdict reasons, provenance, check results, a combined video timeline and one heatmap
+  generic steps, one result per analysis — face swap, AI generation, general (the detectors'
+  families, editable on Admin → Models) — with its verdict and probability but never how many
+  detectors it combines, verdict reasons, provenance, check results, a video timeline per analysis
+  and one heatmap
   (the main blended map) from each detector the admin chose, with generic labels and file names. The user serializers, reports,
   the explanation prompt and the news-agent prompt are all built from it. The detailed serializers
   are named `Admin*` and only admin endpoints use them.
@@ -30,6 +33,9 @@ it fake. Long-form scans use one admin-chosen detector.
   have no detector allow-list, the dashboard counts analyses by type, the long-form token names the
   session only (the stream service claims the parameters from the API once) and forwards whitelisted
   engine fields, and the published OpenAPI document omits the admin API.
+
+The headline verdict is fake when any analysis says fake and shows the highest analysis probability
+(owner, 2026-10-01); each analysis combines its detectors with their weights.
 
 **Consequences.** Re-running a job uses the current admin configuration. Per-detector scores,
 heatmap provenance and logs remain available to staff in the admin console. Adding a field to a

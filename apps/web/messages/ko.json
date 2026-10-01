@@ -476,7 +476,7 @@
       "metadata_ai_indicator": "메타데이터 또는 콘텐츠 자격 증명에서 AI 생성 표시 확인",
       "no_face": "파일에서 얼굴을 찾지 못했습니다",
       "news_agent": "검증 에이전트 평가",
-      "analysis": "자동 분석의 종합 결과",
+      "analysis": "종합: 분석 결과 중 가장 강한 판정",
       "metadata_hint": "메타데이터에 AI 생성 흔적이 있으며 분석 결과와 일치합니다",
       "stopped_early": "선택한 구간이 끝나기 전에 분석이 중지되었습니다"
     },
@@ -570,6 +570,16 @@
         "failed": "완료하지 못함",
         "canceled": "취소됨",
         "skipped": "건너뜀"
+      }
+    },
+    "analysis": {
+      "title": "분석별 결과",
+      "failed": "완료하지 못함",
+      "probabilityOf": "{name}: 가짜 확률",
+      "name": {
+        "face_swap": "얼굴 합성(페이스 스왑) 분석",
+        "ai_generated": "AI 생성 분석",
+        "general": "일반 분석"
       }
     }
   },
@@ -792,7 +802,14 @@
       "heatmap": "히트맵",
       "heatmapFor": "사용자에게 {model}의 히트맵 표시",
       "heatmapsSummary": "{count, plural, one {사용자에게 {names}의 히트맵 표시} other {사용자에게 히트맵 #개 표시: {names}}}",
-      "noHeatmaps": "사용자에게 히트맵을 표시하지 않음"
+      "noHeatmaps": "사용자에게 히트맵을 표시하지 않음",
+      "category": "분류",
+      "categoryFor": "{model} 분류",
+      "family": {
+        "deepfake": "얼굴 합성",
+        "ai_generated": "AI 생성",
+        "general": "일반"
+      }
     },
     "pricing": {
       "eyebrow": "관리자 · 요금제",

@@ -330,6 +330,8 @@ SPECTACULAR_SETTINGS = {
         # What users see of artifacts and checks (sml.jobs.public); distinct from the admin enums.
         "EvidenceKindEnum": ["heatmap", "face", "video"],
         "JobStepEnum": ["queued", "checks", "analysis", "verification", "results"],
+        "AnalysisEnum": ["face_swap", "ai_generated", "general"],
+        "FamilyEnum": ["deepfake", "ai_generated", "general"],
         "CheckIdEnum": ["face", "safety", "fas"],
         "ServiceStatusEnum": ["ok", "error"],
         "PaymentModeEnum": ["off", "test", "live"],

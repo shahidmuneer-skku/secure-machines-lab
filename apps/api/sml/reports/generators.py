@@ -62,6 +62,7 @@ class ReportData:
     partial: bool
     ai_generated: bool  # flagged by AI-generation markers in the metadata
     reasons: list[dict[str, Any]]  # sml.jobs.public.reasons: never names detectors
+    analyses: list[dict[str, Any]]  # sml.jobs.public.analyses: one result per analysis (face swap, …)
     checks: list[dict[str, Any]]  # sml.jobs.public.checks
     provenance: dict[str, Any] | None  # sml.jobs.public.provenance
     media: dict[str, Any]
@@ -109,6 +110,14 @@ def _fmt_size(n: int | None) -> str:
     return f"{size:.1f} TB"
 
 
+def _analysis_text(a: dict[str, Any], t: dict[str, str]) -> str:
+    if a.get("status") == "no_face":
+        return t["no_face"]
+    if a.get("status") != "done" or a.get("fake_probability") is None:
+        return t["check_failed"]
+    return f"{t.get(a.get('verdict') or 'inconclusive', t['inconclusive'])} · {_pct(a['fake_probability'])}"
+
+
 def _check_text(check: dict[str, Any], t: dict[str, str]) -> str:
     if check.get("status") != "done":
         return t["check_failed"] if check.get("status") == "failed" else t.get(check.get("status", ""), "—")
@@ -151,6 +160,9 @@ def render_pdf(d: ReportData) -> bytes:
         [Paragraph(_esc(_verdict_text(d, t)), verdict_style)],
         [Paragraph(f"{t['probability']}: <b>{_pct(d.fake_probability)}</b>", body)],
     ]
+    for a in d.analyses:
+        name, result = _esc(t["analysis_" + a["id"]]), _esc(_analysis_text(a, t))
+        summary_cells.append([Paragraph(f"{name}: <b>{result}</b>", body)])
     if d.partial:
         summary_cells.append([Paragraph(_esc(t["partial"]), small)])
     for reason in d.reasons:
@@ -308,6 +320,8 @@ def render_hwp(d: ReportData) -> bytes:
     color = 2 if d.verdict == "fake" else 3 if d.verdict == "real" else 4
     lines.append(r"{\b\fs28\cf" + str(color) + " " + _rtf_escape(_verdict_text(d, t)) + r"}\par")
     lines.append(_rtf_escape(f"{t['probability']}: {_pct(d.fake_probability)}") + r"\par")
+    for a in d.analyses:
+        lines.append(_rtf_escape(f"{t['analysis_' + a['id']]}: {_analysis_text(a, t)}") + r"\par")
     if d.partial:
         lines.append(r"{\cf4\fs16 " + _rtf_escape(t["partial"]) + r"}\par")
     lines.append(r"\par{\b " + _rtf_escape(t["file"]) + r"}\par")
@@ -341,6 +355,12 @@ def render_csv(d: ReportData) -> bytes:
     w.writerow(["job_id", "run", "file_name", "media_type", "verdict", "fake_probability", "partial"])
     w.writerow([d.job_id, d.run_number, d.title, d.media_type, d.verdict,
                 "" if d.fake_probability is None else f"{d.fake_probability:.6f}", d.partial])
+    if d.analyses:
+        w.writerow([])
+        w.writerow(["analysis", "verdict", "fake_probability"])
+        for a in d.analyses:
+            fp = a.get("fake_probability")
+            w.writerow([a["id"], a.get("verdict") or a.get("status"), "" if fp is None else f"{fp:.6f}"])
     ind = d.provenance or {}
     w.writerow([])
     w.writerow(["metadata_ai_generated", "c2pa_status", "camera", "software"])
@@ -366,7 +386,8 @@ def render_zip(d: ReportData, artifacts: list[tuple[str, bytes]]) -> bytes:
         zf.writestr("report.csv", render_csv(d))
         zf.writestr("summary.json", json.dumps({
             "job_id": d.job_id, "run": d.run_number, "file_name": d.title, "verdict": d.verdict,
-            "fake_probability": d.fake_probability, "provenance": d.provenance, "checks": d.checks,
+            "fake_probability": d.fake_probability, "analyses": d.analyses, "provenance": d.provenance,
+            "checks": d.checks,
             "reasons": d.reasons,
         }, indent=2, ensure_ascii=False, default=str))
         for name, data in artifacts:

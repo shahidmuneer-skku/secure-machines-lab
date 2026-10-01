@@ -28,6 +28,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from sml.catalog import access
+from sml.catalog.registry import registry
 from sml.core.events import publish_job
 from sml.core.exceptions import ApiError, Conflict
 from sml.core.models import PlatformSettings
@@ -192,6 +193,11 @@ def create_session(user: Any, req: StreamRequest) -> tuple[StreamSession, str]:
     # scan's parameters (detector, range, size) from the API, so they never reach the client.
     token = sign_token({"sid": str(session.pk), "exp": int(time.time()) + settings.STREAM_TOKEN_TTL_SECONDS})
     return session, token
+
+
+def _family(model_id: str) -> str:
+    spec = registry().get(model_id)
+    return spec.family if spec else "general"
 
 
 def claim_session(session_id: str) -> dict[str, Any]:
@@ -371,6 +377,9 @@ def _on_finished(session: StreamSession, job: Job, task: JobTask, payload: dict[
                     "fake_prob": job.fake_probability, "no_face": False, "weight": 1.0,
                     "duration_ms": task.duration_ms, "fallback": None, "error_code": task.error_code}],
         "audit": {}, "ai_indicators": {},
+        # One result group: the family of the long-form detector in use.
+        "groups": [{"group": _family(session.model_id), "status": "done", "fake_probability": job.fake_probability,
+                    "verdict": job.verdict}] if job.fake_probability is not None else [],
         "stream": {"status": status, "analysed_seconds": round(analysed, 1),
                    "range_seconds": round(session.reserved_seconds, 1), "intervals": len(intervals)},
     }

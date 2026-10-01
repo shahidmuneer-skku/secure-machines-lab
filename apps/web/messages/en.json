@@ -476,7 +476,7 @@
       "metadata_ai_indicator": "Metadata or Content Credentials indicate AI generation",
       "no_face": "No face was found in the file",
       "news_agent": "Verification agent assessment",
-      "analysis": "Combined result of the automated analysis",
+      "analysis": "Overall: the strongest finding across the analyses",
       "metadata_hint": "The metadata hints at AI generation, consistent with the analysis",
       "stopped_early": "The scan was stopped before the end of the selected range"
     },
@@ -570,6 +570,16 @@
         "failed": "Could not be completed",
         "canceled": "Canceled",
         "skipped": "Skipped"
+      }
+    },
+    "analysis": {
+      "title": "Results by analysis",
+      "failed": "Could not be completed",
+      "probabilityOf": "{name}: fake probability",
+      "name": {
+        "face_swap": "Face-swap analysis",
+        "ai_generated": "AI-generation analysis",
+        "general": "General analysis"
       }
     }
   },
@@ -792,7 +802,14 @@
       "heatmap": "Heatmap",
       "heatmapFor": "Show {model}'s heatmap to users",
       "heatmapsSummary": "{count, plural, one {Users see the heatmap of {names}} other {Users see # heatmaps: {names}}}",
-      "noHeatmaps": "Users see no heatmap"
+      "noHeatmaps": "Users see no heatmap",
+      "category": "Category",
+      "categoryFor": "Category of {model}",
+      "family": {
+        "deepfake": "Face swap",
+        "ai_generated": "AI-generated",
+        "general": "General"
+      }
     },
     "pricing": {
       "eyebrow": "Admin · Pricing",

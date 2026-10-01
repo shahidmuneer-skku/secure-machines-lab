@@ -14,7 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from sml.catalog.registry import registry
+from sml.catalog.registry import FAMILIES, registry
 from sml.core.models import PlatformSettings
 from sml.credits import services as credits
 
@@ -238,6 +238,35 @@ def _metadata_flags(indicators: dict[str, Any], *, detectors_say_fake: bool) -> 
     return detectors_say_fake and bool(indicators.get("evidence"))
 
 
+def group_results(tasks: list[JobTask], threshold: float, reg: Any = None) -> list[dict[str, Any]]:
+    """One result per detector family (face swap, AI-generated, general) that ran.
+
+    Each group's probability is the weighted mean of its detectors that produced a score; users see
+    the group's verdict and probability, never how many detectors it combines (ADR 0011).
+    """
+    reg = reg or registry()
+    out = []
+    for family in FAMILIES:
+        members = [t for t in tasks if t.kind == JobTask.Kind.MODEL and (spec := reg.get(t.target)) is not None
+                   and spec.family == family]
+        if not members:
+            continue
+        usable = [t for t in members if t.status == JobTask.Status.SUCCEEDED and not t.result.get("no_face")
+                  and t.result.get("fake_prob") is not None]
+        if usable:
+            weights = [reg.get(t.target).weight for t in usable]
+            prob = round(sum(w * t.result["fake_prob"] for w, t in zip(weights, usable, strict=True))
+                         / (sum(weights) or 1), 6)
+            out.append({"group": family, "status": "done", "fake_probability": prob,
+                        "verdict": Job.Verdict.FAKE if prob >= threshold else Job.Verdict.REAL})
+        elif any(t.status == JobTask.Status.SUCCEEDED and t.result.get("no_face") for t in members):
+            out.append({"group": family, "status": "no_face", "fake_probability": None,
+                        "verdict": Job.Verdict.NO_FACE})
+        else:
+            out.append({"group": family, "status": "failed", "fake_probability": None, "verdict": ""})
+    return out
+
+
 def _metadata_indicators(job: Job) -> dict[str, Any]:
     meta = job.tasks.filter(kind=JobTask.Kind.AUDIT, target="metadata", status=JobTask.Status.SUCCEEDED).first()
     return (meta.result or {}).get("ai_indicators", {}) if meta else {}
@@ -269,7 +298,8 @@ def finalize_job(job: Job) -> Job:
             "fallback": t.result.get("fallback"), "error_code": t.error_code,
         })
     audits = {t.target: {"status": t.status, "result": t.result} for t in tasks if t.kind == JobTask.Kind.AUDIT}
-    job.summary = {"models": per_model, "audit": audits, "ai_indicators": indicators}
+    groups = group_results(tasks, threshold, reg)
+    job.summary = {"models": per_model, "audit": audits, "ai_indicators": indicators, "groups": groups}
     job.finished_at = timezone.now()
     job.progress = 100.0
     job.stage = "done"
@@ -283,10 +313,16 @@ def finalize_job(job: Job) -> Job:
     elif news is not None:
         _finalize_news(job, news, reasons)
     elif usable:
-        weights = [(reg.get(t.target).weight if reg.get(t.target) else 1.0) for t in usable]
-        prob = sum(w * t.result["fake_prob"] for w, t in zip(weights, usable, strict=True)) / (sum(weights) or 1)
-        job.fake_probability = round(prob, 6)
-        job.verdict = Job.Verdict.FAKE if prob >= threshold else Job.Verdict.REAL
+        # Headline (owner, 2026-10-01): fake if any result group says fake; it shows the highest
+        # group probability. Each group's own result is kept in the summary.
+        scored_groups = [g for g in groups if g["fake_probability"] is not None]
+        if scored_groups:
+            job.fake_probability = max(g["fake_probability"] for g in scored_groups)
+        else:  # detectors without a known family
+            weights = [(reg.get(t.target).weight if reg.get(t.target) else 1.0) for t in usable]
+            job.fake_probability = round(sum(w * t.result["fake_prob"] for w, t in zip(weights, usable, strict=True))
+                                         / (sum(weights) or 1), 6)
+        job.verdict = Job.Verdict.FAKE if job.fake_probability >= threshold else Job.Verdict.REAL
         reasons.append({"code": "model_consensus", "models": len(usable), "fake_probability": job.fake_probability})
         if _metadata_flags(indicators, detectors_say_fake=job.verdict == Job.Verdict.FAKE):
             job.verdict = Job.Verdict.FAKE

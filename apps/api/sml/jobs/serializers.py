@@ -325,7 +325,15 @@ class CheckSerializer(serializers.Serializer):
     result = serializers.DictField(help_text="faces_found, sensitive_content or spoof_detected")
 
 
+class AnalysisResultSerializer(serializers.Serializer):
+    id = serializers.ChoiceField(choices=["face_swap", "ai_generated", "general"])
+    status = serializers.ChoiceField(choices=["done", "no_face", "failed"])
+    verdict = serializers.CharField(allow_blank=True)
+    fake_probability = serializers.FloatField(allow_null=True)
+
+
 class TimelinePointSerializer(serializers.Serializer):
+    analysis = serializers.ChoiceField(choices=["face_swap", "ai_generated", "general"])
     start_sec = serializers.FloatField()
     end_sec = serializers.FloatField()
     fake_prob = serializers.FloatField()
@@ -377,6 +385,7 @@ class JobDetailSerializer(JobListSerializer):
     options = serializers.SerializerMethodField()
     verdict_reasons = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
+    analyses = serializers.SerializerMethodField()
     provenance = serializers.SerializerMethodField()
     checks = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
@@ -389,7 +398,7 @@ class JobDetailSerializer(JobListSerializer):
 
     class Meta(JobListSerializer.Meta):
         fields = [*JobListSerializer.Meta.fields, "media", "options", "locale", "verdict_reasons", "quote_lines",
-                  "steps", "provenance", "checks", "timeline", "long_video", "news", "events", "artifacts",
+                  "steps", "analyses", "provenance", "checks", "timeline", "long_video", "news", "events", "artifacts",
                   "explanations", "reports", "parent", "cancel_requested", "purged_at"]
 
     def _tasks(self, obj: Job) -> list[JobTask]:
@@ -412,6 +421,10 @@ class JobDetailSerializer(JobListSerializer):
         running = [str(t.pk) for t in tasks if t.status == JobTask.Status.RUNNING]
         return public.steps(obj, tasks, task_progress(running))
 
+    @extend_schema_field(AnalysisResultSerializer(many=True))
+    def get_analyses(self, obj: Job) -> list[dict[str, Any]]:
+        return public.analyses(obj)
+
     @extend_schema_field(ProvenanceSerializer(allow_null=True))
     def get_provenance(self, obj: Job) -> dict[str, Any] | None:
         return public.provenance(self._tasks(obj))
@@ -421,7 +434,7 @@ class JobDetailSerializer(JobListSerializer):
         return public.checks(self._tasks(obj))
 
     @extend_schema_field(TimelinePointSerializer(many=True))
-    def get_timeline(self, obj: Job) -> list[dict[str, float]]:
+    def get_timeline(self, obj: Job) -> list[dict[str, Any]]:
         return public.timeline(obj, self._tasks(obj))
 
     @extend_schema_field(LongVideoSummarySerializer(allow_null=True))

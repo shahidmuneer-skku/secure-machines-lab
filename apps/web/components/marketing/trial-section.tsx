@@ -24,6 +24,8 @@ const COPY = {
     doneTitle: "Result", signup: "Create a free account", signupBody: "Get a welcome bonus, free credits every day, videos, reports and the full model catalog.",
     exhausted: "You've used today's free checks.", error: "Something went wrong. Please try again.", disabled: "The free trial is currently unavailable.",
     queued: "Queued", disclaimer: "Probabilistic estimate — not legal evidence.", fake: "Fake probability", metadata: "AI indicator found in metadata",
+    analyses: { face_swap: "Face-swap analysis", ai_generated: "AI-generation analysis", general: "General analysis" },
+    noFace: "No face found", notCompleted: "Not completed",
   },
   ko: {
     eyebrow: "Index / 체험하기 · 002", title: "계정 없이 이미지 검사하기",
@@ -32,6 +34,8 @@ const COPY = {
     doneTitle: "결과", signup: "무료 계정 만들기", signupBody: "가입 보너스, 매일 무료 크레딧, 영상 분석, 보고서와 전체 모델을 이용하세요.",
     exhausted: "오늘의 무료 검사를 모두 사용했습니다.", error: "오류가 발생했습니다. 다시 시도해 주세요.", disabled: "무료 체험을 현재 이용할 수 없습니다.",
     queued: "대기 중", disclaimer: "확률적 추정치이며 법적 증거가 아닙니다.", fake: "가짜 확률", metadata: "메타데이터에서 AI 생성 흔적 발견",
+    analyses: { face_swap: "얼굴 합성(페이스 스왑) 분석", ai_generated: "AI 생성 분석", general: "일반 분석" },
+    noFace: "얼굴 없음", notCompleted: "완료하지 못함",
   },
   de: {
     eyebrow: "Index / Testen · 002", title: "Bild prüfen – ohne Konto",
@@ -41,6 +45,8 @@ const COPY = {
     exhausted: "Die kostenlosen Prüfungen für heute sind aufgebraucht.", error: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     disabled: "Die kostenlose Testversion ist derzeit nicht verfügbar.", queued: "In Warteschlange",
     disclaimer: "Probabilistische Schätzung – kein rechtlicher Beweis.", fake: "Fake-Wahrscheinlichkeit", metadata: "KI-Hinweis in den Metadaten",
+    analyses: { face_swap: "Face-Swap-Analyse", ai_generated: "KI-Generierungs-Analyse", general: "Allgemeine Analyse" },
+    noFace: "Kein Gesicht", notCompleted: "Nicht abgeschlossen",
   },
 } as const
 
@@ -146,6 +152,15 @@ export function TrialSection({ language }: { language: Language }) {
                 <>
                   <ProbabilityGauge value={j.fake_probability} label={c.fake} />
                   {aiMeta && <p className="flex items-center gap-2 text-sm text-[var(--sml-accent-2)]"><Sparkles className="size-4" />{c.metadata}</p>}
+                  <ul className="space-y-1.5 text-sm">
+                    {j.analyses.map((a) => (
+                      <li key={a.id} className="flex items-center justify-between gap-2 rounded-md border border-[var(--sml-line)] px-3 py-1.5">
+                        <span>{c.analyses[a.id]}</span>
+                        {a.status === "done" ? <VerdictBadge verdict={a.verdict} probability={a.fake_probability} size="sm" />
+                          : <span className="text-xs text-[var(--sml-ink-dim)]">{a.status === "no_face" ? c.noFace : c.notCompleted}</span>}
+                      </li>
+                    ))}
+                  </ul>
                   <p className="text-xs text-[var(--sml-ink-faint)]">{c.disclaimer}</p>
                 </>
               )}

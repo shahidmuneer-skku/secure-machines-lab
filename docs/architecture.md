@@ -87,8 +87,10 @@ unloaded and the model is pinned with the same context size, so it is never load
 older attempt are ignored. A model may declare fallbacks in `config/models.yaml` (e.g. no face
 found → run Center).
 
-**Verdict and charging** (ADR 0006). The verdict is the weighted mean of the detectors that
-produced a score. A definite AI-generation marker in the metadata (C2PA / IPTC declaration,
+**Verdict and charging** (ADR 0006, 0011). Detectors are grouped by family into three analyses
+(face swap, AI generation, general); each analysis is the weighted mean of its detectors that
+produced a score, and the headline verdict is fake when any analysis is fake (it shows the highest
+analysis probability). A definite AI-generation marker in the metadata (C2PA / IPTC declaration,
 embedded generation parameters, generator software tag) forces "fake" and labels the file
 "likely AI-generated"; a weak hint only adds that label when the detectors already judged it fake. A job is
 charged its quoted price only if at least one model produced a score. No-face results, failures

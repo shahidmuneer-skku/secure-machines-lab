@@ -333,14 +333,22 @@ export function AdminModels() {
       </div>
       <HudCard><CardContent className="overflow-x-auto pt-4">
         <Table>
-          <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("enabled")}</TableHead>
+          <TableHeader><TableRow><TableHead>{t("model")}</TableHead><TableHead>{t("category")}</TableHead><TableHead>{t("enabled")}</TableHead>
             <TableHead>{t("media.image")}</TableHead><TableHead>{t("media.video")}</TableHead>
             <TableHead>{t("heatmap")}</TableHead><TableHead>{t("trial")}</TableHead><TableHead>{t("weight")}</TableHead><TableHead className="text-right">{t("consumers")}</TableHead>
             <TableHead className="text-right">{t("runs")}</TableHead><TableHead>{t("envs")}</TableHead></TableRow></TableHeader>
           <TableBody>
             {(models ?? []).map((m) => (
               <TableRow key={m.id}>
-                <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id} · {m.media.join("/")} · {m.family}</span></TableCell>
+                <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id} · {m.media.join("/")}</span></TableCell>
+                <TableCell>
+                  <Select value={m.family} disabled={!canEdit} onValueChange={(v) => patch.mutate({ model_id: m.id, family: v })}>
+                    <SelectTrigger className="h-8 w-40" aria-label={t("categoryFor", { model: m.name })}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(["deepfake", "ai_generated", "general"] as const).map((f) => <SelectItem key={f} value={f}>{t(`family.${f}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
                 <TableCell><Switch checked={m.enabled} disabled={!canEdit} onCheckedChange={(v) => patch.mutate({ model_id: m.id, enabled: v })} aria-label={t("enabled")} /></TableCell>
                 <TableCell>{mediaSwitch(m, "image")}</TableCell>
                 <TableCell>{mediaSwitch(m, "video")}</TableCell>

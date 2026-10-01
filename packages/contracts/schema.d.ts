@@ -1648,7 +1648,7 @@ export interface components {
         AdminModel: {
             id: string;
             name: string;
-            family: string;
+            family: components["schemas"]["FamilyEnum"];
             media: string[];
             enabled: boolean;
             /** Format: double */
@@ -1742,6 +1742,27 @@ export interface components {
          * @enum {string}
          */
         AllowedAuditStepsEnum: "face" | "safety" | "fas" | "metadata";
+        /**
+         * @description * `face_swap` - face_swap
+         *     * `ai_generated` - ai_generated
+         *     * `general` - general
+         * @enum {string}
+         */
+        AnalysisEnum: "face_swap" | "ai_generated" | "general";
+        AnalysisResult: {
+            id: components["schemas"]["AnalysisEnum"];
+            status: components["schemas"]["AnalysisResultStatusEnum"];
+            verdict: string;
+            /** Format: double */
+            fake_probability: number | null;
+        };
+        /**
+         * @description * `done` - done
+         *     * `no_face` - no_face
+         *     * `failed` - failed
+         * @enum {string}
+         */
+        AnalysisResultStatusEnum: "done" | "no_face" | "failed";
         ApiKey: {
             /** Format: uuid */
             readonly id: string;
@@ -2097,6 +2118,13 @@ export interface components {
          * @enum {string}
          */
         FaceCropEnum: "always" | "optional" | "none";
+        /**
+         * @description * `deepfake` - deepfake
+         *     * `ai_generated` - ai_generated
+         *     * `general` - general
+         * @enum {string}
+         */
+        FamilyEnum: "deepfake" | "ai_generated" | "general";
         FreeAllowance: {
             guest_trial_images_per_day: number;
             signup_bonus_credits: number;
@@ -2181,6 +2209,7 @@ export interface components {
             }[];
             quote_lines: unknown;
             readonly steps: components["schemas"]["JobStep"][];
+            readonly analyses: components["schemas"]["AnalysisResult"][];
             readonly provenance: components["schemas"]["Provenance"] | null;
             readonly checks: components["schemas"]["Check"][];
             readonly timeline: components["schemas"]["TimelinePoint"][];
@@ -2538,6 +2567,7 @@ export interface components {
             }[];
             quote_lines: unknown;
             readonly steps: components["schemas"]["JobStep"][];
+            readonly analyses: components["schemas"]["AnalysisResult"][];
             readonly provenance: components["schemas"]["Provenance"] | null;
             readonly checks: components["schemas"]["Check"][];
             readonly timeline: components["schemas"]["TimelinePoint"][];
@@ -3347,6 +3377,7 @@ export interface components {
          */
         TaskStatusEnum: "pending" | "dispatched" | "running" | "succeeded" | "failed" | "canceled" | "skipped";
         TimelinePoint: {
+            analysis: components["schemas"]["AnalysisEnum"];
             /** Format: double */
             start_sec: number;
             /** Format: double */
@@ -3629,6 +3660,11 @@ export interface operations {
                     trial?: boolean;
                     show_heatmap?: boolean;
                     note?: string;
+                    /**
+                     * @description Result group; empty = models.yaml.
+                     * @enum {string}
+                     */
+                    family?: "" | "deepfake" | "ai_generated" | "general";
                 };
             };
         };

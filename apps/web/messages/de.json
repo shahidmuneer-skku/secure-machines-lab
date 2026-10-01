@@ -476,7 +476,7 @@
       "metadata_ai_indicator": "Metadaten oder Content Credentials weisen auf KI-Generierung hin",
       "no_face": "In der Datei wurde kein Gesicht gefunden",
       "news_agent": "Bewertung durch den Verifizierungsagenten",
-      "analysis": "Gesamtergebnis der automatischen Analyse",
+      "analysis": "Gesamt: das deutlichste Ergebnis der Analysen",
       "metadata_hint": "Die Metadaten deuten auf KI-Generierung hin, passend zur Analyse",
       "stopped_early": "Die Analyse wurde vor dem Ende des gewählten Bereichs gestoppt"
     },
@@ -570,6 +570,16 @@
         "failed": "Konnte nicht abgeschlossen werden",
         "canceled": "Abgebrochen",
         "skipped": "Übersprungen"
+      }
+    },
+    "analysis": {
+      "title": "Ergebnisse je Analyse",
+      "failed": "Konnte nicht abgeschlossen werden",
+      "probabilityOf": "{name}: Fake-Wahrscheinlichkeit",
+      "name": {
+        "face_swap": "Face-Swap-Analyse",
+        "ai_generated": "KI-Generierungs-Analyse",
+        "general": "Allgemeine Analyse"
       }
     }
   },
@@ -792,7 +802,14 @@
       "heatmap": "Heatmap",
       "heatmapFor": "Heatmap von {model} für Nutzer anzeigen",
       "heatmapsSummary": "{count, plural, one {Nutzer sehen die Heatmap von {names}} other {Nutzer sehen # Heatmaps: {names}}}",
-      "noHeatmaps": "Nutzer sehen keine Heatmap"
+      "noHeatmaps": "Nutzer sehen keine Heatmap",
+      "category": "Kategorie",
+      "categoryFor": "Kategorie von {model}",
+      "family": {
+        "deepfake": "Face-Swap",
+        "ai_generated": "KI-generiert",
+        "general": "Allgemein"
+      }
     },
     "pricing": {
       "eyebrow": "Admin · Preise",

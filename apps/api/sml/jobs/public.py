@@ -115,6 +115,17 @@ def ai_generated(job: Job) -> bool:
         r.get("code") == "metadata_ai_indicator" for r in job.verdict_reasons or [])
 
 
+# Detector family → the name of the result users see.
+ANALYSIS_IDS = {"deepfake": "face_swap", "ai_generated": "ai_generated", "general": "general"}
+
+
+def analyses(job: Job) -> list[dict[str, Any]]:
+    """The result of each analysis (face swap, AI generation, general): verdict and probability only."""
+    return [{"id": ANALYSIS_IDS.get(g.get("group"), "general"), "status": g.get("status", "done"),
+             "verdict": g.get("verdict") or "", "fake_probability": g.get("fake_probability")}
+            for g in (job.summary or {}).get("groups") or []]
+
+
 def evidence_items(items: Any) -> list[dict[str, str]]:
     return [{"source": str(e.get("source", "")), "detail": str(e.get("detail", "")),
              "strength": str(e.get("strength", ""))}
@@ -164,45 +175,49 @@ def checks(tasks: list[JobTask]) -> list[dict[str, Any]]:
     return out
 
 
-def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, float]]:
-    """Fake probability over time for videos, combined across detectors (weighted like the verdict)."""
+def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, Any]]:
+    """Fake probability over time for videos, one series per analysis (detectors combined within each,
+    weighted like the verdict)."""
+    reg = registry()
     long_task = _task(tasks, JobTask.Kind.LONG_VIDEO)
     if long_task is not None:
-        return [{"start_sec": float(i.get("start_sec") or 0.0), "end_sec": float(i.get("end_sec") or 0.0),
-                 "fake_prob": float(i.get("fake_prob") or 0.0)}
+        spec = reg.get(long_task.target)
+        group = ANALYSIS_IDS.get(spec.family if spec else "general", "general")
+        return [{"analysis": group, "start_sec": float(i.get("start_sec") or 0.0),
+                 "end_sec": float(i.get("end_sec") or 0.0), "fake_prob": float(i.get("fake_prob") or 0.0)}
                 for i in (long_task.result or {}).get("intervals") or [] if isinstance(i, dict)]
     if job.media_type != "video":
         return []
     media = job.media
     fps = (media.fps if media and media.fps else None) or 25.0
     duration = (media.duration_seconds if media else None) or 0.0
-    reg = registry()
-    bins: dict[int, list[tuple[float, float]]] = defaultdict(list)
+    bins: dict[tuple[str, int], list[tuple[float, float]]] = defaultdict(list)
     for t in tasks:
         frames = (t.result or {}).get("per_frame") if t.kind == JobTask.Kind.MODEL else None
         if t.status != JobTask.Status.SUCCEEDED or not frames:
             continue
         spec = reg.get(t.target)
         weight = spec.weight if spec else 1.0
+        group = ANALYSIS_IDS.get(spec.family if spec else "general", "general")
         for idx, f in enumerate(frames):
             try:
-                n = float(f.get("frame"))
-                second = n / fps
+                second = float(f.get("frame")) / fps
             except (TypeError, ValueError, AttributeError):
                 second = duration * idx / max(1, len(frames))
             try:
-                bins[int(second)].append((weight, float(f.get("fake_prob"))))
+                bins[(group, int(second))].append((weight, float(f.get("fake_prob"))))
             except (TypeError, ValueError, AttributeError):
                 continue
     points = []
-    for second in sorted(bins):
-        pairs = bins[second]
+    for (group, second) in sorted(bins, key=lambda k: (k[1], k[0])):
+        pairs = bins[(group, second)]
         total = sum(w for w, _ in pairs) or 1.0
-        points.append({"start_sec": float(second), "end_sec": float(second + 1),
+        points.append({"analysis": group, "start_sec": float(second), "end_sec": float(second + 1),
                        "fake_prob": round(sum(w * p for w, p in pairs) / total, 4)})
-    if len(points) > TIMELINE_POINTS:  # keep the payload small for long clips
-        step = len(points) / TIMELINE_POINTS
-        points = [points[int(i * step)] for i in range(TIMELINE_POINTS)]
+    limit = TIMELINE_POINTS * len(ANALYSIS_IDS)
+    if len(points) > limit:  # keep the payload small for long clips
+        step = len(points) / limit
+        points = [points[int(i * step)] for i in range(limit)]
     return points
 
 

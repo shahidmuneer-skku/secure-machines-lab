@@ -142,6 +142,8 @@ def test_full_scan_is_charged_per_minute_analysed(user):
     job = Job.objects.get(pk=session.job_id)
     assert result["credits_charged"] == 20 and job.credits_charged == 20
     assert (job.status, job.verdict, job.partial) == (Job.Status.SUCCEEDED, Job.Verdict.FAKE, False)
+    assert job.summary["groups"] == [{"group": "ai_generated", "status": "done", "fake_probability": 0.8,
+                                      "verdict": Job.Verdict.FAKE}]  # the detector's analysis
     assert job.hold.status == CreditHold.Status.CAPTURED
     assert credits.get_balance(user).balance == 80
     assert credits.verify_wallet(credits.ensure_wallet(user))

@@ -60,15 +60,22 @@ def _few_shots(limit: int = 3) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
+ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis",
+                  "general": "general analysis"}
+
+
 def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], forensics: list[dict[str, Any]],
                  locale: str) -> str:
     forensic_lines = []
-    for f in forensics:  # one combined result per file; the report must not reveal the detectors
-        if f.get("fake_prob") is None:
-            state = "no face found" if f.get("no_face") else "could not be analysed"
-            forensic_lines.append(f"- {f.get('file')}: {state}")
-        else:
-            forensic_lines.append(f"- {f.get('file')}: fake probability {float(f['fake_prob']) * 100:.1f}%")
+    for f in forensics:  # per file, one result per analysis; the report must not reveal the detectors
+        parts = []
+        for a in f.get("analyses") or []:
+            name = ANALYSIS_NAMES.get(a.get("analysis"), "general analysis")
+            if a.get("fake_prob") is not None:
+                parts.append(f"{name}: fake probability {float(a['fake_prob']) * 100:.1f}%")
+            else:
+                parts.append(f"{name}: {'no face found' if a.get('status') == 'no_face' else 'could not be completed'}")
+        forensic_lines.append(f"- {f.get('file')}: " + ("; ".join(parts) or "could not be analysed"))
     return "\n".join([
         "# YOUR SKILL", _read("skill.md"), "", "# TASK INSTRUCTIONS", _read("instructions.md"), "",
         "# SCORING RUBRIC", _read("evaluation.md"), "",

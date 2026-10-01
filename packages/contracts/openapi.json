@@ -468,6 +468,16 @@
                                     },
                                     "note": {
                                         "type": "string"
+                                    },
+                                    "family": {
+                                        "type": "string",
+                                        "enum": [
+                                            "",
+                                            "deepfake",
+                                            "ai_generated",
+                                            "general"
+                                        ],
+                                        "description": "Result group; empty = models.yaml."
                                     }
                                 }
                             }
@@ -6420,7 +6430,7 @@
                         "type": "string"
                     },
                     "family": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/FamilyEnum"
                     },
                     "media": {
                         "type": "array",
@@ -6737,6 +6747,49 @@
                 ],
                 "type": "string",
                 "description": "* `face` - face\n* `safety` - safety\n* `fas` - fas\n* `metadata` - metadata"
+            },
+            "AnalysisEnum": {
+                "enum": [
+                    "face_swap",
+                    "ai_generated",
+                    "general"
+                ],
+                "type": "string",
+                "description": "* `face_swap` - face_swap\n* `ai_generated` - ai_generated\n* `general` - general"
+            },
+            "AnalysisResult": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/AnalysisEnum"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/AnalysisResultStatusEnum"
+                    },
+                    "verdict": {
+                        "type": "string"
+                    },
+                    "fake_probability": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "fake_probability",
+                    "id",
+                    "status",
+                    "verdict"
+                ]
+            },
+            "AnalysisResultStatusEnum": {
+                "enum": [
+                    "done",
+                    "no_face",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `done` - done\n* `no_face` - no_face\n* `failed` - failed"
             },
             "ApiKey": {
                 "type": "object",
@@ -8004,6 +8057,15 @@
                 "type": "string",
                 "description": "* `always` - always\n* `optional` - optional\n* `none` - none"
             },
+            "FamilyEnum": {
+                "enum": [
+                    "deepfake",
+                    "ai_generated",
+                    "general"
+                ],
+                "type": "string",
+                "description": "* `deepfake` - deepfake\n* `ai_generated` - ai_generated\n* `general` - general"
+            },
             "FreeAllowance": {
                 "type": "object",
                 "properties": {
@@ -8292,6 +8354,13 @@
                         },
                         "readOnly": true
                     },
+                    "analyses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnalysisResult"
+                        },
+                        "readOnly": true
+                    },
                     "provenance": {
                         "allOf": [
                             {
@@ -8377,6 +8446,7 @@
                 },
                 "required": [
                     "ai_generated",
+                    "analyses",
                     "artifacts",
                     "batch_id",
                     "cancel_requested",
@@ -9512,6 +9582,13 @@
                         },
                         "readOnly": true
                     },
+                    "analyses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnalysisResult"
+                        },
+                        "readOnly": true
+                    },
                     "provenance": {
                         "allOf": [
                             {
@@ -9608,6 +9685,7 @@
                 },
                 "required": [
                     "ai_generated",
+                    "analyses",
                     "artifacts",
                     "batch_id",
                     "cancel_requested",
@@ -12101,6 +12179,9 @@
             "TimelinePoint": {
                 "type": "object",
                 "properties": {
+                    "analysis": {
+                        "$ref": "#/components/schemas/AnalysisEnum"
+                    },
                     "start_sec": {
                         "type": "number",
                         "format": "double"
@@ -12115,6 +12196,7 @@
                     }
                 },
                 "required": [
+                    "analysis",
                     "end_sec",
                     "fake_prob",
                     "start_sec"

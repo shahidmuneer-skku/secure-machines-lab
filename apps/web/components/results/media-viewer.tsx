@@ -3,12 +3,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
 import { useMemo, useRef, useState } from "react"
-import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
 
 import { Eyebrow } from "@/components/sml/eyebrow"
 import { HudCard } from "@/components/sml/hud-card"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import {
+  ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig,
+} from "@/components/ui/chart"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -107,35 +109,51 @@ export function MediaViewer({ job }: { job: JobDetail }) {
   )
 }
 
-/** Combined fake probability over time (live intervals while a scan runs); click to seek. */
+const ANALYSES = ["face_swap", "ai_generated", "general"] as const
+type AnalysisId = (typeof ANALYSES)[number]
+const ANALYSIS_COLOR: Record<AnalysisId, string> = {
+  face_swap: "var(--viz-analysis-face-swap)", ai_generated: "var(--viz-analysis-ai-generated)",
+  general: "var(--viz-analysis-general)",
+}
+const formatClock = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`
+
+/** Fake probability over time, one line per analysis (live intervals while a scan runs); click to seek. */
 function VideoTimeline({ job, videoRef }: { job: JobDetail; videoRef: React.RefObject<HTMLVideoElement | null> }) {
   const t = useTranslations("job")
-  const { data: liveIntervals } = useQuery<TimelinePoint[]>({
+  const { data: liveIntervals } = useQuery<{ start_sec: number; fake_prob: number }[]>({
     queryKey: ["jobs", "intervals", job.id], queryFn: () => [], enabled: false, staleTime: Infinity })
-  const series = useMemo(() => {
-    const points = job.timeline.length ? job.timeline : liveIntervals ?? []
-    return points.map((i) => ({ x: i.start_sec, fake: Math.round((i.fake_prob ?? 0) * 1000) / 10 }))
+  const { rows, present } = useMemo(() => {
+    const points: TimelinePoint[] = job.timeline.length ? job.timeline
+      : (liveIntervals ?? []).map((i) => ({ ...i, analysis: "general", end_sec: i.start_sec } as TimelinePoint))
+    const byTime = new Map<number, Record<string, number>>()
+    const seen = new Set<AnalysisId>()
+    for (const p of points) {
+      const row = byTime.get(p.start_sec) ?? { x: p.start_sec }
+      row[p.analysis] = Math.round((p.fake_prob ?? 0) * 1000) / 10
+      byTime.set(p.start_sec, row)
+      seen.add(p.analysis as AnalysisId)
+    }
+    return { rows: [...byTime.values()].sort((a, b) => a.x - b.x), present: ANALYSES.filter((a) => seen.has(a)) }
   }, [job.timeline, liveIntervals])
-  const config = { fake: { label: t("media.fakePct"), color: "var(--viz-fake)" } } satisfies ChartConfig
-  if (!series.length) return null
+  const config = Object.fromEntries(present.map((a) => [a, { label: t(`analysis.name.${a}`), color: ANALYSIS_COLOR[a] }])) satisfies ChartConfig
+  if (!rows.length) return null
   return (
     <div className="space-y-1.5">
       <p className="hud-eyebrow">{t("media.timeline")}</p>
-      <ChartContainer config={config} className="h-40 w-full">
-        <AreaChart data={series} margin={{ left: -16, right: 8 }}
+      <ChartContainer config={config} className="h-44 w-full">
+        <LineChart data={rows} margin={{ left: -16, right: 8 }}
           onClick={(e) => { const x = Number(e?.activeLabel); if (videoRef.current && Number.isFinite(x)) videoRef.current.currentTime = x }}>
           <CartesianGrid vertical={false} stroke="var(--viz-grid)" />
-          <XAxis dataKey="x" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false}
-            tickFormatter={(v) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`} />
+          <XAxis dataKey="x" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} tickFormatter={formatClock} />
           <YAxis domain={[0, 100]} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => `${v}%`} />
           <ReferenceLine y={50} stroke="var(--muted-foreground)" strokeDasharray="4 4" />
-          <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, p) => {
-            const x = Number(p?.[0]?.payload?.x ?? 0)
-            return `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, "0")}`
-          }} />} />
-          <Area dataKey="fake" type="monotone" stroke="var(--color-fake)" strokeWidth={2} fill="var(--color-fake)"
-            fillOpacity={0.15} dot={false} activeDot={{ r: 4 }} />
-        </AreaChart>
+          <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, p) => formatClock(Number(p?.[0]?.payload?.x ?? 0))} />} />
+          {present.length > 1 && <ChartLegend content={<ChartLegendContent />} />}
+          {present.map((a) => (
+            <Line key={a} dataKey={a} type="monotone" stroke={`var(--color-${a})`} strokeWidth={2} dot={false}
+              activeDot={{ r: 4 }} connectNulls />
+          ))}
+        </LineChart>
       </ChartContainer>
       <p className="text-xs text-muted-foreground">{t("media.timelineHint")}</p>
     </div>

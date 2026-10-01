@@ -447,7 +447,9 @@ class ModelAdminView(APIView):
     @extend_schema(tags=TAG, request={"application/json": {"type": "object", "properties": {
         "model_id": {"type": "string"}, "enabled": {"type": "boolean"}, "weight": {"type": "number"},
         "run_on_image": {"type": "boolean"}, "run_on_video": {"type": "boolean"}, "trial": {"type": "boolean"},
-        "show_heatmap": {"type": "boolean"}, "note": {"type": "string"}}}},
+        "show_heatmap": {"type": "boolean"}, "note": {"type": "string"},
+        "family": {"type": "string", "enum": ["", "deepfake", "ai_generated", "general"],
+                   "description": "Result group; empty = models.yaml."}}}},
         responses=schemas.OkSerializer)
     def patch(self, request: Request) -> Response:
         model_id = str(request.data.get("model_id", ""))
@@ -459,10 +461,15 @@ class ModelAdminView(APIView):
                 raise ApiError(f"{spec.name('en')} cannot analyse {media}s.")
         o, _ = ModelOverride.objects.get_or_create(model_id=spec.id)
         fields = ("enabled", "run_on_image", "run_on_video", "trial", "show_heatmap")
-        before = {"weight": o.weight, **{f: getattr(o, f) for f in fields}}
+        before = {"weight": o.weight, "family": o.family, **{f: getattr(o, f) for f in fields}}
         for field in fields:
             if field in request.data:
                 setattr(o, field, bool(request.data[field]))
+        if "family" in request.data:
+            family = str(request.data["family"] or "")
+            if family and family not in ModelOverride.Family.values:
+                raise ApiError(f"family must be one of: {', '.join(ModelOverride.Family.values)}.")
+            o.family = family
         if "weight" in request.data:
             weight = float(request.data["weight"])
             if not 0 <= weight <= 10:
@@ -473,7 +480,8 @@ class ModelAdminView(APIView):
         o.save()
         invalidate_overrides()
         audit.record("admin.model_updated", request=request, target_type="catalog.model", target_id=spec.id,
-                     before=before, after={"weight": o.weight, **{f: getattr(o, f) for f in fields}})
+                     before=before, after={"weight": o.weight, "family": o.family,
+                                           **{f: getattr(o, f) for f in fields}})
         return Response({"ok": True})
 
 

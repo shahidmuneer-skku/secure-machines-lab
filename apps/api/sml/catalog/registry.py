@@ -15,7 +15,7 @@ import yaml
 from django.conf import settings
 from django.core.cache import cache
 
-OVERRIDES_CACHE_KEY = "model-overrides:v3"
+OVERRIDES_CACHE_KEY = "model-overrides:v4"
 
 
 def model_queue(model_id: str) -> str:
@@ -91,6 +91,10 @@ def _runs_on(raw_model: dict[str, Any], override: dict[str, Any]) -> frozenset[s
     return frozenset(chosen)
 
 
+# Result groups users see, in display order (the detectors' families; ADR 0011).
+FAMILIES = ("deepfake", "ai_generated", "general")
+
+
 class Registry:
     def __init__(self, raw: dict[str, Any], overrides: dict[str, dict[str, Any]]):
         defaults = raw.get("defaults", {})
@@ -103,7 +107,7 @@ class Registry:
                 id=m["id"],
                 display_name=m.get("display_name", {"en": m["id"]}),
                 description=m.get("description", {}),
-                family=m.get("family", "general"),
+                family=ov.get("family") or m.get("family", "general"),
                 face_required=bool(m.get("face_required", False)),
                 xai=m.get("xai", "none"),
                 enabled=ov.get("enabled") if ov.get("enabled") is not None else bool(m.get("enabled", True)),
@@ -159,7 +163,8 @@ def _overrides() -> dict[str, dict[str, Any]]:
 
         data = {
             o.model_id: {"enabled": o.enabled, "weight": o.weight, "run_on_image": o.run_on_image,
-                         "run_on_video": o.run_on_video, "trial": o.trial, "show_heatmap": o.show_heatmap}
+                         "run_on_video": o.run_on_video, "trial": o.trial, "show_heatmap": o.show_heatmap,
+                         "family": o.family}
             for o in ModelOverride.objects.all()
         }
         cache.set(OVERRIDES_CACHE_KEY, data, 30)

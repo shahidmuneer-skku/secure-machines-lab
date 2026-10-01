@@ -46,7 +46,7 @@ def _context(job: Job) -> dict[str, Any]:
     return {
         "verdict": job.verdict, "fake_probability": job.fake_probability, "media_type": job.media_type,
         "file_name": job.title, "reasons": public.reasons(job), "provenance": public.provenance(tasks),
-        "checks": public.checks(tasks),
+        "checks": public.checks(tasks), "analyses": public.analyses(job),
         "artifacts": [{"kind": public.artifact_label(a), "storage_key": a.storage_key}
                       for a in public.evidence_artifacts(job, tasks) if a.content_type.startswith("image/")],
     }

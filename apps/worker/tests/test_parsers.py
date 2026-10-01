@@ -79,6 +79,11 @@ def test_prompts_never_name_detectors():
                "summary": {"models": [{"name": "Xception", "fake_prob": 0.9}]}}
     text = explain_prompt(context, "media.png", ["heatmap_1.png"], "en")
     assert "Xception" not in text and "How the detectors agree" not in text and "Confidential" in text
-    news = news_prompt({"title": "x"}, [("a.png", "image")],
-                       [{"file": "a.png", "fake_prob": 0.8, "model": "skku-aigc"}], "en")
-    assert "skku-aigc" not in news and "fake probability 80.0%" in news
+    news = news_prompt({"title": "x"}, [("a.png", "image")], [{"file": "a.png", "analyses": [
+        {"analysis": "face_swap", "status": "no_face", "fake_prob": None},
+        {"analysis": "ai_generated", "status": "done", "fake_prob": 0.8}]}], "en")
+    assert "skku" not in news.lower()
+    assert "face-swap analysis: no face found; AI-generation analysis: fake probability 80.0%" in news
+    text = explain_prompt({**context, "analyses": [{"id": "face_swap", "verdict": "fake", "fake_probability": 0.9,
+                                                    "status": "done"}]}, "media.png", [], "en")
+    assert '"analysis": "face-swap analysis"' in text and "Results by analysis" in text
