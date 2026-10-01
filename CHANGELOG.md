@@ -28,6 +28,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- SKKU-P2, SKKU-P3 and XB-DFD show their predicted manipulation masks instead of Grad-CAM ("Predicted
+  mask", fixed scale): P3 outlines a swapped face, XB-DFD the edited mouth/nose, and authentic images stay
+  mostly blue. The old maps were stretched per image and always showed a hot spot.
 - The six detectors that run on every job stay loaded on the GPUs (resident model servers, one per
   script, in each model's own env): a task's launch of the model is handed to its server, so outputs are
   unchanged. Image runs: SKKU-P2 85 s → 5 s, XB-DFD 38 s → 1 s, SKKU-P3 23 s → 5 s, Center 22 s → 11 s,

@@ -228,3 +228,19 @@ def test_a_duplicate_delivery_of_a_finished_task_is_skipped(monkeypatch):
     monkeypatch.setattr(runner, "TaskContext", lambda *a, **k: ran.append("started"))
     runner.run_envelope(None, {"task_id": "t1", "attempt": 1, "kind": "model", "target": "x"})
     assert ran == []
+
+
+def test_predicted_masks_are_collected_as_heatmaps(worker_env, ctx_factory):
+    """P2/P3/XB-DFD publish their predicted manipulation mask instead of Grad-CAM (owner, 2026-10-01)."""
+    from sml_worker.adapters.subprocess_cli import _label_for
+
+    images = worker_env["models"] / "inference_images"
+    images.mkdir()
+    for name in ("abc_mask.png", "abc_face_mask.png", "abc.png", "abc_face_0.jpg"):
+        (images / name).write_bytes(b"x")
+    ctx = ctx_factory()
+    adapter()._collect("abc", ctx)
+    collected = {(a.kind, a.label) for a in ctx.artifacts}
+    assert collected == {("xai", "Predicted mask"), ("xai", "Face predicted mask"), ("xai", "Original"),
+                         ("face", "face 0")}
+    assert _label_for("abc_mask.png", "abc") == "Predicted mask"

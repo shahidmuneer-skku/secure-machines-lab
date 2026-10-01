@@ -139,3 +139,14 @@ def test_video_timeline_weighs_p2_like_the_verdict():
     points = {(p["analysis"], p["start_sec"]): p["fake_prob"] for p in timeline(Job(media_type="video"), tasks)}
     assert points == {("face_swap", 0.0): pytest.approx(0.4), ("face_swap", 1.0): pytest.approx(0.4),
                       ("ai_generated", 0.0): pytest.approx((0.9 + 0.4) / 3, abs=1e-4)}  # none at 1s: no own frame
+
+
+def test_a_predicted_mask_is_a_detectors_main_heatmap():
+    from sml.jobs.models import Artifact
+    from sml.jobs.public import _heatmap_rank
+
+    def art(label: str) -> Artifact:
+        return Artifact(kind=Artifact.Kind.XAI, label=label)
+
+    ranked = sorted(["Original", "Face predicted mask", "Predicted mask"], key=lambda label: _heatmap_rank(art(label)))
+    assert ranked[0] == "Predicted mask"

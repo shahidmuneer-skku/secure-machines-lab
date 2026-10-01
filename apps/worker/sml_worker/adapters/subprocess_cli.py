@@ -247,7 +247,7 @@ class SubprocessAdapter:
                 name = path.name.lower()
                 suffix = path.suffix.lower()
                 if suffix in IMAGE_SUFFIXES:
-                    kind = "face" if "_face_" in name and "gradcam" not in name else "xai"
+                    kind = "face" if "_face_" in name and "gradcam" not in name and "mask" not in name else "xai"
                     label = _label_for(name, stem)
                     ctx.add_artifact(path, kind=kind, label=label)
                 elif suffix == ".mp4":
@@ -262,4 +262,5 @@ def _label_for(name: str, stem: str) -> str:
     base = name.rsplit(".", 1)[0]
     rest = base[len(stem):].strip("_.") or "original"
     return {"gradcam": "Grad-CAM", "face_gradcam": "Face Grad-CAM", "face_map": "Face map",
+            "mask": "Predicted mask", "face_mask": "Face predicted mask",  # P2/P3/XB-DFD (owner, 2026-10-01)
             "original": "Original"}.get(rest, rest.replace("_", " "))

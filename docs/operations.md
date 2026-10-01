@@ -169,6 +169,12 @@ Admin → Models. Invisible pixel watermarks are not decoded.
 server (`run_fas_analysis.py` looks in `fakedetector/fakedetector/CVPR24-FAS`). Leave the check off
 in Admin → Models until they are copied there.
 
+**Heatmaps of SKKU-P2, SKKU-P3 and XB-DFD are their predicted masks** (owner, 2026-10-01), labelled
+"Predicted mask": P2/P3 show each pixel's probability of a fake class from their class masks (fixed 0-1
+scale), XB-DFD its decoder's manipulation mask on the face (fixed 0-0.5 scale). Blue is untouched, red
+manipulated; nothing is stretched per image, so authentic files stay mostly blue. The edits to the model
+scripts are listed in `~/fakedetector/path-migration-20260930/README.txt` (originals backed up there).
+
 **Resident models (kept loaded on the GPUs).** `python -m sml_worker --resident` (started by
 `scripts/dev.sh` and `sml-resident.service`) runs one server per script listed under `resident` in
 `config/models.yaml`, in the model's conda env on the listed GPU, loads its weights once and keeps them.

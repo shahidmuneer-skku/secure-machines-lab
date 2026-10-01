@@ -270,10 +270,10 @@ def is_public_artifact(artifact: Artifact) -> bool:
 
 
 def _heatmap_rank(artifact: Artifact) -> int:
-    """Which of a detector's images is its heatmap: the blended whole-image map first, then other
-    whole-image maps, then face-only maps; raw colour maps last."""
+    """Which of a detector's images is its heatmap: a predicted manipulation mask or the blended
+    whole-image map first, then other whole-image maps, then face-only maps; raw colour maps last."""
     label = artifact.label.strip().lower()
-    if label in ("grad-cam", "gradcam", "attention"):
+    if label in ("predicted mask", "grad-cam", "gradcam", "attention"):
         return 0
     if "overlay" in label:
         return 1
