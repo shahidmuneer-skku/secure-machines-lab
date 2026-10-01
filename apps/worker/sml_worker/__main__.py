@@ -3,6 +3,7 @@
     python -m sml_worker --detectors --gpu 0 --concurrency 4   # detectors on one GPU
     python -m sml_worker --agents --concurrency 2               # news / explain-why agents (Ollama)
     python -m sml_worker --models skku-p2 --gpu 3               # a worker dedicated to one model
+    python -m sml_worker --resident                              # keep resident models loaded (models.yaml)
 
 Detector tasks start only when their GPU memory fits (sml_worker/gpu.py), so concurrency is an
 upper bound, not a promise: tasks that do not fit wait while the others run. Agent runs share one
@@ -25,12 +26,21 @@ def main() -> None:
     parser.add_argument("--all", action="store_true", help="Consume every model/audit/agent queue")
     parser.add_argument("--detectors", action="store_true", help="Consume every model/audit/long-video queue")
     parser.add_argument("--agents", action="store_true", help="Consume the news and explain-why agent queues")
+    parser.add_argument("--resident", action="store_true",
+                        help="Start and watch the resident model servers (`resident` blocks in models.yaml); "
+                             "--models limits it to those models")
     parser.add_argument("--gpu", default="", help="GPU index for CUDA_VISIBLE_DEVICES")
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--name", default="")
     parser.add_argument("--loglevel", default="INFO")
     args = parser.parse_args()
 
+    if args.resident:
+        logging.basicConfig(level=args.loglevel, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+        from .resident.supervisor import supervise
+
+        supervise([m.strip() for m in args.models.split(",") if m.strip()] or None)
+        return
     queues = [q.strip() for q in args.queues.split(",") if q.strip()]
     queues += [f"sml.model.{m.strip()}" for m in args.models.split(",") if m.strip()]
     if args.all:

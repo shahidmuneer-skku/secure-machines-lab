@@ -484,6 +484,7 @@ class ModelAdminView(APIView):
             for q in w.get("queues", []):
                 consumers[q] = consumers.get(q, 0) + 1
         bench, measured = detectors.benchmarks(), detectors.measured_accuracy()
+        resident = live.resident_servers()
         out = []
         for spec in registry().models.values():
             o = overrides.get(spec.id)
@@ -497,6 +498,7 @@ class ModelAdminView(APIView):
                 "conda_envs": sorted({m.get("conda_env", "") for m in spec.media.values()}),
                 "benchmark": bench.get(spec.id), "measured": measured.get(spec.id),
                 "authentic_boost": spec.authentic_boost, "authentic_counts_in_all": spec.authentic_counts_in_all,
+                "resident": resident.get(spec.id, []),
             })
         return Response(out)
 

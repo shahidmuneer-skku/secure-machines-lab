@@ -9,6 +9,7 @@
 #   GPUS=0 scripts/dev.sh       # model workers on other GPUs (comma-separated; GPU=2 still works)
 #   NO_MODELS=1 scripts/dev.sh  # skip the model worker
 #   NO_STREAM=1 scripts/dev.sh  # skip the long-form stream service
+#   NO_RESIDENT=1 scripts/dev.sh  # do not keep models loaded (each task loads its model)
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -42,6 +43,10 @@ if [[ -z "${NO_MODELS:-}" ]]; then
     start "worker-gpu$gpu" "$ROOT/apps/worker" uv run python -m sml_worker --detectors --gpu "$gpu" --concurrency 4
   done
   start agents "$ROOT/apps/worker" uv run python -m sml_worker --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
+  # Keeps the models with a `resident` block loaded on their GPUs (NO_RESIDENT=1 to load per task).
+  if [[ -z "${NO_RESIDENT:-}" ]]; then
+    start resident "$ROOT/apps/worker" uv run python -m sml_worker --resident
+  fi
 fi
 if [[ -z "${NO_STREAM:-}" ]]; then
   # Long-form stream service: the legacy conda env (torch + engine), on its own GPU.

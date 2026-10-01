@@ -125,5 +125,28 @@ def workers() -> list[dict[str, Any]]:
         return []
 
 
+def resident_servers() -> dict[str, list[dict[str, Any]]]:
+    """Resident model servers by model id, as published by `sml_worker --resident` (TTL'd keys)."""
+    r = _redis()
+    if r is None:
+        return {}
+    out: dict[str, list[dict[str, Any]]] = {}
+    try:
+        for key in r.scan_iter(match="sml:resident:*", count=100):
+            raw = r.get(key)
+            if not raw:
+                continue
+            status = json.loads(raw)
+            out.setdefault(status.get("model", ""), []).append({
+                "server": key.decode().rsplit(":", 1)[-1] if isinstance(key, bytes) else str(key).rsplit(":", 1)[-1],
+                "state": status.get("state", "down"), "gpu": str(status.get("gpu", "")),
+                "media": list(status.get("media") or [])})
+    except (redis.RedisError, ValueError):
+        return {}
+    for servers in out.values():
+        servers.sort(key=lambda s: s["server"])
+    return out
+
+
 def consumers_for(queue: str) -> int:
     return sum(1 for w in workers() if queue in w.get("queues", []))

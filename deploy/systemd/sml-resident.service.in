@@ -1,0 +1,29 @@
+[Unit]
+Description=SML resident detector models (kept loaded on their GPUs; config/models.yaml `resident`)
+After=network-online.target docker.service
+PartOf=sml.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@/apps/worker
+EnvironmentFile=@ROOT@/.env
+# Starts one server per resident script and restarts any that exit. Detector workers hand those
+# models' runs to the servers while they are ready and load per task otherwise.
+ExecStart=@ROOT@/apps/worker/.venv/bin/python -m sml_worker --resident
+TimeoutStopSec=60
+KillMode=mixed
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0027
+
+[Install]
+WantedBy=sml.target

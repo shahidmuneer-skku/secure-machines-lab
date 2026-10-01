@@ -896,6 +896,17 @@
         "legend": "Echt ×: Das Gewicht eines Detektors wird damit multipliziert, wenn er „echt“ sagt; mit „Echt zählt in beiden“ zählt diese Antwort auch in der anderen Analyse. Die gemessene Genauigkeit nutzt Dateien, die als echt oder mit der Analyse des Detektors markiert sind, beim Fälschungs-Schwellenwert der Plattform.",
         "exief": "EXIEF-Metadaten",
         "exiefNote": "Metadatensignale, Gewicht {weight} in der KI-Analyse (einstellbar unter Prüfungen bei jedem Auftrag). Gemessen an Dateien, die als echt oder KI-generiert markiert sind."
+      },
+      "resident": {
+        "state": {
+          "ready": "Auf GPU {gpu} geladen",
+          "loading": "Wird auf GPU {gpu} geladen",
+          "down": "Nicht geladen — lädt pro Auftrag"
+        },
+        "media": {
+          "image": "Bilder",
+          "video": "Videos"
+        }
       }
     },
     "pricing": {

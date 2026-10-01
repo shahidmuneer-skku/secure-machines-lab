@@ -375,6 +375,13 @@ class DetectorAccuracySerializer(serializers.Serializer):
     auc = serializers.FloatField(allow_null=True)
 
 
+class ResidentServerSerializer(serializers.Serializer):
+    server = serializers.CharField()
+    state = serializers.ChoiceField(choices=["loading", "ready", "down"])
+    gpu = serializers.CharField()
+    media = serializers.ListField(child=serializers.CharField())
+
+
 class AdminModelSerializer(serializers.Serializer):
     id = serializers.CharField()
     name = serializers.CharField()
@@ -397,6 +404,7 @@ class AdminModelSerializer(serializers.Serializer):
     authentic_boost = serializers.FloatField(help_text="Weight multiplier when it says authentic.")
     authentic_counts_in_all = serializers.BooleanField(
         help_text="An authentic answer also counts in the other analysis.")
+    resident = ResidentServerSerializer(many=True, help_text="Servers keeping this model loaded on a GPU.")
 
 
 class FramePointSerializer(serializers.Serializer):

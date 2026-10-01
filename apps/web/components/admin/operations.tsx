@@ -341,7 +341,8 @@ export function AdminModels() {
           <TableBody>
             {(models ?? []).map((m) => (
               <TableRow key={m.id}>
-                <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id} · {m.media.join("/")}</span></TableCell>
+                <TableCell><span className="font-medium">{m.name}</span><span className="block font-mono text-[10px] text-muted-foreground">{m.id} · {m.media.join("/")}</span>
+                  <ResidentChips servers={m.resident} /></TableCell>
                 <TableCell>
                   <Select value={m.family} disabled={!canEdit} onValueChange={(v) => patch.mutate({ model_id: m.id, family: v })}>
                     <SelectTrigger className="h-8 w-40" aria-label={t("categoryFor", { model: m.name })}><SelectValue /></SelectTrigger>
@@ -370,6 +371,23 @@ export function AdminModels() {
       <ModelAccuracy models={models ?? []} canEdit={canEdit} onPatch={(body) => patch.mutate(body)} />
       <DetectionSetup />
     </div>
+  )
+}
+
+/** Whether the detector stays loaded on a GPU (`sml_worker --resident`), per server. */
+function ResidentChips({ servers }: { servers: AdminModel["resident"] }) {
+  const t = useTranslations("admin.models.resident")
+  if (!servers.length) return null
+  const tone = { ready: "border-real/50 text-real", loading: "border-primary/50 text-primary", down: "border-warn/50 text-warn" }
+  return (
+    <span className="mt-1 flex flex-wrap gap-1">
+      {servers.map((s) => (
+        <Badge key={s.server} variant="outline" className={`text-[10px] ${tone[s.state]}`}>
+          {t(`state.${s.state}`, { gpu: s.gpu })}
+          {servers.length > 1 ? ` · ${s.media.map((m) => t(`media.${m}`)).join("/")}` : ""}
+        </Badge>
+      ))}
+    </span>
   )
 }
 

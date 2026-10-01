@@ -896,6 +896,17 @@
         "legend": "Authentic ×: a detector's weight is multiplied by this when it says authentic; with “Authentic counts in both” that answer also counts in the other analysis. Measured accuracy uses the files labelled authentic or with the detector's own analysis, at the platform's fake threshold.",
         "exief": "EXIEF metadata",
         "exiefNote": "Metadata signals, weight {weight} in the AI-generation analysis (set under Checks on every job). Measured on files labelled authentic or AI-generated."
+      },
+      "resident": {
+        "state": {
+          "ready": "Loaded on GPU {gpu}",
+          "loading": "Loading on GPU {gpu}",
+          "down": "Not loaded — loads per task"
+        },
+        "media": {
+          "image": "images",
+          "video": "videos"
+        }
       }
     },
     "pricing": {

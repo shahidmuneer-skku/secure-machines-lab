@@ -28,6 +28,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   running and waiting work, the long-video GPU, the loaded AI model and launch-readiness settings.
 - Tests for the API, the model worker and the web app; CI; nginx and systemd deployment files;
   architecture, operations and model-onboarding documentation; decision records.
+- The six detectors that run on every job stay loaded on the GPUs (resident model servers, one per
+  script, in each model's own env): a task's launch of the model is handed to its server, so outputs are
+  unchanged. Image runs: SKKU-P2 85 s → 5 s, XB-DFD 38 s → 1 s, SKKU-P3 23 s → 5 s, Center 22 s → 11 s,
+  SKKU-AIGC 15 s → 7 s, SKKU-SNET 6 s → 2 s; videos 1.2-5× faster. Admin → Models shows what is loaded.
 - EXIEF metadata signals (the owner's ExifTool-based scorer) in the metadata check: its verdict is a
   weighted vote in the AI-generation analysis (confirmed 100 % fake, suspect 80 %, weak 60 %; weight 3 by
   default, set on Admin → Models). Damaged or altered metadata (ExifTool corruption, failed C2PA

@@ -17,6 +17,16 @@ every image and every video job (ADR 0011).
 | Output parsers, run logic | `apps/worker/sml_worker/adapters/` (`parsers.py`, `subprocess_cli.py`) | — |
 | Runtime choices (on/off per media, category, heatmap, weight) | Admin → Models (database overrides) | — |
 
+## Keeping a detector loaded (optional)
+
+Add a `resident` block to its entry in `config/models.yaml` to keep its weights on a GPU between tasks
+(see the existing ones). List the Python script that loads the model (the one a bash or Python wrapper
+launches, not the wrapper), `mode: main` when the script has a `main()` without arguments (imported once)
+or `mode: run` otherwise (re-run per task), the loaders to keep under `cache` (`build_model`, or
+`module:load_model` for one imported from another file; classes work too), `torch_load_cache: true`
+when it reads its checkpoint with `torch.load`, and a `warmup` argv. Then compare a resident run with a
+per-task run on the same file: the scores must be identical.
+
 ## 1. Make the script runnable from the command line
 
 The worker calls an argv list (never a shell string) with the model's conda Python, from a

@@ -26,6 +26,7 @@ from .clients import download, redis_client
 from .config import config
 from .context import RESULT_KEY, RESULT_TTL_SECONDS, Canceled, TaskContext
 from .registry import audit_spec, long_video_spec, model_spec, raw_registry
+from .resident import supervisor as resident
 
 logger = logging.getLogger(__name__)
 RESULT_TASK = "sml.jobs.record_task_event"
@@ -172,6 +173,8 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
 def _gpu_need(envelope: dict[str, Any]) -> int:
     """GPU memory (MB) a task must reserve before it starts; 0 for work that needs no GPU slot."""
     kind, target = envelope.get("kind"), envelope.get("target", "")
+    if kind == "model" and resident.ready_servers(target, envelope.get("media_type", "")):
+        return 0  # its resident server already holds the memory
     if kind == "model":
         spec = model_spec(target) or {}
     elif kind == "audit" and target != "metadata":

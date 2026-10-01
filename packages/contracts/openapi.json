@@ -6918,6 +6918,13 @@
                     "authentic_counts_in_all": {
                         "type": "boolean",
                         "description": "An authentic answer also counts in the other analysis."
+                    },
+                    "resident": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ResidentServer"
+                        },
+                        "description": "Servers keeping this model loaded on a GPU."
                     }
                 },
                 "required": [
@@ -6935,6 +6942,7 @@
                     "name",
                     "note",
                     "queue",
+                    "resident",
                     "run_on",
                     "show_heatmap",
                     "stats_24h",
@@ -12329,6 +12337,32 @@
                 "type": "string",
                 "description": "* `queued` - Queued\n* `running` - Generating\n* `ready` - Ready\n* `failed` - Failed"
             },
+            "ResidentServer": {
+                "type": "object",
+                "properties": {
+                    "server": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/StateEnum"
+                    },
+                    "gpu": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "gpu",
+                    "media",
+                    "server",
+                    "state"
+                ]
+            },
             "Role": {
                 "type": "object",
                 "properties": {
@@ -12504,6 +12538,15 @@
                     "name",
                     "reason"
                 ]
+            },
+            "StateEnum": {
+                "enum": [
+                    "loading",
+                    "ready",
+                    "down"
+                ],
+                "type": "string",
+                "description": "* `loading` - loading\n* `ready` - ready\n* `down` - down"
             },
             "StorageEnum": {
                 "enum": [

@@ -27,6 +27,7 @@ from .. import gpu as gpu_admission
 from ..config import config, gpu_env
 from ..context import Canceled, TaskContext
 from ..procenv import model_env
+from ..resident import supervisor as resident
 from . import parsers
 from .base import AdapterError, ModelResult
 
@@ -105,8 +106,8 @@ class SubprocessAdapter:
                 raise AdapterError("CONFIG_ERROR", f"Bad argv template {part!r}: {exc}") from exc
         return argv
 
-    def _env(self) -> dict[str, str]:
-        return model_env(self.spec.get("conda_env"))
+    def _env(self, routing: dict[str, str] | None = None) -> dict[str, str]:
+        return {**model_env(self.spec.get("conda_env")), **(routing or {})}
 
     # --- run ----------------------------------------------------------------------------
 
@@ -120,14 +121,17 @@ class SubprocessAdapter:
             raise AdapterError("CONFIG_ERROR", f"Model directory not found: {cwd}")
         stem = staged.stem
         progress_csv = c.models_root / "inference_csv" / f"{stem}.csv"
+        # A resident server keeps this model loaded on its own GPU; the script launch is handed to it.
+        routing = resident.routing_env(self.id, media_type)
+        where = "resident server" if routing else f"GPU {gpu_env()['CUDA_VISIBLE_DEVICES']}"
         ctx.log(f"Starting {self.model.get('display_name', {}).get('en', self.id)} "
-                f"({media_type}, env {self.spec.get('conda_env', '-')}, GPU {gpu_env()['CUDA_VISIBLE_DEVICES']})")
-        ctx.progress(3, "Loading model weights", force=True)
+                f"({media_type}, env {self.spec.get('conda_env', '-')}, {where})")
+        ctx.progress(3, "Running" if routing else "Loading model weights", force=True)
 
         stdout_lines: deque[str] = deque(maxlen=4000)
         stderr_lines: deque[str] = deque(maxlen=800)
         proc = subprocess.Popen(
-            argv, cwd=str(cwd), env=self._env(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            argv, cwd=str(cwd), env=self._env(routing), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, errors="replace", start_new_session=True,
         )
 
@@ -172,7 +176,7 @@ class SubprocessAdapter:
             raise
         for t in threads:
             t.join(timeout=5)
-        if peak_mb:
+        if peak_mb and not routing:  # a resident run's memory belongs to the server, not this process tree
             gpu_admission.record_peak(f"model:{self.id}:{media_type}", peak_mb)
             logger.info("Model %s peak GPU memory: %.1f GB", self.id, peak_mb / 1024)
         stdout, stderr = "".join(stdout_lines), "".join(stderr_lines)

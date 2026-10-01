@@ -169,6 +169,19 @@ Admin → Models. Invisible pixel watermarks are not decoded.
 server (`run_fas_analysis.py` looks in `fakedetector/fakedetector/CVPR24-FAS`). Leave the check off
 in Admin → Models until they are copied there.
 
+**Resident models (kept loaded on the GPUs).** `python -m sml_worker --resident` (started by
+`scripts/dev.sh` and `sml-resident.service`) runs one server per script listed under `resident` in
+`config/models.yaml`, in the model's conda env on the listed GPU, loads its weights once and keeps them.
+A task still launches the model exactly as before; the launch of that script is handed to its server
+(`sml_worker/resident/hook/sitecustomize.py`), so the wrappers, output files and scores are unchanged,
+and resident runs skip GPU admission. Placement today: SKKU-P2 and Center on GPU 0, SKKU-AIGC on GPU 1 (only
+its env runs on the RTX PRO 6000), SKKU-P3 on GPU 2, XB-DFD and SKKU-SNET on GPU 3. Admin → Models shows
+"Loaded on GPU n" per detector. A server that is loading, down or restarting is skipped: its model loads
+per task until it is back. A server runs one task at a time; a run that exceeds the model's time limit
+(plus 2 minutes) restarts it, and a canceled task still finishes inside it. Logs:
+`var/log/resident.log` and `var/log/resident-<server>.log`. After changing a model's code or weights, restart
+the resident service.
+
 **Finished tasks run again, or a worker logs `PRECONDITION_FAILED - delivery acknowledgement …
 timed out` and shuts down.** Workers acknowledge a task when it ends, and RabbitMQ's default limit is
 30 minutes; a long detector run (or a long wait for GPU memory) exceeds it, the broker closes the

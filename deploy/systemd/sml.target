@@ -1,6 +1,7 @@
 [Unit]
 Description=Secure Machines Lab (API, background workers, web, model workers)
-Wants=sml-api.service sml-celery.service sml-beat.service sml-web.service sml-stream.service sml-agents.service
+Wants=sml-api.service sml-celery.service sml-beat.service sml-web.service sml-stream.service sml-agents.service \
+    sml-resident.service
 After=network-online.target docker.service
 
 [Install]

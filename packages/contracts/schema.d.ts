@@ -1794,6 +1794,8 @@ export interface components {
             authentic_boost: number;
             /** @description An authentic answer also counts in the other analysis. */
             authentic_counts_in_all: boolean;
+            /** @description Servers keeping this model loaded on a GPU. */
+            resident: components["schemas"]["ResidentServer"][];
         };
         AdminOverview: {
             users: {
@@ -3396,6 +3398,12 @@ export interface components {
          * @enum {string}
          */
         ReportStatusEnum: "queued" | "running" | "ready" | "failed";
+        ResidentServer: {
+            server: string;
+            state: components["schemas"]["StateEnum"];
+            gpu: string;
+            media: string[];
+        };
         Role: {
             readonly id: number;
             name: string;
@@ -3464,6 +3472,13 @@ export interface components {
             /** @description Admin's choice; null = the default. */
             face_crop_setting: boolean | null;
         };
+        /**
+         * @description * `loading` - loading
+         *     * `ready` - ready
+         *     * `down` - down
+         * @enum {string}
+         */
+        StateEnum: "loading" | "ready" | "down";
         /**
          * @description * `s3` - s3
          *     * `local` - local

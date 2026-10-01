@@ -78,6 +78,12 @@ its observed peak plus 25 % once it has run on that media type, otherwise `gpu_m
 `models.yaml`, capped below the card's size. A task waiting over two minutes is served first if it
 can fit, so large models are not starved.
 
+**Resident models.** Detectors with a `resident` block in `models.yaml` stay loaded: a supervisor
+(`sml_worker --resident`) runs one server per heavy script in the model's own conda env on a fixed GPU,
+and a `sitecustomize` hook on the task's `PYTHONPATH` hands any launch of that script to its server, which
+runs it in-process with its loaders cached. Wrappers, files and scores are unchanged; without a ready
+server the model loads per task, with GPU admission as above.
+
 **Agents.** News verification and explain-why run in a separate agent worker. All runs share one
 loaded Ollama model: at most `SML_AGENT_PARALLEL` at once, the rest wait; other idle models are
 unloaded and the model is pinned with the same context size, so it is never loaded twice.

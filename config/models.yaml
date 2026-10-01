@@ -43,6 +43,13 @@ conda_envs:
 # `authentic_boost: 2.0` multiplies a detector's weight when it says authentic (score below the
 # threshold); with `authentic_counts_in_all: true` that answer also counts in the other analysis.
 
+# `resident` keeps a detector loaded on a GPU between tasks (owner, 2026-10-01): `python -m sml_worker
+# --resident` runs one server per listed script (sml_worker/resident/server.py) in the model's env on
+# `gpu`; a task launches the model as usual and the launch is handed to the server. `mode: main` imports
+# the script once and calls main(); `mode: run` re-runs it. `cache` names the loaders whose result is kept
+# (`name` in the script, or `module:name`); `torch_load_cache` keeps checkpoints read with torch.load;
+# `warmup` runs at start so the first task is fast. Without a ready server the model loads per task.
+
 # Aggregation shown to users as one verdict (weighted mean of fake probability).
 aggregation:
   method: weighted_mean
@@ -278,6 +285,14 @@ models:
     xai: gradcam
     default_selected: true
     gpu_mem_mb: 12000   # measured peak 11.2 GB (fp32 weights, 2.9B parameters)
+    resident:   # kept loaded (owner, 2026-10-01); see `resident` in the header
+      gpu: 3
+      servers:
+        - script: "{models_root}/detection_models/XB-DFD/sml_infer.py"
+          mode: main
+          cache: [load_model, FaceCropper]
+          warmup:
+            - ["--input", "{warmup_image}", "--stem", "{stem}", "--media", "image", "--out-root", "{warmup_dir}"]
     # sml_infer.py is our wrapper around the repo's inference.py. Weights come from the Hugging Face
     # cache (XB-DF/XB-DF). Videos score up to 128 frames spread over the clip and write the standard
     # per-frame CSV.
@@ -305,6 +320,24 @@ models:
     xai: none
     default_selected: true
     trial: true
+    resident:
+      gpu: 1   # the safe env (torch 2.8, CUDA 12.8) runs on the RTX PRO 6000
+      servers:
+        - id: skku-aigc-image
+          media: [image]
+          script: "{models_root}/detection_models/Safe/inference.py"
+          mode: main
+          cache: [DINOv2Binary]
+          torch_load_cache: true
+          warmup:
+            - ["--image", "{warmup_image}", "--model_path", "{models_root}/detection_models/Safe/SafeChallenge/no_temp_2000_iter.pt",
+               "--result_file_path", "{warmup_dir}/skku-aigc.csv", "--artifact_base", "{stem}"]
+        - id: skku-aigc-video   # run_safe_video.py launches inference_video.py; loads on its first video
+          media: [video]
+          script: "{models_root}/detection_models/Safe/inference_video.py"
+          mode: main
+          cache: [DINOv2WithClassifier]
+          torch_load_cache: true
     media:
       image:
         conda_env: safe
@@ -365,6 +398,17 @@ models:
     # counts twice, in the face-swap and the AI-generation analysis. Editable in Admin → Models.
     authentic_boost: 2.0
     authentic_counts_in_all: true
+    resident:
+      gpu: 0
+      servers:
+        - script: "{models_root}/detection_models/SKKU-P2/demo_mask2former_vit_7b_qkv_lora.py"
+          mode: main
+          cache: [build_model, load_checkpoint_flexible, _load_face_detector]
+          env: {CUBLAS_WORKSPACE_CONFIG: ":4096:8"}   # inference.sh sets it; cuBLAS reads it once
+          warmup:
+            - ["--input", "{warmup_image}", "--infer_ckpt", "{models_root}/detection_models/SKKU-P2/checkpoints/model_state.pt",
+               "--device", "cuda", "--num_video_frames", "0", "--output_dir", "{warmup_dir}/skku-p2",
+               "--scores_csv", "{warmup_dir}/skku-p2/scores.csv", "--enable_face_crop"]
     media:
       image:
         conda_env: wacv
@@ -391,6 +435,17 @@ models:
     xai: gradcam
     default_selected: false
     gpu_mem_mb: 20000
+    resident:
+      gpu: 2
+      servers:
+        - script: "{models_root}/detection_models/SKKU-P3/demo_mask2former_vit_7b_qkv_lora.py"
+          mode: main
+          cache: [build_model, load_checkpoint_flexible, _load_face_detector]
+          env: {CUBLAS_WORKSPACE_CONFIG: ":4096:8"}
+          warmup:
+            - ["--input", "{warmup_image}", "--infer_ckpt", "{models_root}/detection_models/SKKU-P3/checkpoints/model_state.pt",
+               "--device", "cuda", "--num_video_frames", "0", "--output_dir", "{warmup_dir}/skku-p3",
+               "--scores_csv", "{warmup_dir}/skku-p3/scores.csv", "--enable_face_crop"]
     media:
       image:
         conda_env: wacv
@@ -442,6 +497,18 @@ models:
     face_required: false
     xai: gradcam
     default_selected: true
+    resident:
+      gpu: 3
+      servers:
+        - script: "{models_root}/detection_models/SpecXNet/predict_with_image.py"
+          mode: run   # works at module level: re-run per file, checkpoint kept in memory
+          torch_load_cache: true
+          warmup:
+            - ["--image", "{warmup_image}", "--arch", "ffc_xception", "--ratio", "0.5", "--lfu", "--use_se",
+               "--gradcam", "--gradcam_out_dir", "{warmup_dir}", "--inference_dir", "{warmup_dir}", "--output", "/dev/null",
+               "--page_type", "ai-image",
+               "--resume", "{models_root}/detection_models/SpecXNet/checkpoint_big/ffc_xception/fixFULL-ckpt.best.pth.tar",
+               "--artifact_stem", "{stem}"]
     media:
       image:
         conda_env: gid
@@ -486,6 +553,27 @@ models:
     default_selected: true
     show_heatmap: true   # users see this detector's heatmap (owner's default, 2026-10-01)
     trial: true
+    resident:
+      gpu: 0
+      servers:   # run_center_image.py / run_center_video.py launch these
+        - id: center-image
+          media: [image]
+          script: "{models_root}/detection_models/Center/Centaur_dinov3small/inference.py"
+          mode: run
+          cache: ["load_model_dinowbilat_rope_bilat:load_model"]
+          warmup:
+            - ["--data_path", "{warmup_image}", "--weights_path", "{models_root}/detection_models/Center/center_ckpt/checkpoint_itr6000.pt",
+               "--config_path", "{models_root}/detection_models/Center/Centaur_dinov3small/configs/args.json",
+               "--result_file_path", "{warmup_dir}/center-image.csv"]
+        - id: center-video
+          media: [video]
+          script: "{models_root}/detection_models/Center/Centaur_avif/inference.py"
+          mode: run
+          cache: ["load_model_dinowbilat_rope_bilat:load_model"]
+          warmup:
+            - ["--data_path", "{warmup_image_dir}", "--weights_path", "{models_root}/detection_models/Center/center_ckpt/checkpoint_itr24000.pt",
+               "--config_path", "{models_root}/detection_models/Center/Centaur_avif/configs/args.json",
+               "--result_file_path", "{warmup_dir}/center-video.csv"]
     media:
       image:
         conda_env: center
