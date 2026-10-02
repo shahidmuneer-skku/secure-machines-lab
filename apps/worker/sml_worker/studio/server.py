@@ -521,6 +521,14 @@ class Server(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
             time.sleep(5)
 
 
+
+def remove_own_socket(path: str, inode: int) -> None:
+    """Remove the socket only if it is still ours: a newer server may have bound the same path."""
+    with contextlib.suppress(OSError):
+        if os.stat(path).st_ino == inode:
+            os.unlink(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--config", required=True, help="JSON written by the supervisor")
@@ -539,13 +547,13 @@ def main() -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     server = Server(path, studio, cfg)  # serving at once; the admin's models load in the background
     os.chmod(path, 0o600)
+    bound = os.stat(path).st_ino
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     log("ready")
     try:
         server.serve_forever()
     finally:
-        with contextlib.suppress(OSError):
-            os.unlink(path)
+        remove_own_socket(path, bound)
 
 
 if __name__ == "__main__":

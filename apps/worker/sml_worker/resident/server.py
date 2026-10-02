@@ -286,6 +286,14 @@ class Server(socketserver.UnixStreamServer):
 SERVER: Server
 
 
+
+def remove_own_socket(path: str, inode: int) -> None:
+    """Remove the socket only if it is still ours: a newer server may have bound the same path."""
+    with contextlib.suppress(OSError):
+        if os.stat(path).st_ino == inode:
+            os.unlink(path)
+
+
 def main() -> None:
     global SERVER
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -312,12 +320,12 @@ def main() -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     SERVER = Server(path, script, float(cfg.get("max_run_seconds") or 0))  # binding last: socket = ready
     os.chmod(path, 0o600)
+    bound = os.stat(path).st_ino
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # remove the socket on the way out
     try:
         SERVER.serve_forever()
     finally:
-        with contextlib.suppress(OSError):
-            os.unlink(path)
+        remove_own_socket(path, bound)
 
 
 if __name__ == "__main__":

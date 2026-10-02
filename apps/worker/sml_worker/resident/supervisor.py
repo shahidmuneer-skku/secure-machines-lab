@@ -224,7 +224,26 @@ def _publish(run: Running, state: str) -> None:
         redis_client().set(STATUS_KEY.format(run.spec.id), json.dumps(status), ex=STATUS_TTL)
 
 
+def _single_instance() -> Any:
+    """An exclusive lock for the supervisor's lifetime: a second one would start every server again,
+    load each model twice and take over the servers' sockets."""
+    import fcntl
+
+    resident_dir().mkdir(parents=True, exist_ok=True)
+    handle = (resident_dir() / "supervisor.lock").open("w")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        raise SystemExit("Another resident supervisor is already running (var/run/resident/supervisor.lock); "
+                         "stop it first.") from None
+    handle.write(str(os.getpid()))
+    handle.flush()
+    return handle
+
+
 def supervise(only: list[str] | None = None) -> None:
+    lock = _single_instance()  # noqa: F841 - held until the process exits
     specs = [s for s in servers() if not only or s.id in only or s.model_id in only]
     if not specs:
         logger.warning("No resident servers configured (models.yaml `resident` blocks)")
