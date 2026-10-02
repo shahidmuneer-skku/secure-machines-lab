@@ -37,7 +37,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${jakarta.variable} ${jetbrains.variable} ${notoKr.variable}`}
     >
-      <body className="min-h-screen font-sans antialiased">
+      {/* Browser extensions (e.g. Grammarly) add attributes to <body> before React hydrates. */}
+      <body className="min-h-screen font-sans antialiased" suppressHydrationWarning>
         <NextIntlClientProvider>
           <Providers nonce={nonce}>{children}</Providers>
         </NextIntlClientProvider>
