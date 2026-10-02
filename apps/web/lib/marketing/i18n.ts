@@ -7,102 +7,6 @@ export const SUPPORTED_LANGUAGES = [
 export type Language = (typeof SUPPORTED_LANGUAGES)[number]["code"]
 
 const en = {
-  nav: {
-    systems: "Systems",
-    research: "Research",
-    about: "About",
-    customers: "Collaborators",
-    contact: "Contact",
-    getInTouch: "Get in touch →",
-    language: "Select language",
-  },
-  hero: {
-    status: "Systems operational",
-    title: {
-      secure: "SECURE",
-      machines: "MACHINES",
-      lab: "LAB.",
-    },
-    subtitle:
-      "We build the detection layer for the generative era. Model- and data-free deepfake forensics, watermarking defenses, and tools to trace synthetic media as it spreads.",
-    affiliation: "DASH Lab · SKKU",
-    exploreSystems: "Explore the systems ↓",
-    marquee: [
-      "Deepfake detection",
-      "Model-free forensics",
-      "Generation source blocking",
-      "Propagation prediction",
-      "AI forensics assistant",
-      "Synthetic watermarking",
-      "Media provenance",
-      "Adversarial robustness",
-    ],
-    stats: [
-      { v: "99.4%", l: "Detection AUROC", sub: "CVPR’24 bench" },
-      { v: "<120ms", l: "Analysis latency", sub: "per frame @ 1080p" },
-      { v: "14", l: "Peer-reviewed publications", sub: "since 2023" },
-      { v: "∞", l: "Synthetic samples analyzed", sub: "and counting" },
-    ],
-  },
-  tools: {
-    face: {
-      eyeTitle: "EYE_L · 98.7%",
-      eyeSub: "SYNTHETIC MARKER",
-      noseTitle: "NOSE · CLEAN",
-      noseSub: "FREQ ANALYSIS OK",
-      browTitle: "BROW · 94.2%",
-      browSub: "MICRO-EDGE DRIFT",
-      mouthTitle: "MOUTH · ANOMALY",
-      mouthSub: "DIFFUSION ARTIFACT",
-      footer: "SML/FACE-V4 · 68 LANDMARKS · FRAME 00482",
-    },
-    sectionIdx: "02 / Systems",
-    eyebrow: "Products",
-    titleLine: "Safer AI.",
-    titleEm: "Secure world.",
-    subtitle:
-      "Pioneering forensic tools for researchers, newsrooms, and platform trust teams. Our systems run landmark, frequency, and mesh-level analysis in real time — click through to launch the live terminal.",
-    labels: {
-      live: "Live",
-      openLivePreview: "Open live preview",
-      openFullSystem: "Open full system",
-    },
-    cards: {
-      detector: {
-        title: "Deepfake Detector",
-        kicker: "Forensic analysis",
-        desc:
-          "A model-agnostic pipeline for spotting AI-generated and manipulated images and video. Trained on 2M+ synthetic samples across 40+ generators.",
-        launch: "Launch Deepfake",
-        metrics: [
-          { k: "AUROC", v: "99.4%" },
-          { k: "Latency", v: "118ms" },
-          { k: "Models covered", v: "40+" },
-        ],
-      },
-      assistant: {
-        title: "Forensics Assistant",
-        kicker: "Research copilot",
-        desc:
-          "A conversational agent for media integrity analysts — upload, cross-check, cite. Backed by our detection stack and an evolving evidence graph.",
-        launch: "Launch Forensics",
-        metrics: [
-          { k: "Evidence sources", v: "12.4k" },
-          { k: "Response time", v: "1.2s" },
-          { k: "Languages", v: "8" },
-        ],
-      },
-    },
-    useCases: {
-      eyebrow: "In the field",
-      items: [
-        { h: "Newsrooms", b: "Verify user-submitted footage before publish." },
-        { h: "Platforms", b: "Flag synthetic uploads at scale, at the edge." },
-        { h: "Researchers", b: "Benchmark new detection methods against ours." },
-        { h: "Policy", b: "Audit evidence for investigations and regulation." },
-      ],
-    },
-  },
   research: {
     idx: "03 / Research",
     eyebrow: "What we study",
@@ -161,12 +65,6 @@ const en = {
       ["Hiring", "Open (ML, infra)"],
     ],
   },
-  customers: {
-    idx: "05",
-    eyebrow: "Collaborating organizations",
-    title: "Collaborators",
-    subtitle: "Organizations we are collaborating with to make online information more trustworthy.",
-  },
   contact: {
     idx: "06 / Contact",
     titleLine: "Let's make",
@@ -197,12 +95,6 @@ const en = {
       status: "All systems operational",
     },
   },
-  visitors: {
-    idx: "07 / Visitors",
-    eyebrow: "Live reach",
-    title: "Where visitors are from",
-    subtitle: "A live map of recent visits to Secure Machines Lab from around the world.",
-  },
 }
 
 export type DashTranslations = typeof en
@@ -210,98 +102,6 @@ export type DashTranslations = typeof en
 export const dashTranslations = {
   en,
   ko: {
-    nav: {
-      systems: "Systems",
-      research: "Research",
-      about: "About",
-      customers: "Collaborators",
-      contact: "Contact",
-      getInTouch: "Get in touch →",
-      language: "Select language",
-    },
-    hero: {
-      status: "시스템 운영",
-      title: en.hero.title,
-      subtitle:
-        "생성형 AI 시대의 탐지 솔루션을 구축합니다. 모델과 데이터에 의존하지 않는 딥페이크 포렌식, 워터마킹 방어, 합성 미디어 확산 추적 도구를 제공합니다.",
-      affiliation: "DASH Lab · SKKU",
-      exploreSystems: "시스템 살펴보기 ↓",
-      marquee: [
-        "딥페이크 탐지",
-        "Model-free 포렌식",
-        "생성 출처 차단",
-        "확산 예측",
-        "AI 포렌식 어시스턴트",
-        "합성 워터마킹",
-        "미디어 출처 증명",
-        "적대적 강건성",
-      ],
-      stats: [
-        { v: "99.4%", l: "탐지 AUROC", sub: "CVPR’24 벤치마크" },
-        { v: "<120ms", l: "분석 지연시간", sub: "1080p 프레임당" },
-        { v: "14", l: "동료심사 논문", sub: "2023년 이후" },
-        { v: "∞", l: "분석한 합성 샘플", sub: "계속 증가 중" },
-      ],
-    },
-    tools: {
-      face: {
-        eyeTitle: "EYE_L · 98.7%",
-        eyeSub: "합성 마커",
-        noseTitle: "NOSE · 정상",
-        noseSub: "주파수 분석 정상",
-        browTitle: "BROW · 94.2%",
-        browSub: "미세 엣지 드리프트",
-        mouthTitle: "MOUTH · 이상",
-        mouthSub: "확산 아티팩트",
-        footer: "SML/FACE-V4 · 68 랜드마크 · 프레임 00482",
-      },
-      sectionIdx: "02 / 시스템",
-      eyebrow: "제품",
-      titleLine: "Safer AI.",
-      titleEm: "Secure World.",
-      subtitle:
-        "연구자, 뉴스룸, 플랫폼 신뢰팀을 위한 포렌식 도구를 개척합니다. 당사의 시스템은 랜드마크, 주파수, mash 수준 분석을 실시간으로 실행하며, 클릭하면 라이브 터미널을 실행할 수 있습니다.",
-      labels: {
-        live: "실시간",
-        openLivePreview: "라이브 미리보기 열기",
-        openFullSystem: "전체 시스템 열기",
-      },
-      cards: {
-        detector: {
-          title: "딥페이크 탐지기",
-          kicker: "포렌식 분석",
-          desc:
-            "AI 생성 및 조작 이미지와 영상을 탐지하는 파이프라인입니다. 40개 이상의 생성 모델에서 나온 200만 개 이상의 합성 샘플로 학습했습니다.",
-          launch: "딥페이크 탐지 실행",
-          metrics: [
-            { k: "AUROC", v: "99.4%" },
-            { k: "지연시간", v: "118ms" },
-            { k: "지원 모델", v: "40+" },
-          ],
-        },
-        assistant: {
-          title: "포렌식 어시스턴트",
-          kicker: "연구 코파일럿",
-          desc:
-            "미디어 무결성 분석가를 위한 대화형 에이전트입니다. 업로드, 교차 검증, 인용을 지원하며 탐지 스택과 진화하는 증거 그래프를 기반으로 동작합니다.",
-          launch: "포렌식 실행",
-          metrics: [
-            { k: "증거 소스", v: "12.4k" },
-            { k: "응답 시간", v: "1.2s" },
-            { k: "언어", v: "8" },
-          ],
-        },
-      },
-      useCases: {
-        eyebrow: "현장 활용",
-        items: [
-          { h: "뉴스룸", b: "게시 전 사용자 제보 영상을 검증합니다." },
-          { h: "플랫폼", b: "엣지에서 대규모 합성 업로드를 표시합니다." },
-          { h: "연구자", b: "새 탐지 방법을 당사 시스템과 비교 벤치마크합니다." },
-          { h: "정책", b: "수사와 규제를 위한 증거를 감사합니다." },
-        ],
-      },
-    },
     research: {
       idx: "03 / 연구",
       eyebrow: "연구 주제",
@@ -360,12 +160,6 @@ export const dashTranslations = {
         ["채용", "진행 중 (ML, 인프라)"],
       ],
     },
-    customers: {
-      idx: "",
-      eyebrow: "협력기관",
-      title: "Collaborators",
-      subtitle: "더 신뢰할 수 있는 온라인 정보 환경을\n함께 만들어 가는 협력 기관입니다.",
-    },
     contact: {
       idx: "06 / 연락처",
       titleLine: "Let's make",
@@ -396,106 +190,8 @@ export const dashTranslations = {
         status: "전체 시스템 정상 운영",
       },
     },
-    visitors: {
-      idx: "07 / 방문자",
-      eyebrow: "실시간 도달",
-      title: "방문자 통계",
-      subtitle: "전 세계에서 Secure Machines Lab을 찾아온 최근 방문의 실시간 지도입니다.",
-    },
   },
   de: {
-    nav: {
-      systems: "Systems",
-      research: "Research",
-      about: "About",
-      customers: "Collaborators",
-      contact: "Contact",
-      getInTouch: "Get in touch →",
-      language: "Select language",
-    },
-    hero: {
-      status: "Systeme betriebsbereit",
-      title: en.hero.title,
-      subtitle:
-        "Wir bauen die Erkennungsebene für das Zeitalter generativer KI: modell- und datenfreie Deepfake-Forensik, Watermarking-Abwehr und Werkzeuge, die synthetische Medien bei ihrer Verbreitung verfolgen.",
-      affiliation: "DASH Lab · SKKU",
-      exploreSystems: "Systeme erkunden ↓",
-      marquee: [
-        "Deepfake-Erkennung",
-        "Modellfreie Forensik",
-        "Quellenblockierung",
-        "Ausbreitungsvorhersage",
-        "KI-Forensik-Assistent",
-        "Synthetisches Watermarking",
-        "Medienprovenienz",
-        "Adversariale Robustheit",
-      ],
-      stats: [
-        { v: "99.4%", l: "Erkennungs-AUROC", sub: "CVPR’24 Benchmark" },
-        { v: "<120ms", l: "Analyselatenz", sub: "pro Frame @ 1080p" },
-        { v: "14", l: "Peer-Review-Publikationen", sub: "seit 2023" },
-        { v: "∞", l: "Analysierte synthetische Proben", sub: "fortlaufend" },
-      ],
-    },
-    tools: {
-      face: {
-        eyeTitle: "EYE_L · 98.7%",
-        eyeSub: "SYNTHETISCHER MARKER",
-        noseTitle: "NOSE · SAUBER",
-        noseSub: "FREQUENZANALYSE OK",
-        browTitle: "BROW · 94.2%",
-        browSub: "MIKROKANTEN-DRIFT",
-        mouthTitle: "MOUTH · ANOMALIE",
-        mouthSub: "DIFFUSIONSARTEFAKT",
-        footer: "SML/FACE-V4 · 68 LANDMARKS · FRAME 00482",
-      },
-      sectionIdx: "02 / Systeme",
-      eyebrow: "Produkte",
-      titleLine: "Sicherere KI.",
-      titleEm: "Sichere Welt.",
-      subtitle:
-        "Forensische Werkzeuge für Forschende, Redaktionen und Trust-Teams von Plattformen. Unsere Systeme analysieren Landmarken, Frequenzen und Mesh-Strukturen in Echtzeit — klicken Sie sich durch, um das Live-Terminal zu starten.",
-      labels: {
-        live: "Live",
-        openLivePreview: "Live-Vorschau öffnen",
-        openFullSystem: "Vollsystem öffnen",
-      },
-      cards: {
-        detector: {
-          title: "Deepfake-Detektor",
-          kicker: "Forensische Analyse",
-          desc:
-            "Eine modellagnostische Pipeline zum Erkennen KI-generierter und manipulierter Bilder und Videos. Trainiert mit über 2 Mio. synthetischen Proben aus mehr als 40 Generatoren.",
-          launch: "Deepfake-Erkennung starten",
-          metrics: [
-            { k: "AUROC", v: "99.4%" },
-            { k: "Latenz", v: "118ms" },
-            { k: "Modelle abgedeckt", v: "40+" },
-          ],
-        },
-        assistant: {
-          title: "Forensik-Assistent",
-          kicker: "Forschungs-Copilot",
-          desc:
-            "Ein dialogbasierter Agent für Medienintegritäts-Analysten: hochladen, gegenprüfen, zitieren. Gestützt auf unseren Erkennungs-Stack und einen wachsenden Evidenzgraphen.",
-          launch: "Forensik starten",
-          metrics: [
-            { k: "Evidenzquellen", v: "12.4k" },
-            { k: "Antwortzeit", v: "1.2s" },
-            { k: "Sprachen", v: "8" },
-          ],
-        },
-      },
-      useCases: {
-        eyebrow: "Im Einsatz",
-        items: [
-          { h: "Redaktionen", b: "Nutzeraufnahmen vor der Veröffentlichung verifizieren." },
-          { h: "Plattformen", b: "Synthetische Uploads skaliert und am Edge markieren." },
-          { h: "Forschende", b: "Neue Erkennungsmethoden gegen unsere Systeme benchmarken." },
-          { h: "Politik", b: "Evidenz für Ermittlungen und Regulierung prüfen." },
-        ],
-      },
-    },
     research: {
       idx: "03 / Forschung",
       eyebrow: "Was wir untersuchen",
@@ -554,12 +250,6 @@ export const dashTranslations = {
         ["Hiring", "Offen (ML, Infra)"],
       ],
     },
-    customers: {
-      idx: "05",
-      eyebrow: "Collaborating organizations",
-      title: "Collaborators",
-      subtitle: "Organisationen, mit denen wir an vertrauenswürdigeren Online-Informationen arbeiten.",
-    },
     contact: {
       idx: "06 / Kontakt",
       titleLine: "Let's make",
@@ -589,13 +279,6 @@ export const dashTranslations = {
         github: "GitHub ↗",
         status: "Alle Systeme betriebsbereit",
       },
-    },
-    visitors: {
-      idx: "07 / Besucher",
-      eyebrow: "Live-Reichweite",
-      title: "Woher Besucher kommen",
-      subtitle:
-        "Eine Live-Karte der jüngsten Besuche bei Secure Machines Lab aus aller Welt.",
     },
   },
 } satisfies Record<Language, DashTranslations>

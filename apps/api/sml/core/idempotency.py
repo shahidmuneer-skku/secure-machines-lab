@@ -101,7 +101,7 @@ def idempotent(required: bool = True) -> Callable:
                     record.response_status = response.status_code
                     record.response_body = json.loads(json.dumps(response.data, cls=JSONEncoder))
                     record.save(update_fields=["response_status", "response_body"])
-                except Exception:  # noqa: BLE001
+                except Exception:
                     log.exception("Could not store the idempotent response for %s", request.path)
                     record.delete()
             else:

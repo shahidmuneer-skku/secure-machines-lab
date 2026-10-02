@@ -16,6 +16,7 @@ v1 = [
     path("", include("sml.reports.urls")),
     path("", include("sml.news.urls")),
     path("", include("sml.studio.urls")),
+    path("", include("sml.assistant.urls")),
     path("", include("sml.credits.urls")),
     path("", include("sml.billing.urls")),
     path("", include("sml.trial.urls")),

@@ -20,7 +20,7 @@ function StepIcon({ status }: { status: string }) {
 }
 
 /**
- * What is happening behind the scenes, in generic steps: queued → checks → analysis (→ verification)
+ * What is happening behind the scenes, in generic steps: queued → analysis (→ verification)
  * → results. Users see progress and their place in the queue, never which detectors run.
  */
 export function ProcessingPanel({ job }: { job: JobDetail }) {

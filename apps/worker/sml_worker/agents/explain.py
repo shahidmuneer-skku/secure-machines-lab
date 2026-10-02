@@ -1,4 +1,4 @@
-"""'Explain why' reasoning: an agent inspects the media, detector scores, XAI maps and metadata."""
+"""'Explain why' reasoning: a vision model looks at the media and the heatmaps and explains the result."""
 
 from __future__ import annotations
 
@@ -20,53 +20,51 @@ LANG_NAMES = {"en": "English", "ko": "Korean (한국어)", "de": "German (Deutsc
 ANALYSIS_NAMES = {"face_swap": "face-swap analysis", "ai_generated": "AI-generation analysis"}
 
 
+CONFIDENTIAL_RULE = (
+    "STRICTLY CONFIDENTIAL: never mention, hint at or speculate about how the result was obtained — no "
+    "detectors, models, model names or architectures, no number of analyses or checks, no scores per method; "
+    "nothing about the file's metadata (EXIF, XMP, IPTC, C2PA, content credentials, camera or software "
+    "information, embedded data, file properties); no face-detection, content-safety or anti-spoofing checks. "
+    "Refer to the process only as 'the analysis'. If something cannot be explained without these, leave it out."
+)
+
+
 def build_prompt(context: dict[str, Any], media_name: str, xai_names: list[str], locale: str) -> str:
-    """The answer is shown to the user, who must not learn which detectors run or how the automated
-    analysis works: the prompt carries only the combined result and the evidence users already see."""
-    provenance = context.get("provenance") or {}
-    checks = [{"check": c.get("id"), "status": c.get("status"), **(c.get("result") or {})}
-              for c in context.get("checks") or []]
+    """The answer is shown to the user, who must not learn how the analysis works (owner, 2026-10-01 and
+    2026-10-02): the prompt carries only the result as users see it — no detectors, metadata or checks."""
+    results = [{"analysis": ANALYSIS_NAMES.get(a.get("id"), "AI-generation analysis"), "verdict": a.get("verdict"),
+                "fake_probability": a.get("fake_probability"), "status": a.get("status")}
+               for a in context.get("analyses") or []]
     return "\n".join([
-        "You are a senior media-forensics analyst at Secure Machines Lab.",
+        "You are a media-forensics analyst at Secure Machines Lab, writing for a non-expert.",
         f"Write your answer in {LANG_NAMES.get(locale, 'English')}.",
         "",
         "## Task",
-        "Explain to a non-expert WHY this file was judged the way it was, and whether you agree.",
-        f"The file is `./{media_name}` in the current directory. Open and look at it carefully.",
-        ("Heatmaps of the regions the automated analysis focused on are: " + ", ".join(f"`./{n}`" for n in xai_names))
+        "Explain what the analysis result means for this file and which visible details are consistent with it.",
+        f"The file is `./{media_name}` in the current directory. Look at it carefully.",
+        ("Heatmaps of the regions the analysis focused on are: " + ", ".join(f"`./{n}`" for n in xai_names))
         if xai_names else "No heatmaps are available.",
         "",
-        "## Automated result",
+        "## Analysis result (final)",
         "```json",
-        json.dumps({"verdict": context.get("verdict"), "fake_probability": context.get("fake_probability"),
-                    "media_type": context.get("media_type"),
-                    "metadata": {"ai_generation_markers": provenance.get("ai_generated"),
-                                 "evidence": provenance.get("evidence"), "camera": provenance.get("camera"),
-                                 "software": provenance.get("software"),
-                                 "c2pa_status": provenance.get("c2pa_status")},
-                    "results_by_analysis": [
-                        {"analysis": ANALYSIS_NAMES.get(a.get("id"), "AI-generation analysis"),
-                         "verdict": a.get("verdict"), "fake_probability": a.get("fake_probability"),
-                         "status": a.get("status")}
-                        for a in context.get("analyses") or []],
-                    "additional_checks": checks},
+        json.dumps({"verdict": context.get("verdict_label") or context.get("verdict"),
+                    "fake_probability": context.get("fake_probability"), "media_type": context.get("media_type"),
+                    "no_face_found": bool(context.get("no_face")), "results_by_analysis": results},
                    indent=2, ensure_ascii=False),
         "```",
         "",
-        "## Output format (Markdown, 250–450 words)",
-        "### Summary — one or two sentences: your conclusion and confidence (high/medium/low).",
-        "### Visual evidence — concrete observations: skin/hair texture, eyes and teeth, lighting and shadows,",
-        "  edges and blending seams, background warping, text rendering, hands, temporal flicker (video).",
-        "  Refer to the heatmap regions when relevant.",
-        "### Provenance — what EXIF / C2PA metadata does or doesn't show.",
-        "### Results by analysis — what the face-swap and AI-generation analyses each found,",
-        "  in plain language (only those present above).",
-        "### Caveats — what could make this assessment wrong.",
+        "## Output format (Markdown, 200–400 words)",
+        "### Summary — one or two sentences: what the result says, in plain words.",
+        "### What is visible — concrete observations consistent with the result: skin/hair texture, eyes and",
+        "  teeth, lighting and shadows, edges and blending, background, text, hands, flicker (video).",
+        "  Refer to the highlighted heatmap regions when relevant.",
+        "### Results by analysis — what the face-swap and AI-generation analyses found, in plain language",
+        "  (only those present above).",
+        "### Caveats — general limits (image quality, compression, small or partly hidden faces).",
         "",
-        "Rules: be specific, never invent facts you cannot see, say 'cannot be determined' when unsure,",
-        "treat the automated result as one input rather than ground truth. Do not include any preamble.",
-        "Confidential: never name or speculate about detection models, model architectures, how many",
-        "detectors were used or how the automated analysis works; refer to it only as 'the automated analysis'.",
+        "Rules: be specific, never invent facts you cannot see, say 'cannot be determined' when unsure.",
+        "The analysis result is final: never contradict or second-guess it. Do not include any preamble.",
+        CONFIDENTIAL_RULE,
     ])
 
 

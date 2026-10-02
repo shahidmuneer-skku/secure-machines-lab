@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 from sml.accounts.models import User
 from sml.catalog.registry import registry
+from sml.core.confidential import scrub
 from sml.media.models import MediaObject
 from sml.reports.serializers import ReportSerializer
 
@@ -298,31 +299,9 @@ class JobListSerializer(serializers.ModelSerializer):
 
 
 class JobStepSerializer(serializers.Serializer):
-    id = serializers.ChoiceField(choices=["queued", "checks", "analysis", "verification", "results"])
+    id = serializers.ChoiceField(choices=["queued", "analysis", "verification", "results"])
     status = serializers.CharField()
     progress = serializers.FloatField()
-
-
-class EvidenceSerializer(serializers.Serializer):
-    source = serializers.CharField()
-    detail = serializers.CharField()
-    strength = serializers.CharField(allow_blank=True)
-
-
-class ProvenanceSerializer(serializers.Serializer):
-    ai_generated = serializers.BooleanField()
-    confidence = serializers.CharField()
-    c2pa_status = serializers.CharField()
-    camera = serializers.CharField(allow_null=True)
-    software = serializers.CharField(allow_null=True)
-    evidence = EvidenceSerializer(many=True)
-    notes = serializers.ListField(child=serializers.CharField())
-
-
-class CheckSerializer(serializers.Serializer):
-    id = serializers.ChoiceField(choices=["face", "safety", "fas"])
-    status = serializers.CharField()
-    result = serializers.DictField(help_text="faces_found, sensitive_content or spoof_detected")
 
 
 class AnalysisResultSerializer(serializers.Serializer):
@@ -374,10 +353,17 @@ class ArtifactSerializer(serializers.Serializer):
 
 
 class ExplanationSerializer(serializers.ModelSerializer):
+    content = serializers.SerializerMethodField()
+
     class Meta:
         model = Explanation
         fields = ["id", "status", "locale", "content", "credits_charged", "error_message", "created_at",
                   "started_at", "finished_at"]
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_content(self, obj: Explanation) -> str:
+        # Also filters explanations written before the method was hidden (2026-10-02).
+        return scrub(obj.content or "")
 
 
 class JobDetailSerializer(JobListSerializer):
@@ -386,8 +372,6 @@ class JobDetailSerializer(JobListSerializer):
     verdict_reasons = serializers.SerializerMethodField()
     steps = serializers.SerializerMethodField()
     analyses = serializers.SerializerMethodField()
-    provenance = serializers.SerializerMethodField()
-    checks = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
     long_video = serializers.SerializerMethodField()
     news = serializers.SerializerMethodField()
@@ -398,7 +382,7 @@ class JobDetailSerializer(JobListSerializer):
 
     class Meta(JobListSerializer.Meta):
         fields = [*JobListSerializer.Meta.fields, "media", "options", "locale", "verdict_reasons", "quote_lines",
-                  "steps", "analyses", "provenance", "checks", "timeline", "long_video", "news", "events", "artifacts",
+                  "steps", "analyses", "timeline", "long_video", "news", "events", "artifacts",
                   "explanations", "reports", "parent", "cancel_requested", "purged_at"]
 
     def _tasks(self, obj: Job) -> list[JobTask]:
@@ -424,14 +408,6 @@ class JobDetailSerializer(JobListSerializer):
     @extend_schema_field(AnalysisResultSerializer(many=True))
     def get_analyses(self, obj: Job) -> list[dict[str, Any]]:
         return public.analyses(obj)
-
-    @extend_schema_field(ProvenanceSerializer(allow_null=True))
-    def get_provenance(self, obj: Job) -> dict[str, Any] | None:
-        return public.provenance(self._tasks(obj))
-
-    @extend_schema_field(CheckSerializer(many=True))
-    def get_checks(self, obj: Job) -> list[dict[str, Any]]:
-        return public.checks(self._tasks(obj))
 
     @extend_schema_field(TimelinePointSerializer(many=True))
     def get_timeline(self, obj: Job) -> list[dict[str, Any]]:

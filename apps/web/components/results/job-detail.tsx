@@ -1,7 +1,8 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Ban, Clock, Coins, RotateCw, Timer } from "lucide-react"
+import { ArrowLeft, Ban, BotMessageSquare, Clock, Coins, RotateCw, Timer } from "lucide-react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
@@ -13,18 +14,21 @@ import { Button } from "@/components/ui/button"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useCan, useMe } from "@/hooks/use-me"
 import { api, data } from "@/lib/api/client"
 import { isApiError } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
 import type { JobDetail as JobDetailT } from "@/lib/api/types"
 import { formatDateTime, formatRelative } from "@/lib/format"
 
-import { DetectorBreakdown } from "./detector-breakdown"
 import { ExplainCard, ReportsCard } from "./explain-reports"
 import { JobActions, useJobMutations } from "./job-actions"
 import { MediaViewer } from "./media-viewer"
 import { ProcessingPanel, Timeline } from "./processing-panel"
-import { ProvenanceCard, VerdictPanel } from "./verdict-panel"
+import { VerdictPanel } from "./verdict-panel"
+
+// Administrators only: its code is downloaded by their browsers alone (ADR 0011, 0015).
+const DetectorBreakdown = dynamic(() => import("./detector-breakdown").then((m) => m.DetectorBreakdown), { ssr: false })
 
 export function useJob(id: string) {
   return useQuery({
@@ -41,6 +45,8 @@ export function JobDetailView({ id }: { id: string }) {
   const router = useRouter()
   const { data: job, isLoading, error, refetch } = useJob(id)
   const { cancel, rerun } = useJobMutations(id)
+  const { data: me } = useMe()
+  const staff = useCan("view_all_jobs")
 
   if (isLoading) {
     return <div className="space-y-4"><Skeleton className="h-10 w-1/2" /><div className="grid gap-4 lg:grid-cols-3">
@@ -58,6 +64,8 @@ export function JobDetailView({ id }: { id: string }) {
   }
   const active = job.status === "queued" || job.status === "running"
   const finished = ["succeeded", "failed", "canceled"].includes(job.status)
+  // The assistant opens in its own tab with a new chat about this result (it is not analysed again).
+  const ask = job.kind === "detect" && (active || job.status === "succeeded") && !!me?.capabilities?.includes("use_assistant")
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -79,7 +87,12 @@ export function JobDetailView({ id }: { id: string }) {
             <span className="font-mono">{job.id}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {ask && (
+            <Button asChild variant="outline">
+              <a href={`/assistant?job=${job.id}`} target="_blank" rel="noopener"><BotMessageSquare className="size-4" /> {t("askAssistant")}</a>
+            </Button>
+          )}
           {active && <Button variant="outline" onClick={() => cancel.mutate()} disabled={cancel.isPending}><Ban className="size-4" /> {t("cancel")}</Button>}
           {finished && job.kind !== "news" && (
             <Button variant="outline" onClick={() => rerun.mutate()} disabled={rerun.isPending}><RotateCw className="size-4" /> {t("rerun")}</Button>
@@ -96,8 +109,7 @@ export function JobDetailView({ id }: { id: string }) {
         </div>
         <div className="space-y-5">
           <VerdictPanel job={job} />
-          <DetectorBreakdown job={job} />
-          <ProvenanceCard job={job} />
+          {staff && <DetectorBreakdown job={job} />}
           <ReportsCard job={job} />
           <CreditsCard job={job} />
           <Timeline events={job.events} />

@@ -8,6 +8,7 @@ user_capabilities: &user_caps
   - run_news_verification
   - use_reasoning
   - use_studio
+  - use_assistant
   - manage_own_api_keys
   - purchase_credits
 

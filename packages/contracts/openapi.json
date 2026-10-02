@@ -3189,6 +3189,381 @@
                 }
             }
         },
+        "/api/v1/assistant/conversations": {
+            "get": {
+                "operationId": "assistant_conversations_list",
+                "summary": "My conversations (newest first)",
+                "parameters": [
+                    {
+                        "name": "cursor",
+                        "required": false,
+                        "in": "query",
+                        "description": "The pagination cursor value.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedConversationList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "assistant_conversations_create",
+                "summary": "Start a conversation (listed once it has a message)",
+                "tags": [
+                    "assistant"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Conversation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/assistant/conversations/{id}": {
+            "get": {
+                "operationId": "assistant_conversations_retrieve",
+                "summary": "A conversation with its messages",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConversationDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "assistant_conversations_partial_update",
+                "summary": "Rename",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedConversationRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedConversationRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedConversationRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Conversation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "assistant_conversations_destroy",
+                "summary": "Delete (the analyses stay in Results)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/assistant/conversations/{id}/messages": {
+            "post": {
+                "operationId": "assistant_conversations_messages_create",
+                "description": "Sends a message to the assistant. Attached files are analysed at the normal price per file; the\nreply arrives as Server-Sent Events. Errors before the reply starts are JSON problem details.",
+                "summary": "Send a message. Attached files are analysed at the normal price per file; the reply streams.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendMessageRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendMessageRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendMessageRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Server-Sent Events: `meta` (the stored user message and any analyses it started), `delta` (reply text, sentence by sentence), then `done` (the stored reply) or `error`."
+                    }
+                }
+            }
+        },
+        "/api/v1/assistant/conversations/{id}/messages/{message_id}/results": {
+            "post": {
+                "operationId": "assistant_conversations_messages_results_create",
+                "description": "Once every analysis a message started has finished, the assistant explains the results (once per\nmessage), as Server-Sent Events.",
+                "summary": "Have the assistant explain the results once every analysis a message started has finished.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "message_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "SessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Server-Sent Events: `meta` (the stored user message and any analyses it started), `delta` (reply text, sentence by sentence), then `done` (the stored reply) or `error`."
+                    }
+                }
+            }
+        },
         "/api/v1/billing/catalog": {
             "get": {
                 "operationId": "billing_catalog_retrieve",
@@ -7986,6 +8361,32 @@
                 "type": "string",
                 "description": "* `xai` - Explainability map\n* `face` - Face crop\n* `video` - Annotated video\n* `frames` - Per-frame scores\n* `report` - Report\n* `other` - Other"
             },
+            "Attachment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "media_type": {
+                        "$ref": "#/components/schemas/MediaTypeEnum"
+                    },
+                    "thumbnail_url": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "media_type",
+                    "name",
+                    "thumbnail_url"
+                ]
+            },
             "AuditLog": {
                 "type": "object",
                 "properties": {
@@ -8180,36 +8581,6 @@
                     "thumbnail_url"
                 ]
             },
-            "Check": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "$ref": "#/components/schemas/CheckIdEnum"
-                    },
-                    "status": {
-                        "type": "string"
-                    },
-                    "result": {
-                        "type": "object",
-                        "additionalProperties": {},
-                        "description": "faces_found, sensitive_content or spoof_detected"
-                    }
-                },
-                "required": [
-                    "id",
-                    "result",
-                    "status"
-                ]
-            },
-            "CheckIdEnum": {
-                "enum": [
-                    "face",
-                    "safety",
-                    "fas"
-                ],
-                "type": "string",
-                "description": "* `face` - face\n* `safety` - safety\n* `fas` - fas"
-            },
             "CheckoutRequest": {
                 "type": "object",
                 "properties": {
@@ -8290,6 +8661,83 @@
                 "properties": {
                     "granted": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "Conversation": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "title",
+                    "updated_at"
+                ]
+            },
+            "ConversationDetail": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "messages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Message"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "messages",
+                    "title",
+                    "updated_at"
+                ]
+            },
+            "ConversationRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
                     }
                 }
             },
@@ -8792,25 +9240,6 @@
                     "dataset"
                 ]
             },
-            "Evidence": {
-                "type": "object",
-                "properties": {
-                    "source": {
-                        "type": "string"
-                    },
-                    "detail": {
-                        "type": "string"
-                    },
-                    "strength": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "detail",
-                    "source",
-                    "strength"
-                ]
-            },
             "EvidenceKindEnum": {
                 "enum": [
                     "heatmap",
@@ -8940,7 +9369,8 @@
                         "maxLength": 5
                     },
                     "content": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
                     },
                     "credits_charged": {
                         "type": "integer",
@@ -9367,22 +9797,6 @@
                         },
                         "readOnly": true
                     },
-                    "provenance": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/Provenance"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "checks": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Check"
-                        },
-                        "readOnly": true
-                    },
                     "timeline": {
                         "type": "array",
                         "items": {
@@ -9456,7 +9870,6 @@
                     "artifacts",
                     "batch_id",
                     "cancel_requested",
-                    "checks",
                     "created_at",
                     "credits_charged",
                     "credits_quoted",
@@ -9478,7 +9891,6 @@
                     "parent",
                     "partial",
                     "progress",
-                    "provenance",
                     "purged_at",
                     "queue",
                     "quote_lines",
@@ -9737,13 +10149,12 @@
             "JobStepEnum": {
                 "enum": [
                     "queued",
-                    "checks",
                     "analysis",
                     "verification",
                     "results"
                 ],
                 "type": "string",
-                "description": "* `queued` - queued\n* `checks` - checks\n* `analysis` - analysis\n* `verification` - verification\n* `results` - results"
+                "description": "* `queued` - queued\n* `analysis` - analysis\n* `verification` - verification\n* `results` - results"
             },
             "JobTruth": {
                 "type": "object",
@@ -10357,6 +10768,73 @@
                 "type": "string",
                 "description": "* `image` - Image\n* `video` - Video"
             },
+            "Message": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/RoleEnum"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/MessageStatusEnum"
+                    },
+                    "content": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "attachments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Attachment"
+                        },
+                        "readOnly": true
+                    },
+                    "jobs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/JobList"
+                        },
+                        "readOnly": true
+                    },
+                    "started_analyses": {
+                        "type": "boolean"
+                    },
+                    "results_reply": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "attachments",
+                    "content",
+                    "created_at",
+                    "id",
+                    "jobs",
+                    "results_reply",
+                    "role",
+                    "started_analyses",
+                    "status"
+                ]
+            },
+            "MessageStatusEnum": {
+                "enum": [
+                    "complete",
+                    "stopped",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `complete` - Complete\n* `stopped` - Stopped by the user\n* `failed` - Failed"
+            },
             "ModelRef": {
                 "type": "object",
                 "properties": {
@@ -10396,10 +10874,11 @@
                     "detect",
                     "long_video",
                     "news",
-                    "studio"
+                    "studio",
+                    "assistant"
                 ],
                 "type": "string",
-                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news\n* `studio` - studio"
+                "description": "* `detect` - detect\n* `long_video` - long_video\n* `news` - news\n* `studio` - studio\n* `assistant` - assistant"
             },
             "ModuleInfo": {
                 "type": "object",
@@ -10648,22 +11127,6 @@
                         },
                         "readOnly": true
                     },
-                    "provenance": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/Provenance"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "checks": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Check"
-                        },
-                        "readOnly": true
-                    },
                     "timeline": {
                         "type": "array",
                         "items": {
@@ -10750,7 +11213,6 @@
                     "cancel_requested",
                     "case",
                     "case_media",
-                    "checks",
                     "created_at",
                     "credits_charged",
                     "credits_quoted",
@@ -10772,7 +11234,6 @@
                     "parent",
                     "partial",
                     "progress",
-                    "provenance",
                     "purged_at",
                     "queue",
                     "quote_lines",
@@ -10975,6 +11436,34 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/AuditLog"
+                        }
+                    }
+                }
+            },
+            "PaginatedConversationList": {
+                "type": "object",
+                "required": [
+                    "next",
+                    "previous",
+                    "results"
+                ],
+                "properties": {
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cD00ODY%3D\""
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?cursor=cj0xJnA9NDg3"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Conversation"
                         }
                     }
                 }
@@ -11248,6 +11737,15 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    }
+                }
+            },
+            "PatchedConversationRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
                     }
                 }
             },
@@ -12274,49 +12772,6 @@
                 "type": "string",
                 "description": "* `pack` - pack\n* `plan` - plan"
             },
-            "Provenance": {
-                "type": "object",
-                "properties": {
-                    "ai_generated": {
-                        "type": "boolean"
-                    },
-                    "confidence": {
-                        "type": "string"
-                    },
-                    "c2pa_status": {
-                        "type": "string"
-                    },
-                    "camera": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "software": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "evidence": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Evidence"
-                        }
-                    },
-                    "notes": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "required": [
-                    "ai_generated",
-                    "c2pa_status",
-                    "camera",
-                    "confidence",
-                    "evidence",
-                    "notes",
-                    "software"
-                ]
-            },
             "ProviderEnum": {
                 "enum": [
                     "toss",
@@ -12791,6 +13246,14 @@
                     "name"
                 ]
             },
+            "RoleEnum": {
+                "enum": [
+                    "user",
+                    "assistant"
+                ],
+                "type": "string",
+                "description": "* `user` - User\n* `assistant` - Assistant"
+            },
             "RunOnEnum": {
                 "enum": [
                     "image",
@@ -12811,6 +13274,45 @@
                 ],
                 "type": "string",
                 "description": "* `detect:write` - Submit detection jobs\n* `jobs:read` - Read jobs and results\n* `jobs:write` - Cancel, re-run and delete jobs\n* `reports:read` - Generate and download reports\n* `credits:read` - Read credit balance and ledger\n* `news:write` - Submit news verification cases\n* `studio:write` - Generate and edit images in the image studio"
+            },
+            "SendMessageLocaleEnum": {
+                "enum": [
+                    "en",
+                    "ko",
+                    "de"
+                ],
+                "type": "string",
+                "description": "* `en` - en\n* `ko` - ko\n* `de` - de"
+            },
+            "SendMessageRequest": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 4000
+                    },
+                    "media_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 10
+                    },
+                    "job_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Your earlier results to discuss; nothing is analysed again.",
+                        "maxItems": 10
+                    },
+                    "locale": {
+                        "$ref": "#/components/schemas/SendMessageLocaleEnum"
+                    }
+                }
             },
             "ServiceStatusEnum": {
                 "enum": [

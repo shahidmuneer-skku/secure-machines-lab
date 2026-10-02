@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest"
 
 type Tree = { [key: string]: string | Tree }
 
-const load = (locale: string): Tree => JSON.parse(readFileSync(new URL(`./${locale}.json`, import.meta.url), "utf8"))
+const load = (locale: string, dir = "."): Tree => JSON.parse(readFileSync(new URL(`${dir}/${locale}.json`, import.meta.url), "utf8"))
 
 function flatten(tree: Tree, prefix = ""): Record<string, string> {
   return Object.fromEntries(
@@ -68,3 +68,25 @@ it("English messages all parse", () => {
   })
   expect(failing.map(([k]) => k)).toEqual([])
 })
+
+// Administrators' detector texts live in their own files (loaded only for them); same rules apply.
+describe.each(["ko", "de"])("%s detector messages", (locale) => {
+  const source = flatten(load("en", "./detectors"))
+  const messages = flatten(load(locale, "./detectors"))
+
+  it("have exactly the English keys", () => {
+    expect(Object.keys(messages).sort()).toEqual(Object.keys(source).sort())
+  })
+
+  it("keep the ICU structure of every English message", () => {
+    const broken = Object.keys(source).filter((key) => {
+      try {
+        return JSON.stringify(signature(messages[key])) !== JSON.stringify(signature(source[key]))
+      } catch {
+        return true
+      }
+    })
+    expect(broken).toEqual([])
+  })
+})
+

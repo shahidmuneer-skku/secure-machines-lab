@@ -282,6 +282,15 @@ landed on the Blackwell GPU (or the model cannot fit on the card).
 **News / explain-why runs wait.** At most `SML_AGENT_PARALLEL` (default 2) share the loaded model;
 `curl localhost:11434/api/ps` shows what Ollama has loaded.
 
+**The assistant answers slowly or says it is unavailable.** Its replies (`/assistant`) come from the
+same Ollama model as the agents, which serves one request at a time: a reply waits behind a running
+explanation or news-agent step (up to `ASSISTANT_READ_TIMEOUT`, 300 s; the stream sends keep-alive
+comments meanwhile). "Not available" means Ollama did not answer: check `curl localhost:11434/api/ps`
+and the API log. Nothing is stored for a reply that never started, and analyses the message started
+run and are charged as usual. `Assistant reply: N sentence(s) about the method withheld` in the API
+log counts sentences the confidentiality filter removed (ADR 0015); a steady rise suggests the prompt
+needs tightening.
+
 **Messages in `sml.dead`.** A message the worker rejected (e.g. it could not be decoded).
 Inspect it in the RabbitMQ UI. The task itself fails with `QUEUE_TIMEOUT` after
 `STALE_DISPATCH_HOURS`, which settles the job and refunds the user.

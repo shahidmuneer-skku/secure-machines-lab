@@ -9,7 +9,7 @@ import LinearProgress from "@mui/material/LinearProgress"
 import Stack from "@mui/material/Stack"
 import Typography from "@mui/material/Typography"
 import { Turnstile } from "@marsidev/react-turnstile"
-import { IconArrowRight, IconGift, IconLoader2, IconLock, IconRefresh, IconSparkles } from "@tabler/icons-react"
+import { IconArrowRight, IconGift, IconLoader2, IconLock, IconRefresh } from "@tabler/icons-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useTheme } from "next-themes"
@@ -31,11 +31,11 @@ import type { Language } from "@/lib/marketing/i18n"
 const COPY = {
   en: {
     eyebrow: "Free trial", title: "Test an image — no account needed",
-    body: "Drop a photo and our detectors check it for face manipulation and AI generation, plus EXIF/C2PA provenance.",
+    body: "Drop a photo and we check it for face manipulation and AI generation.",
     left: (n: number, d: number) => `${n} of ${d} free checks left today`, analyzing: "Analyzing", again: "Try another image",
     doneTitle: "Result", signup: "Create a free account", signupBody: "Get a welcome bonus, free credits every day, videos, reports and the full model catalog.",
     exhausted: "You've used today's free checks.", error: "Something went wrong. Please try again.", disabled: "The free trial is currently unavailable.",
-    queued: "Queued", disclaimer: "Probabilistic estimate — not legal evidence.", fake: "Fake probability", metadata: "AI indicator found in metadata",
+    queued: "Queued", disclaimer: "Probabilistic estimate — not legal evidence.", fake: "Fake probability",
     analyses: { face_swap: "Face-swap analysis", ai_generated: "AI-generation analysis" },
     noFace: "No face found", notCompleted: "Not completed",
     privacy: "Files are stored privately and deleted on schedule.", unavailableHint: "Create a free account to analyse images now.",
@@ -43,11 +43,11 @@ const COPY = {
   },
   ko: {
     eyebrow: "무료 체험", title: "계정 없이 이미지 검사하기",
-    body: "사진을 올리면 얼굴 조작·AI 생성 여부와 EXIF/C2PA 출처 정보를 분석합니다.",
+    body: "사진을 올리면 얼굴 조작과 AI 생성 여부를 분석합니다.",
     left: (n: number, d: number) => `오늘 무료 검사 ${d}회 중 ${n}회 남음`, analyzing: "분석 중", again: "다른 이미지 검사",
     doneTitle: "결과", signup: "무료 계정 만들기", signupBody: "가입 보너스, 매일 무료 크레딧, 영상 분석, 보고서와 전체 모델을 이용하세요.",
     exhausted: "오늘의 무료 검사를 모두 사용했습니다.", error: "오류가 발생했습니다. 다시 시도해 주세요.", disabled: "무료 체험을 현재 이용할 수 없습니다.",
-    queued: "대기 중", disclaimer: "확률적 추정치이며 법적 증거가 아닙니다.", fake: "가짜 확률", metadata: "메타데이터에서 AI 생성 흔적 발견",
+    queued: "대기 중", disclaimer: "확률적 추정치이며 법적 증거가 아닙니다.", fake: "가짜 확률",
     analyses: { face_swap: "얼굴 합성(페이스 스왑) 분석", ai_generated: "AI 생성 분석" },
     noFace: "얼굴 없음", notCompleted: "완료하지 못함",
     privacy: "파일은 비공개로 보관되고 일정에 따라 삭제됩니다.", unavailableHint: "무료 계정을 만들면 지금 바로 이미지를 분석할 수 있습니다.",
@@ -55,12 +55,12 @@ const COPY = {
   },
   de: {
     eyebrow: "Kostenlos testen", title: "Bild prüfen – ohne Konto",
-    body: "Laden Sie ein Foto hoch: Unsere Detektoren prüfen es auf Gesichtsmanipulation, KI-Generierung und EXIF/C2PA-Herkunft.",
+    body: "Laden Sie ein Foto hoch: Wir prüfen es auf Gesichtsmanipulation und KI-Generierung.",
     left: (n: number, d: number) => `Noch ${n} von ${d} kostenlosen Prüfungen heute`, analyzing: "Analyse läuft", again: "Weiteres Bild prüfen",
     doneTitle: "Ergebnis", signup: "Kostenloses Konto erstellen", signupBody: "Willkommensbonus, täglich Gratis-Credits, Videos, Berichte und alle Modelle.",
     exhausted: "Die kostenlosen Prüfungen für heute sind aufgebraucht.", error: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     disabled: "Die kostenlose Testversion ist derzeit nicht verfügbar.", queued: "In Warteschlange",
-    disclaimer: "Probabilistische Schätzung – kein rechtlicher Beweis.", fake: "Fake-Wahrscheinlichkeit", metadata: "KI-Hinweis in den Metadaten",
+    disclaimer: "Probabilistische Schätzung – kein rechtlicher Beweis.", fake: "Fake-Wahrscheinlichkeit",
     analyses: { face_swap: "Face-Swap-Analyse", ai_generated: "KI-Generierungs-Analyse" },
     noFace: "Kein Gesicht", notCompleted: "Nicht abgeschlossen",
     privacy: "Dateien werden privat gespeichert und planmäßig gelöscht.", unavailableHint: "Mit einem kostenlosen Konto können Sie Bilder sofort analysieren.",
@@ -118,7 +118,6 @@ export function TrialSection({ language }: { language: Language }) {
   const s = status.data
   const j = job.data
   const running = j && (j.status === "queued" || j.status === "running")
-  const aiMeta = !!j?.ai_generated
 
   const corner = (pos: "tl" | "br") => ({
     content: '""', position: "absolute", width: 22, height: 22, borderColor: "var(--landing-accent)", borderStyle: "solid", borderWidth: 0,
@@ -213,11 +212,6 @@ export function TrialSection({ language }: { language: Language }) {
                       {j?.status === "succeeded" && (
                         <>
                           <ProbabilityGauge value={j.fake_probability} label={c.fake} />
-                          {aiMeta && (
-                            <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "error.main" }}>
-                              <IconSparkles size={18} /><Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{c.metadata}</Typography>
-                            </Stack>
-                          )}
                           <Stack spacing={1}>
                             {j.analyses.map((a) => (
                               <Stack key={a.id} direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, px: 2, py: 1.25,

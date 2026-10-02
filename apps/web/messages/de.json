@@ -87,7 +87,9 @@
     "getStarted": "Loslegen",
     "openApp": "App öffnen",
     "studio": "Bildstudio",
-    "adminStudio": "Bildstudio"
+    "assistant": "Assistent",
+    "adminStudio": "Bildstudio",
+    "newTab": "öffnet in einem neuen Tab"
   },
   "status": {
     "queued": "In Warteschlange",
@@ -112,7 +114,6 @@
     "real": "Wahrscheinlich authentisch",
     "no_face": "Kein Gesicht erkannt",
     "inconclusive": "Kein eindeutiges Ergebnis",
-    "aiMetadata": "KI-Generierungsindikator in Metadaten",
     "ai_generated": "Wahrscheinlich KI-generiert"
   },
   "queue": {
@@ -514,40 +515,16 @@
       "partial": "Einige Analyseschritte konnten nicht abgeschlossen werden; das Ergebnis beruht auf den abgeschlossenen Schritten."
     },
     "reason": {
-      "metadata_ai_indicator": "Metadaten oder Content Credentials weisen auf KI-Generierung hin",
       "no_face": "In der Datei wurde kein Gesicht gefunden",
       "news_agent": "Bewertung durch den Verifizierungsagenten",
       "analysis": "Gesamt: das deutlichste Ergebnis der Analysen",
-      "metadata_hint": "Die Metadaten deuten auf KI-Generierung hin, passend zur Analyse",
       "stopped_early": "Die Analyse wurde vor dem Ende des gewählten Bereichs gestoppt"
     },
     "disclaimer": "Die Werte sind probabilistische Schätzungen und können falsch sein. Verwenden Sie sie zur Unterstützung, nicht zur Ersetzung, von Expertenurteilen; sie sind kein rechtlicher Beweis.",
-    "provenance": {
-      "eyebrow": "Herkunft",
-      "title": "Metadaten & Prüfungen",
-      "aiFound": "Indikator für KI-Generierung gefunden",
-      "noneFound": "Kein KI-Indikator in den Metadaten",
-      "confidence": {
-        "strong": "starke Beweise",
-        "weak": "schwacher Hinweis",
-        "none": "keine Beweise"
-      },
-      "camera": "Kamera",
-      "software": "Software",
-      "c2pa": {
-        "valid": "Gültige Content Credentials",
-        "invalid_signature": "Credentials vorhanden, Signatur ungültig",
-        "none": "Keine Content Credentials",
-        "tool_unavailable": "Nicht geprüft",
-        "error": "Konnte nicht gelesen werden"
-      },
-      "hintFound": "Schwacher Hinweis auf KI-Generierung in den Metadaten",
-      "checks": "Zusätzliche Prüfungen"
-    },
     "explain": {
       "eyebrow": "KI-Analyst",
       "title": "Erklärung des Ergebnisses",
-      "subtitle": "Ein KI-Analyst betrachtet die Datei, die Heatmaps und die Metadaten und erklärt das Ergebnis verständlich.",
+      "subtitle": "Ein KI-Analyst betrachtet die Datei und die Heatmaps und erklärt das Ergebnis verständlich.",
       "ask": "Erklären",
       "again": "Erneut fragen",
       "cost": "{count} cr",
@@ -578,7 +555,6 @@
     },
     "step": {
       "queued": "Wartet in der Warteschlange",
-      "checks": "Datei wird geprüft (Metadaten, Herkunft)",
       "analysis": "{media, select, image {Bild wird analysiert} video {Video wird analysiert} attachments {Angehängte Medien werden analysiert} other {Datei wird analysiert}}",
       "verification": "Meldung und Quellen werden geprüft",
       "results": "Ergebnis wird erstellt"
@@ -592,27 +568,6 @@
       "expired": "abgelaufen",
       "skipped": "übersprungen"
     },
-    "check": {
-      "name": {
-        "face": "Gesichtserkennung",
-        "safety": "Inhaltssicherheit",
-        "fas": "Lebenderkennung"
-      },
-      "facesFound": "Gesichter gefunden",
-      "noFace": "Kein Gesicht gefunden",
-      "sensitive": "Sensible Inhalte erkannt",
-      "notSensitive": "Keine sensiblen Inhalte",
-      "spoof": "Täuschungsversuch vermutet",
-      "live": "Kein Täuschungsversuch",
-      "status": {
-        "pending": "Wartet",
-        "running": "Läuft",
-        "done": "Fertig",
-        "failed": "Konnte nicht abgeschlossen werden",
-        "canceled": "Abgebrochen",
-        "skipped": "Übersprungen"
-      }
-    },
     "analysis": {
       "title": "Ergebnisse je Analyse",
       "failed": "Konnte nicht abgeschlossen werden",
@@ -622,62 +577,7 @@
         "ai_generated": "KI-Generierungs-Analyse"
       }
     },
-    "detectors": {
-      "eyebrow": "Nur für Admins",
-      "title": "Ergebnisse je Detektor",
-      "hint": "Was jeder Detektor zu dieser Datei sagt. Nur Administratoren sehen diese Karte; Nutzer sehen die beiden Analysen.",
-      "none": "Für diese Datei lief kein Detektor.",
-      "analysis": {
-        "face_swap": "Face-Swap-Detektoren",
-        "ai_generated": "KI-Erkennungsdetektoren"
-      },
-      "weight": "Gewicht {weight}",
-      "fallback": "Ersatz",
-      "probabilityOf": "{name}: Fälschungswahrscheinlichkeit",
-      "alsoCounts": {
-        "face_swap": "Zählt auch in der Face-Swap-Analyse",
-        "ai_generated": "Zählt auch in der KI-Analyse"
-      },
-      "perFrame": "Fälschungswahrscheinlichkeit je Frame",
-      "perFrameOf": "{name}: Fälschungswahrscheinlichkeit je Frame",
-      "heatmapOf": "Heatmap von {name}",
-      "truth": {
-        "label": "Tatsächlicher Befund",
-        "none": "Nicht markiert",
-        "value": {
-          "authentic": "Echt",
-          "face_swap": "Face-Swap",
-          "ai_generated": "KI-generiert"
-        },
-        "hint": "Markieren Sie, was diese Datei wirklich ist, um die Genauigkeit jedes Detektors zu messen.",
-        "by": "Markiert von {email}",
-        "saved": "Markierung gespeichert",
-        "failed": "Die Markierung konnte nicht gespeichert werden."
-      },
-      "accuracy": {
-        "benchmark": "Benchmark",
-        "measured": "Gemessen",
-        "acc": "{value} Genauigkeit",
-        "auc": "AUC {value}",
-        "detail": "{files, plural, one {# markierte Datei} other {# markierte Dateien}} ({fake} gefälscht, {authentic} echt) · Präzision {precision} · Trefferquote {recall}",
-        "notMeasured": "Noch keine markierten Dateien"
-      },
-      "exief": {
-        "name": "EXIEF-Metadatensignale",
-        "score": "Wert {score}",
-        "weight": "Gewicht {weight}",
-        "verdict": {
-          "confirmed": "Bestätigt",
-          "suspect": "Verdächtig",
-          "weak": "Schwach",
-          "unknown": "Kein Signal"
-        },
-        "counted": "In der KI-Analyse als {probability} gefälscht gezählt",
-        "notCounted": "Kein Signal — nicht gezählt",
-        "notTrusted": "Nicht gezählt: Die Metadaten wirken beschädigt oder verändert",
-        "signalWeight": "Stufe {tier}, +{weight}"
-      }
-    }
+    "askAssistant": "Assistenten fragen"
   },
   "admin": {
     "forbiddenTitle": "Nur für Admins",
@@ -1521,7 +1421,7 @@
     },
     "privacy": {
       "eyebrow": "KI-Training",
-      "consentTitle": "Helfen Sie uns, unsere Erkennungssysteme zu verbessern",
+      "consentTitle": "Helfen Sie uns, unsere Analyse zu verbessern",
       "consentBody": "Standardmäßig deaktiviert. Wenn Sie zustimmen, können hochgeladene Dateien (pseudonymisiert) zur Schulung und Bewertung unserer Erkennungsmodelle verwendet und bis zu 3 Jahre aufbewahrt werden. Sie können Ihre Zustimmung jederzeit widerrufen; widerrufene Dateien werden von zukünftigen Trainings ausgeschlossen.",
       "consentToggle": "Meine Uploads für die Modellverbesserung zulassen",
       "since": "seit {date}",
@@ -1917,7 +1817,7 @@
       "badge": "Medienforensik auf Forschungsniveau",
       "title": "Wissen, was echt ist.",
       "titleAccent": "Deepfakes und KI-generierte Medien erkennen.",
-      "subtitle": "Laden Sie ein Bild oder Video hoch und erhalten Sie in Sekunden ein klares Ergebnis – mit Heatmaps, Metadaten-Herkunft und einem nachvollziehbaren Bericht. Entwickelt vom DASH Lab der Sungkyunkwan University.",
+      "subtitle": "Laden Sie ein Bild oder Video hoch und erhalten Sie in Sekunden ein klares Ergebnis – mit Heatmaps und einem nachvollziehbaren Bericht. Entwickelt vom DASH Lab der Sungkyunkwan University.",
       "primary": "Kostenlos testen",
       "secondary": "Kostenloses Konto erstellen",
       "note": "3 kostenlose Prüfungen pro Tag · Keine Kreditkarte · 50 Credits bei der Registrierung"
@@ -1928,7 +1828,7 @@
       "verdict": "Wahrscheinlich manipuliert",
       "faceSwap": "Gesichtstausch",
       "aiGenerated": "KI-generiert",
-      "metadata": "Keine C2PA-Inhaltsnachweise",
+      "analysed": "Gesichtstausch und KI-Generierung analysiert",
       "heatmap": "Heatmap",
       "explained": "Verständlich erklärt",
       "report": "PDF-Bericht bereit"
@@ -1973,7 +1873,7 @@
           "points": [
             "Ergebnisse zu Gesichtstausch und KI-Generierung",
             "Heatmaps und Zeitverläufe pro Frame",
-            "EXIF-, XMP- und C2PA-Herkunft"
+            "Berichte als PDF, HWP und CSV"
           ]
         },
         "longVideo": {
@@ -2015,7 +1915,7 @@
         },
         {
           "title": "Analysieren",
-          "body": "Spezialisierte Detektoren prüfen Gesichter, Frequenzen und Generierungsspuren, Metadaten und C2PA werden verifiziert."
+          "body": "Unsere Analyse sucht in jedem Bild und Frame nach Anzeichen von Gesichtstausch und KI-Generierung."
         },
         {
           "title": "Erklären",
@@ -2032,8 +1932,8 @@
           "body": "Heatmaps und Zeitverläufe pro Frame zeigen, wo die Belege liegen."
         },
         {
-          "title": "Herkunftsprüfung",
-          "body": "Liest C2PA-Inhaltsnachweise, EXIF und XMP auf KI-Angaben."
+          "title": "Teilbare Berichte",
+          "body": "Berichte als PDF, HWP und CSV mit Ergebnis, Heatmaps und Erklärung – bereit zum Teilen."
         },
         {
           "title": "Live-Fortschritt",
@@ -2056,7 +1956,7 @@
     "research": {
       "eyebrow": "Forschung",
       "title": "Fundiert durch begutachtete Forschung",
-      "subtitle": "Unsere Detektoren stammen aus dem DASH Lab der Sungkyunkwan University. Drei Forschungsstränge: erkennen, verhindern, vorhersagen.",
+      "subtitle": "Unsere Technologie stammt aus dem DASH Lab der Sungkyunkwan University. Drei Forschungsstränge: erkennen, verhindern, vorhersagen.",
       "publications": "Ausgewählte Publikationen",
       "all": "Alle Publikationen"
     },
@@ -2131,7 +2031,7 @@
         "explain": {
           "label": "Erklären",
           "title": "Aus Signalen werden Belege.",
-          "body": "Befunde werden Region für Region festgehalten und die Herkunft separat geprüft – so sieht Ihr Team, wie eine Schlussfolgerung zustande kam."
+          "body": "Befunde werden Region für Region festgehalten – so sieht Ihr Team, wie eine Schlussfolgerung zustande kam."
         },
         "handoff": {
           "label": "Ihr Bild",
@@ -2183,9 +2083,6 @@
         "region": "Geprüfte Region",
         "regionValue": "Mundkontur",
         "regionNote": "Kanten- und Texturverlauf entlang der Lippenlinie.",
-        "provenance": "Herkunft",
-        "provenanceValue": "Keine Inhaltsnachweise vorhanden",
-        "provenanceNote": "Separat erfasst. Fehlende Nachweise allein bedeuten nicht, dass ein Bild manipuliert wurde.",
         "findings": "Befunde",
         "findingsList": [
           "Gesichtsregionen kartiert: Augen, Nase, Mund, Kieferlinie",
@@ -2213,7 +2110,6 @@
       "illustrative": "Illustrativ",
       "regionMap": "Regionenkarte",
       "regionFindings": "Befunde pro Region",
-      "provenance": "Herkunft separat geprüft",
       "timeline": "Frame-Zeitleiste",
       "marked": "Zur Prüfung markiert",
       "sources": "Zitierte Quellen",
@@ -2228,12 +2124,64 @@
       "eyebrow": "Warum Secure Machines Lab"
     },
     "researchV2": {
-      "inProduct": "Forschung hinter dem Detektor",
+      "inProduct": "Forschung hinter dem Produkt",
       "direction": "Forschungsrichtung",
       "directionNote": "Forschungsrichtungen sind laufende Arbeiten, keine Produktfunktionen.",
       "workshop": "Workshop",
       "dataset": "Datasets & Benchmarks",
       "open": "Publikation öffnen"
     }
+  },
+  "assistant": {
+    "title": "Assistent",
+    "newChat": "Neuer Chat",
+    "chats": "Chats",
+    "noChats": "Noch keine Unterhaltungen.",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "deleteConfirm": "Diese Unterhaltung löschen? Die Analysen bleiben unter Ergebnisse.",
+    "untitled": "Neue Unterhaltung",
+    "back": "Dashboard",
+    "conversations": "Unterhaltungen",
+    "menu": "Weitere Optionen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "welcome": {
+      "title": "Wie kann ich helfen?",
+      "subtitle": "Hängen Sie ein Bild oder Video an und fragen Sie, ob es echt ist – oder stellen Sie Fragen zu Deepfakes und KI-generierten Medien.",
+      "suggestions": [
+        "Ist dieses Foto KI-generiert?",
+        "Wie erkenne ich ein Deepfake-Video?",
+        "Was bedeutet „wahrscheinlich manipuliert“?",
+        "Wie werden Analysen berechnet?"
+      ]
+    },
+    "placeholder": "Fragen Sie zu einem Bild oder Video…",
+    "attach": "Bilder oder Videos anhängen",
+    "send": "Senden",
+    "stop": "Stopp",
+    "you": "Sie",
+    "analysing": "Wird analysiert",
+    "queued": "In der Warteschlange",
+    "openResult": "Ergebnis öffnen",
+    "priceNote": "{count, plural, one {# Datei wird analysiert} other {# Dateien werden analysiert}} · {credits, plural, one {# Credit} other {# Credits}}",
+    "uploading": "Wird hochgeladen…",
+    "failedFile": "Hochladen fehlgeschlagen",
+    "disclaimer": "Ergebnisse stammen aus der Analyse von Secure Machines Lab; der Assistent erklärt sie und kann sich irren.",
+    "stopped": "Gestoppt",
+    "error": "Der Assistent ist gerade nicht verfügbar. Bitte versuchen Sie es erneut.",
+    "insufficient": "Nicht genug Credits, um diese Dateien zu analysieren.",
+    "buyCredits": "Credits kaufen",
+    "explainResult": "Erkläre dieses Ergebnis",
+    "summarising": "Ergebnisse werden gelesen…",
+    "dropHere": "Dateien zum Anhängen ablegen",
+    "remove": "Entfernen",
+    "notCompleted": "Nicht abgeschlossen",
+    "canceled": "Abgebrochen",
+    "noFace": "Kein Gesicht gefunden",
+    "unavailable": "Der Assistent ist für Ihr Konto nicht verfügbar.",
+    "retry": "Erneut versuchen",
+    "interrupted": "Die Antwort wurde unterbrochen.",
+    "expired": "Abgelaufen"
   }
 }

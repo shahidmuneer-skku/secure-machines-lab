@@ -69,7 +69,7 @@ function ResultPreview() {
           ))}
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 2, color: "text.secondary" }}>
             <IconShieldCheck size={18} />
-            <Typography variant="subtitle2">{t("metadata")}</Typography>
+            <Typography variant="subtitle2">{t("analysed")}</Typography>
           </Stack>
         </Box>
       </Card>

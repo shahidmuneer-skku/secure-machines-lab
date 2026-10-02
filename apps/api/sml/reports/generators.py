@@ -13,7 +13,7 @@ import json
 import logging
 import zipfile
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -63,11 +63,10 @@ class ReportData:
     verdict: str
     fake_probability: float | None
     partial: bool
-    ai_generated: bool  # flagged by AI-generation markers in the metadata
-    reasons: list[dict[str, Any]]  # sml.jobs.public.reasons: never names detectors
-    analyses: list[dict[str, Any]]  # sml.jobs.public.analyses: one result per analysis (face swap, …)
-    checks: list[dict[str, Any]]  # sml.jobs.public.checks
-    provenance: dict[str, Any] | None  # sml.jobs.public.provenance
+    ai_generated: bool  # the verdict reads "Likely AI-generated" (users never learn why)
+    # Users' view only (sml.jobs.public): no detectors, metadata findings or check results.
+    reasons: list[dict[str, Any]]
+    analyses: list[dict[str, Any]]  # one result per analysis (face swap, AI generation)
     media: dict[str, Any]
     created_at: datetime
     finished_at: datetime | None
@@ -119,19 +118,6 @@ def _analysis_text(a: dict[str, Any], t: dict[str, str]) -> str:
     if a.get("status") != "done" or a.get("fake_probability") is None:
         return t["check_failed"]
     return f"{t.get(a.get('verdict') or 'inconclusive', t['inconclusive'])} · {_pct(a['fake_probability'])}"
-
-
-def _check_text(check: dict[str, Any], t: dict[str, str]) -> str:
-    if check.get("status") != "done":
-        return t["check_failed"] if check.get("status") == "failed" else t.get(check.get("status", ""), "—")
-    r = check.get("result") or {}
-    if "faces_found" in r:
-        return t["faces_found"] if r["faces_found"] else t["faces_none"]
-    if "sensitive_content" in r:
-        return t["sensitive_yes"] if r["sensitive_content"] else t["sensitive_no"]
-    if "spoof_detected" in r:
-        return t["spoof_yes"] if r["spoof_detected"] else t["spoof_no"]
-    return t["completed"]
 
 
 def _esc(text: str) -> str:
@@ -201,26 +187,8 @@ def render_pdf(d: ReportData) -> bytes:
              [t["completed"], d.finished_at.strftime("%Y-%m-%d %H:%M UTC") if d.finished_at else "—"]]
     story += [*section(2, t["file"]), _kv_table(info, font, mono)]
 
-    ind = d.provenance or {}
-    story += section(3, t["provenance"])
-    evidence = ind.get("evidence") or []
-    if evidence:
-        story.append(Paragraph(f"<b>{_esc(t['ai_indicators'])}</b>", body))
-        for ev in evidence:
-            story.append(Paragraph("• " + _esc(f"{ev.get('source', '')}: {ev.get('detail', '')}"), body))
-    else:
-        story.append(Paragraph(_esc(t["none_found"]), body))
-    for key in ("camera", "software", "c2pa_status"):
-        if ind.get(key):
-            story.append(Paragraph(f"<font color='#5b6170'>{_esc(t[key])}</font>: {_esc(str(ind[key]))}", small))
-
-    if d.checks:
-        rows = [[t["check"], t["result"]]]
-        rows += [[t.get(f"check_{c['id']}", c["id"]), _check_text(c, t)] for c in d.checks]
-        story += [*section(4, t["checks"]), _grid(rows, font, mono, [70 * mm, 104 * mm])]
-
     if d.xai_images:
-        story += section(5, t["xai"])
+        story += section(3, t["xai"])
         cells = []
         for label, data in d.xai_images[:6]:
             try:
@@ -237,7 +205,7 @@ def render_pdf(d: ReportData) -> bytes:
             story.append(Table([flat], colWidths=[58 * mm] * len(flat)))
 
     if d.explanation:
-        story += section(6, t["explanation"])
+        story += section(4, t["explanation"])
         for para in d.explanation.split("\n\n")[:30]:
             story.append(Paragraph(_esc(para).replace("\n", "<br/>"), body))
 
@@ -262,7 +230,7 @@ def render_pdf(d: ReportData) -> bytes:
         canvas.drawString(18 * mm, height - 24.5 * mm, t["subtitle"])
         canvas.setFillColor(MUTED)
         canvas.setFont(mono, 7.5)
-        canvas.drawString(18 * mm, 10 * mm, f"{t['generated']}: {datetime.utcnow():%Y-%m-%d %H:%M} UTC · {d.job_id}")
+        canvas.drawString(18 * mm, 10 * mm, f"{t['generated']}: {datetime.now(UTC):%Y-%m-%d %H:%M} UTC · {d.job_id}")
         canvas.drawRightString(width - 18 * mm, 10 * mm, f"{t['page']} {doc_.page}")
         canvas.restoreState()
 
@@ -334,17 +302,6 @@ def render_hwp(d: ReportData) -> bytes:
     for k, v in [(t["file_name"], d.title), (t["type"], d.media_type), (t["size"], _fmt_size(m.get("size_bytes"))),
                  (t["sha256"], m.get("sha256") or "—"), (t["job_id"], d.job_id)]:
         lines.append(_rtf_escape(f"{k}: {v}") + r"\par")
-    lines.append(r"\par{\b " + _rtf_escape(t["provenance"]) + r"}\par")
-    evidence = (d.provenance or {}).get("evidence") or []
-    if evidence:
-        for ev in evidence:
-            lines.append(_rtf_escape(f"• {ev.get('source', '')}: {ev.get('detail', '')}") + r"\par")
-    else:
-        lines.append(_rtf_escape(t["none_found"]) + r"\par")
-    if d.checks:
-        lines.append(r"\par{\b " + _rtf_escape(t["checks"]) + r"}\par")
-        for c in d.checks:
-            lines.append(_rtf_escape(f"• {t.get('check_' + c['id'], c['id'])}: {_check_text(c, t)}") + r"\par")
     if d.explanation:
         lines.append(r"\par{\b " + _rtf_escape(t["explanation"]) + r"}\par")
         lines.append(_rtf_escape(d.explanation[:20000]) + r"\par")
@@ -366,21 +323,6 @@ def render_csv(d: ReportData) -> bytes:
         for a in d.analyses:
             fp = a.get("fake_probability")
             w.writerow([a["id"], a.get("verdict") or a.get("status"), "" if fp is None else f"{fp:.6f}"])
-    ind = d.provenance or {}
-    w.writerow([])
-    w.writerow(["metadata_ai_generated", "c2pa_status", "camera", "software"])
-    w.writerow([ind.get("ai_generated", ""), ind.get("c2pa_status", ""), ind.get("camera") or "",
-                ind.get("software") or ""])
-    if ind.get("evidence"):
-        w.writerow([])
-        w.writerow(["evidence_source", "evidence_detail", "strength"])
-        for ev in ind["evidence"]:
-            w.writerow([ev.get("source", ""), ev.get("detail", ""), ev.get("strength", "")])
-    if d.checks:
-        w.writerow([])
-        w.writerow(["check", "status", "result"])
-        for c in d.checks:
-            w.writerow([c["id"], c.get("status", ""), ";".join(f"{k}={v}" for k, v in (c.get("result") or {}).items())])
     return ("﻿" + buf.getvalue()).encode("utf-8")  # BOM so Excel opens Korean correctly
 
 
@@ -391,9 +333,7 @@ def render_zip(d: ReportData, artifacts: list[tuple[str, bytes]]) -> bytes:
         zf.writestr("report.csv", render_csv(d))
         zf.writestr("summary.json", json.dumps({
             "job_id": d.job_id, "run": d.run_number, "file_name": d.title, "verdict": d.verdict,
-            "fake_probability": d.fake_probability, "analyses": d.analyses, "provenance": d.provenance,
-            "checks": d.checks,
-            "reasons": d.reasons,
+            "fake_probability": d.fake_probability, "analyses": d.analyses, "reasons": d.reasons,
         }, indent=2, ensure_ascii=False, default=str))
         for name, data in artifacts:
             zf.writestr(f"artifacts/{name}", data)

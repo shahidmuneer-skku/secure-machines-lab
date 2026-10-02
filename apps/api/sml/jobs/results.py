@@ -28,18 +28,13 @@ TASK_WEIGHT = {JobTask.Kind.MODEL: 1.0, JobTask.Kind.LONG_VIDEO: 1.0, JobTask.Ki
                JobTask.Kind.STUDIO: 1.0, JobTask.Kind.AUDIT: 0.25}
 RETRYABLE_CODES = {"WORKER_LOST", "TIMEOUT", "GPU_OOM", "RUNTIME_ERROR", "INFRA_ERROR"}
 
-# What users see when a step starts. They never learn which detectors run or how many.
-PUBLIC_CHECK_STARTED = {
-    "metadata": "Checking file metadata and provenance",
-    "face": "Looking for faces",
-    "safety": "Checking content safety",
-    "fas": "Checking face liveness",
-}
+# What users see when a step starts. They never learn which detectors or checks run, how many, or
+# whether the file's metadata is read (owner, 2026-10-02): checks start silently.
 
 
 def _public_start(job: Job, task: JobTask, first_start: bool) -> str:
     if task.kind == JobTask.Kind.AUDIT:
-        return PUBLIC_CHECK_STARTED.get(task.target, "") if first_start else ""
+        return ""
     if task.kind == JobTask.Kind.NEWS:
         return "Verifying the story" if first_start else ""
     if task.kind == JobTask.Kind.STUDIO:

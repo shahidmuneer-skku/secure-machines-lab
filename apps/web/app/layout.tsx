@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Noto_Sans_KR, Plus_Jakarta_Sans } from "next/font/google"
 import { headers } from "next/headers"
 import { NextIntlClientProvider } from "next-intl"
-import { getLocale } from "next-intl/server"
+import { getLocale, getMessages } from "next-intl/server"
 
 import { Providers } from "@/components/providers"
+import { withoutAdmin } from "@/i18n/messages"
 
 import "./globals.css"
 
@@ -30,6 +31,8 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale()
+  // Administrators' texts stay out of every page's payload; the admin console adds them (i18n/messages).
+  const messages = withoutAdmin(await getMessages())
   const nonce = (await headers()).get("x-nonce") ?? undefined
   return (
     <html
@@ -39,7 +42,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       {/* Browser extensions (e.g. Grammarly) add attributes to <body> before React hydrates. */}
       <body className="min-h-screen font-sans antialiased" suppressHydrationWarning>
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
           <Providers nonce={nonce}>{children}</Providers>
         </NextIntlClientProvider>
       </body>

@@ -86,7 +86,8 @@ def build_prompt(case: dict[str, Any], media_names: list[tuple[str, str]], foren
         "\n".join(forensic_lines) or "(no automated media analysis)", "",
         "Treat the automated media analysis as ONE input — decide authenticity yourself.",
         ("Confidential: never name or speculate about detection models, how many were used or how the automated "
-         "analysis works; refer to it only as 'automated media analysis'."),
+         "analysis works; refer to it only as 'automated media analysis'. Never write about the attached files' "
+         "metadata (EXIF, XMP, IPTC, C2PA, content credentials, camera or software information)."),
         f"Write the report in {LANG_NAMES.get(locale, 'English')} (keep the section headings in English).",
         "", "Silently run the full verification workflow from your skill. Do NOT narrate your process.",
         'CRITICAL OUTPUT RULE: begin with exactly "# Case Summary" and nothing before it.',

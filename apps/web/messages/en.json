@@ -87,7 +87,9 @@
     "getStarted": "Get started",
     "openApp": "Open app",
     "studio": "Image studio",
-    "adminStudio": "Image studio"
+    "assistant": "Assistant",
+    "adminStudio": "Image studio",
+    "newTab": "opens in a new tab"
   },
   "status": {
     "queued": "Queued",
@@ -112,7 +114,6 @@
     "real": "Likely authentic",
     "no_face": "No face detected",
     "inconclusive": "Inconclusive",
-    "aiMetadata": "AI-generation indicator in metadata",
     "ai_generated": "Likely AI-generated"
   },
   "queue": {
@@ -514,40 +515,16 @@
       "partial": "Some analysis steps could not complete; the verdict is based on the steps that finished."
     },
     "reason": {
-      "metadata_ai_indicator": "Metadata or Content Credentials indicate AI generation",
       "no_face": "No face was found in the file",
       "news_agent": "Verification agent assessment",
       "analysis": "Overall: the strongest finding across the analyses",
-      "metadata_hint": "The metadata hints at AI generation, consistent with the analysis",
       "stopped_early": "The scan was stopped before the end of the selected range"
     },
     "disclaimer": "Scores are probabilistic estimates and can be wrong. Use them to support, not replace, expert judgement; they are not legal evidence.",
-    "provenance": {
-      "eyebrow": "Provenance",
-      "title": "Metadata & checks",
-      "aiFound": "AI-generation indicator found",
-      "noneFound": "No AI indicator in metadata",
-      "confidence": {
-        "strong": "strong evidence",
-        "weak": "weak hint",
-        "none": "no evidence"
-      },
-      "camera": "Camera",
-      "software": "Software",
-      "c2pa": {
-        "valid": "Valid Content Credentials",
-        "invalid_signature": "Credentials present, signature invalid",
-        "none": "No Content Credentials",
-        "tool_unavailable": "Not checked",
-        "error": "Could not read"
-      },
-      "hintFound": "Weak AI-generation hint in metadata",
-      "checks": "Additional checks"
-    },
     "explain": {
       "eyebrow": "AI analyst",
       "title": "Explain why",
-      "subtitle": "An AI analyst looks at the file, the heatmaps and the metadata and explains the verdict in plain language.",
+      "subtitle": "An AI analyst looks at the file and the heatmaps and explains the result in plain language.",
       "ask": "Explain why",
       "again": "Ask again",
       "cost": "{count} cr",
@@ -578,7 +555,6 @@
     },
     "step": {
       "queued": "Waiting in the queue",
-      "checks": "Checking the file (metadata, provenance)",
       "analysis": "{media, select, image {Analysing the image} video {Analysing the video} attachments {Analysing the attached media} other {Analysing the file}}",
       "verification": "Verifying the story and its sources",
       "results": "Preparing the result"
@@ -592,27 +568,6 @@
       "expired": "expired",
       "skipped": "skipped"
     },
-    "check": {
-      "name": {
-        "face": "Face detection",
-        "safety": "Content safety",
-        "fas": "Face liveness"
-      },
-      "facesFound": "Faces found",
-      "noFace": "No face found",
-      "sensitive": "Sensitive content detected",
-      "notSensitive": "No sensitive content",
-      "spoof": "Presentation attack suspected",
-      "live": "No presentation attack",
-      "status": {
-        "pending": "Waiting",
-        "running": "Running",
-        "done": "Done",
-        "failed": "Could not be completed",
-        "canceled": "Canceled",
-        "skipped": "Skipped"
-      }
-    },
     "analysis": {
       "title": "Results by analysis",
       "failed": "Could not be completed",
@@ -622,62 +577,7 @@
         "ai_generated": "AI-generation analysis"
       }
     },
-    "detectors": {
-      "eyebrow": "Admin only",
-      "title": "Detector breakdown",
-      "hint": "What each detector said about this file. Only administrators see this card; users see the two analyses.",
-      "none": "No detector ran on this file.",
-      "analysis": {
-        "face_swap": "Face-swap detectors",
-        "ai_generated": "AI-generation detectors"
-      },
-      "weight": "Weight {weight}",
-      "fallback": "Fallback",
-      "probabilityOf": "{name}: fake probability",
-      "alsoCounts": {
-        "face_swap": "Also counted in the face-swap analysis",
-        "ai_generated": "Also counted in the AI-generation analysis"
-      },
-      "perFrame": "Fake probability per frame",
-      "perFrameOf": "{name}: fake probability per frame",
-      "heatmapOf": "Heatmap of {name}",
-      "truth": {
-        "label": "Ground truth",
-        "none": "Not labelled",
-        "value": {
-          "authentic": "Authentic",
-          "face_swap": "Face swap",
-          "ai_generated": "AI-generated"
-        },
-        "hint": "Label what this file really is to measure each detector's accuracy.",
-        "by": "Labelled by {email}",
-        "saved": "Label saved",
-        "failed": "Could not save the label."
-      },
-      "accuracy": {
-        "benchmark": "Benchmark",
-        "measured": "Measured",
-        "acc": "{value} accuracy",
-        "auc": "AUC {value}",
-        "detail": "{files, plural, one {# labelled file} other {# labelled files}} ({fake} fake, {authentic} authentic) · precision {precision} · recall {recall}",
-        "notMeasured": "No labelled files yet"
-      },
-      "exief": {
-        "name": "EXIEF metadata signals",
-        "score": "Score {score}",
-        "weight": "Weight {weight}",
-        "verdict": {
-          "confirmed": "Confirmed",
-          "suspect": "Suspect",
-          "weak": "Weak",
-          "unknown": "No signal"
-        },
-        "counted": "Counted as {probability} fake in the AI-generation analysis",
-        "notCounted": "No signal — not counted",
-        "notTrusted": "Not counted: the metadata looks damaged or altered",
-        "signalWeight": "tier {tier}, +{weight}"
-      }
-    }
+    "askAssistant": "Ask the assistant"
   },
   "admin": {
     "forbiddenTitle": "Admins only",
@@ -1521,7 +1421,7 @@
     },
     "privacy": {
       "eyebrow": "AI training",
-      "consentTitle": "Help improve our detectors",
+      "consentTitle": "Help improve our analysis",
       "consentBody": "Off by default. If you opt in, files you upload afterwards may be used (pseudonymised) to train and evaluate our detection models and kept for up to 3 years. You can withdraw at any time; withdrawn files are excluded from future training.",
       "consentToggle": "Allow my uploads to be used for model improvement",
       "since": "since {date}",
@@ -1917,7 +1817,7 @@
       "badge": "Research-grade media forensics",
       "title": "Know what's real.",
       "titleAccent": "Detect deepfakes and AI-generated media.",
-      "subtitle": "Upload an image or video and get a clear verdict in seconds — with heatmaps, metadata provenance and an explainable report. Built by the DASH Lab at Sungkyunkwan University.",
+      "subtitle": "Upload an image or video and get a clear verdict in seconds — with heatmaps and an explainable report. Built by the DASH Lab at Sungkyunkwan University.",
       "primary": "Try it free",
       "secondary": "Create free account",
       "note": "3 free checks a day · No credit card · 50 credits when you sign up"
@@ -1928,7 +1828,7 @@
       "verdict": "Likely manipulated",
       "faceSwap": "Face swap",
       "aiGenerated": "AI-generated",
-      "metadata": "No C2PA content credentials",
+      "analysed": "Face swap and AI generation analysed",
       "heatmap": "Heatmap",
       "explained": "Explained in plain language",
       "report": "PDF report ready"
@@ -1973,7 +1873,7 @@
           "points": [
             "Face swap and AI-generation verdicts",
             "Heatmaps and per-frame timelines",
-            "EXIF, XMP and C2PA provenance"
+            "PDF, HWP and CSV reports"
           ]
         },
         "longVideo": {
@@ -2015,7 +1915,7 @@
         },
         {
           "title": "Analyse",
-          "body": "Specialised detectors examine faces, frequencies and generation traces while metadata and C2PA are verified."
+          "body": "Our analysis looks for signs of face swapping and AI generation in every image and frame."
         },
         {
           "title": "Explain",
@@ -2032,8 +1932,8 @@
           "body": "Heatmaps and per-frame timelines show where the evidence is."
         },
         {
-          "title": "Provenance checks",
-          "body": "Reads C2PA content credentials, EXIF and XMP for AI declarations."
+          "title": "Shareable reports",
+          "body": "PDF, HWP and CSV reports with the verdict, heatmaps and an explanation, ready to share."
         },
         {
           "title": "Live progress",
@@ -2056,7 +1956,7 @@
     "research": {
       "eyebrow": "Research",
       "title": "Grounded in peer-reviewed research",
-      "subtitle": "Our detectors come out of the DASH Lab at Sungkyunkwan University. Three research threads: detect, prevent, predict.",
+      "subtitle": "Our technology comes out of the DASH Lab at Sungkyunkwan University. Three research threads: detect, prevent, predict.",
       "publications": "Selected publications",
       "all": "All publications"
     },
@@ -2131,7 +2031,7 @@
         "explain": {
           "label": "Explain",
           "title": "Turn signals into evidence.",
-          "body": "Findings are written up region by region, and provenance is checked separately, so your team can see how a conclusion was reached."
+          "body": "Findings are written up region by region, so your team can see how a conclusion was reached."
         },
         "handoff": {
           "label": "Your image",
@@ -2183,9 +2083,6 @@
         "region": "Region reviewed",
         "regionValue": "Mouth boundary",
         "regionNote": "Edge and texture continuity along the lip line.",
-        "provenance": "Provenance",
-        "provenanceValue": "No content credentials attached",
-        "provenanceNote": "Recorded separately. Missing credentials alone do not mean an image was manipulated.",
         "findings": "Findings",
         "findingsList": [
           "Facial regions mapped: eyes, nose, mouth, jawline",
@@ -2213,7 +2110,6 @@
       "illustrative": "Illustrative",
       "regionMap": "Region map",
       "regionFindings": "Region-level findings",
-      "provenance": "Provenance checked separately",
       "timeline": "Frame timeline",
       "marked": "Marked for review",
       "sources": "Cited sources",
@@ -2228,12 +2124,64 @@
       "eyebrow": "Why Secure Machines Lab"
     },
     "researchV2": {
-      "inProduct": "Research behind the detector",
+      "inProduct": "Research behind the product",
       "direction": "Research direction",
       "directionNote": "Research directions are ongoing work, not product features.",
       "workshop": "Workshop",
       "dataset": "Datasets & Benchmarks",
       "open": "Open publication"
     }
+  },
+  "assistant": {
+    "title": "Assistant",
+    "newChat": "New chat",
+    "chats": "Chats",
+    "noChats": "No conversations yet.",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this conversation? Its analyses stay in Results.",
+    "untitled": "New conversation",
+    "back": "Dashboard",
+    "conversations": "Conversations",
+    "menu": "More options",
+    "save": "Save",
+    "cancel": "Cancel",
+    "welcome": {
+      "title": "How can I help?",
+      "subtitle": "Attach an image or video and ask whether it is authentic — or ask anything about deepfakes and AI-generated media.",
+      "suggestions": [
+        "Is this photo AI-generated?",
+        "How can I spot a deepfake video?",
+        "What does “likely manipulated” mean?",
+        "How are analyses charged?"
+      ]
+    },
+    "placeholder": "Ask about an image or video…",
+    "attach": "Attach images or videos",
+    "send": "Send",
+    "stop": "Stop",
+    "you": "You",
+    "analysing": "Analysing",
+    "queued": "Waiting in the queue",
+    "openResult": "Open result",
+    "priceNote": "{count, plural, one {# file will be analysed} other {# files will be analysed}} · {credits, plural, one {# credit} other {# credits}}",
+    "uploading": "Uploading…",
+    "failedFile": "Could not upload",
+    "disclaimer": "Verdicts come from Secure Machines Lab's analysis; the assistant explains them and can make mistakes.",
+    "stopped": "Stopped",
+    "error": "The assistant is not available right now. Please try again.",
+    "insufficient": "Not enough credits to analyse these files.",
+    "buyCredits": "Buy credits",
+    "explainResult": "Explain this result",
+    "summarising": "Reading the results…",
+    "dropHere": "Drop files to attach",
+    "remove": "Remove",
+    "notCompleted": "Not completed",
+    "canceled": "Canceled",
+    "noFace": "No face found",
+    "unavailable": "The assistant is not available for your account.",
+    "retry": "Try again",
+    "interrupted": "The reply was interrupted.",
+    "expired": "Expired"
   }
 }

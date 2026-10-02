@@ -58,8 +58,6 @@ def build_data(job: Job, locale: str) -> generators.ReportData:
         locale=locale, job_id=str(job.pk), run_number=job.run_number, title=job.title, media_type=job.media_type,
         verdict=job.verdict, fake_probability=job.fake_probability, partial=job.partial,
         ai_generated=public.ai_generated(job), reasons=public.reasons(job), analyses=public.analyses(job),
-        checks=public.checks(tasks),
-        provenance=public.provenance(tasks),
         media={"size_bytes": media.size_bytes, "width": media.width, "height": media.height,
                "duration_seconds": media.duration_seconds, "sha256": media.sha256} if media else {},
         created_at=job.created_at, finished_at=job.finished_at,

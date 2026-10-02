@@ -10,13 +10,16 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { isApiError } from "@/lib/api/errors"
 import { DEFAULT_THEME } from "@/lib/theme/palette"
 
+/** Pages that need a session (proxy.ts redirects there too, before the page loads). */
+const SIGNED_IN_AREAS = /^\/(app|admin|assistant)(\/|\?|$)/
+
 function makeClient() {
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error) => {
         if (isApiError(error) && error.status === 401 && typeof window !== "undefined") {
           const here = window.location.pathname + window.location.search
-          if (here.startsWith("/app") || here.startsWith("/admin")) {
+          if (SIGNED_IN_AREAS.test(here)) {
             // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the previous user's cached data
             window.location.assign(`/login?next=${encodeURIComponent(here)}`)
           }

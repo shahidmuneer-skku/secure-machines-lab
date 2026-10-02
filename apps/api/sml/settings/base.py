@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "sml.reports",
     "sml.news",
     "sml.studio",
+    "sml.assistant",
     "sml.trial",
     "sml.dashboard",
     "sml.adminapi",
@@ -301,6 +302,7 @@ REST_FRAMEWORK = {
         "anon": env("THROTTLE_ANON", default="60/min"),
         "trial": env("THROTTLE_TRIAL", default="10/min"),
         "job_create": env("THROTTLE_JOB_CREATE", default="60/min"),
+        "assistant": env("THROTTLE_ASSISTANT", default="20/min"),
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
@@ -328,14 +330,13 @@ SPECTACULAR_SETTINGS = {
         "TaskKindEnum": "sml.jobs.models.JobTask.Kind",
         "ExplanationStatusEnum": "sml.jobs.models.Explanation.Status",
         "ArtifactKindEnum": "sml.jobs.models.Artifact.Kind",
-        # What users see of artifacts and checks (sml.jobs.public); distinct from the admin enums.
+        # What users see of artifacts and progress (sml.jobs.public); distinct from the admin enums.
         "EvidenceKindEnum": ["heatmap", "face", "video"],
-        "JobStepEnum": ["queued", "checks", "analysis", "verification", "results"],
+        "JobStepEnum": ["queued", "analysis", "verification", "results"],
         "AnalysisEnum": ["face_swap", "ai_generated"],
         "FamilyEnum": ["deepfake", "ai_generated"],
         "TruthEnum": "sml.jobs.models.Job.Truth",
         "StudioModeEnum": "sml.studio.registry.MODES",
-        "CheckIdEnum": ["face", "safety", "fas"],
         "ServiceStatusEnum": ["ok", "error"],
         "PaymentModeEnum": ["off", "test", "live"],
         "PaymentStatusEnum": "sml.billing.models.Payment.Status",
@@ -434,6 +435,11 @@ TOSS_API_BASE = env("TOSS_API_BASE", default="https://api.tosspayments.com")
 
 # --- Reasoning / news engines -------------------------------------------------
 OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://127.0.0.1:11434")
+# The chat assistant (owner, 2026-10-02): the model the reasoning worker keeps loaded, with the same
+# context size, so a chat never makes Ollama reload it (sml.assistant.llm).
+ASSISTANT_MODEL = env("ASSISTANT_MODEL", default="qwen3.6:27b")
+ASSISTANT_NUM_CTX = env.int("ASSISTANT_NUM_CTX", default=131072)
+ASSISTANT_READ_TIMEOUT = env.float("ASSISTANT_READ_TIMEOUT", default=300.0)
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 
 # --- Logging ------------------------------------------------------------------

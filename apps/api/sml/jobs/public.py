@@ -1,9 +1,11 @@
 """What users see of a job: the verdict and its evidence, never how the analysis works.
 
-The owner's rule: users (web and API) are not told which detectors run, how many, or how they
-work. They get the combined verdict and probability, the metadata / C2PA evidence, the results of
-the admin's extra checks, unlabelled heatmaps, a combined video timeline, and a progress view in
-generic steps. Operators see everything through the admin endpoints (serializers.Admin*).
+The owner's rules (2026-10-01, tightened 2026-10-02): users — on the web, through the API, in reports,
+explanations and the assistant — are not told which detectors run, how many or how they work, whether
+the file's metadata (EXIF / XMP / C2PA) is read, or which extra checks run. They get the combined
+verdict and probability, the result of each analysis (face swap, AI generation), unlabelled heatmaps,
+a combined video timeline, a plain "no face found" note and a progress view in generic steps.
+Operators see everything through the admin endpoints (serializers.Admin*).
 
 Each function here builds a plain dict from a job and its prefetched tasks/artifacts/events.
 """
@@ -15,6 +17,7 @@ from pathlib import PurePosixPath
 from typing import Any
 
 from sml.catalog.registry import registry
+from sml.core.confidential import scrub
 from sml.core.models import PlatformSettings
 
 from .models import Artifact, Job, JobTask
@@ -24,6 +27,11 @@ ANALYSIS_KINDS = (JobTask.Kind.MODEL, JobTask.Kind.LONG_VIDEO)
 PUBLIC_ARTIFACT_KINDS = {Artifact.Kind.XAI: "heatmap", Artifact.Kind.FACE: "face", Artifact.Kind.VIDEO: "video"}
 PUBLIC_OPTIONS = ("stream", "interval_seconds", "start_sec", "end_sec", "whole_video")
 TIMELINE_POINTS = 200
+
+# Progress messages older jobs stored when their checks started; they named the checks.
+LEGACY_CHECK_MESSAGES = frozenset({
+    "Checking file metadata and provenance", "Looking for faces", "Checking content safety", "Checking face liveness",
+})
 
 
 # --- progress ----------------------------------------------------------------------------------
@@ -56,9 +64,9 @@ def _step_progress(tasks: list[JobTask], live: dict[str, dict[str, Any]]) -> flo
 
 
 def steps(job: Job, tasks: list[JobTask], live: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
-    """Generic stages: queued → checks → analysis (→ verification for news) → results."""
-    checks = [t for t in tasks if t.kind == JobTask.Kind.AUDIT]
-    analysis = [t for t in tasks if t.kind in ANALYSIS_KINDS]
+    """Generic stages: queued → analysis (→ verification for news) → results. The checks are part of
+    the analysis stage, so nothing tells them apart."""
+    analysis = [t for t in tasks if t.kind in ANALYSIS_KINDS or t.kind == JobTask.Kind.AUDIT]
     news = [t for t in tasks if t.kind == JobTask.Kind.NEWS]
     started = any(t.started_at for t in tasks) or job.is_terminal
     if job.status == Job.Status.CANCELED and not started:
@@ -66,8 +74,6 @@ def steps(job: Job, tasks: list[JobTask], live: dict[str, dict[str, Any]]) -> li
     else:
         queued_status = "done" if started else "running"
     out = [{"id": "queued", "status": queued_status, "progress": 100.0 if started else 0.0}]
-    if checks:
-        out.append({"id": "checks", "status": _step_status(checks), "progress": _step_progress(checks, live)})
     if analysis:
         out.append({"id": "analysis", "status": _step_status(analysis), "progress": _step_progress(analysis, live)})
     if news:
@@ -95,24 +101,23 @@ def reasons(job: Job) -> list[dict[str, Any]]:
     out = []
     for r in job.verdict_reasons or []:
         code = r.get("code")
+        # Metadata findings ("metadata_ai_indicator") stay internal: they only move the verdict.
         if code == "model_consensus":
             out.append({"code": "analysis", "fake_probability": r.get("fake_probability")})
-        elif code == "metadata_ai_indicator":
-            out.append({"code": code, "strength": r.get("strength") or "strong",
-                        "evidence": evidence_items(r.get("evidence"))})
         elif code == "stopped_early":
             out.append({"code": code, "analysed_seconds": r.get("analysed_seconds"),
                         "range_seconds": r.get("range_seconds")})
         elif code == "news_agent":
-            out.append({"code": code, "status": r.get("status"), "reasoning": r.get("reasoning", "")})
+            out.append({"code": code, "status": r.get("status"), "reasoning": scrub(r.get("reasoning", ""))})
         elif code == "no_face":
             out.append({"code": code})
     return out
 
 
 def ai_generated(job: Job) -> bool:
-    """A fake verdict backed by a confirmed generator declaration in the metadata (EXIEF). Jobs
-    finished before EXIEF counted any metadata reason they carry."""
+    """Whether the verdict reads "Likely AI-generated" (internally: a fake verdict backed by a confirmed
+    generator declaration; users only see the label). Jobs finished before EXIEF counted any metadata
+    reason they carry."""
     return job.verdict == Job.Verdict.FAKE and any(
         r.get("code") == "metadata_ai_indicator" and (r.get("strength") == "strong" or "exief_verdict" not in r)
         for r in job.verdict_reasons or [])
@@ -131,53 +136,8 @@ def analyses(job: Job) -> list[dict[str, Any]]:
             for g in (job.summary or {}).get("groups") or [] if g.get("group") in ANALYSIS_IDS]
 
 
-def evidence_items(items: Any) -> list[dict[str, str]]:
-    return [{"source": str(e.get("source", "")), "detail": str(e.get("detail", "")),
-             "strength": str(e.get("strength", ""))}
-            for e in (items or []) if isinstance(e, dict)]
-
-
 def _task(tasks: list[JobTask], kind: str, target: str | None = None) -> JobTask | None:
     return next((t for t in tasks if t.kind == kind and (target is None or t.target == target)), None)
-
-
-def provenance(tasks: list[JobTask]) -> dict[str, Any] | None:
-    """Metadata / EXIF / C2PA findings (the user's own file; no detector involved)."""
-    meta = _task(tasks, JobTask.Kind.AUDIT, "metadata")
-    if meta is None or meta.status != JobTask.Status.SUCCEEDED:
-        return None
-    ind = (meta.result or {}).get("ai_indicators") or {}
-    return {"ai_generated": bool(ind.get("ai_generated")), "confidence": str(ind.get("confidence") or "none"),
-            "c2pa_status": str(ind.get("c2pa_status") or "none"), "camera": ind.get("camera") or None,
-            "software": ind.get("software") or None, "evidence": evidence_items(ind.get("evidence")),
-            "notes": [str(n) for n in ind.get("notes") or []]}
-
-
-def _check_result(task: JobTask) -> dict[str, Any]:
-    r = task.result or {}
-    data = r.get("data") if isinstance(r.get("data"), dict) else {}
-    if task.target == "face":
-        return {"faces_found": not r.get("no_face")}
-    if task.target == "safety":
-        predicted = str(data.get("predicted", "")).upper()
-        return {"sensitive_content": predicted == "NSFW"}
-    if task.target == "fas":
-        labels = [str(x.get("label", "")).upper() for x in data.get("fas_results") or [] if isinstance(x, dict)]
-        return {"spoof_detected": any(lb in ("FAKE", "SPOOF") for lb in labels)}
-    return {}
-
-
-def checks(tasks: list[JobTask]) -> list[dict[str, Any]]:
-    """The admin's extra checks: what they found, in plain terms."""
-    out = []
-    for t in tasks:
-        if t.kind != JobTask.Kind.AUDIT or t.target == "metadata":
-            continue
-        status = {JobTask.Status.SUCCEEDED: "done", JobTask.Status.RUNNING: "running",
-                  JobTask.Status.FAILED: "failed", JobTask.Status.CANCELED: "canceled",
-                  JobTask.Status.SKIPPED: "skipped"}.get(t.status, "pending")
-        out.append({"id": t.target, "status": status, "result": _check_result(t) if status == "done" else {}})
-    return out
 
 
 def timeline(job: Job, tasks: list[JobTask]) -> list[dict[str, Any]]:
@@ -253,8 +213,19 @@ def news(job: Job) -> dict[str, Any] | None:
     n = (job.summary or {}).get("news")
     if not n:
         return None
+    # The agent's own words are filtered like every model-written text users see (sml.core.confidential).
     return {"status": n.get("status"), "confidence": n.get("confidence"),
-            "report_markdown": n.get("report_markdown", ""), "meta": n.get("meta") or {}}
+            "report_markdown": scrub(n.get("report_markdown", "")), "meta": _scrub_strings(n.get("meta") or {})}
+
+
+def _scrub_strings(value: Any) -> Any:
+    if isinstance(value, str):
+        return scrub(value)
+    if isinstance(value, dict):
+        return {k: _scrub_strings(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_scrub_strings(v) for v in value]
+    return value
 
 
 def options(job: Job) -> dict[str, Any]:
@@ -332,4 +303,4 @@ def artifacts(job: Job, url_prefix: str, tasks: list[JobTask] | None = None) -> 
 def events(job: Job) -> list[dict[str, Any]]:
     return [{"id": e.pk, "created_at": e.created_at, "level": e.level, "code": e.code, "message": e.public_message,
              "data": public_data(e.data)}
-            for e in job.events.all() if e.public_message]
+            for e in job.events.all() if e.public_message and e.public_message not in LEGACY_CHECK_MESSAGES]

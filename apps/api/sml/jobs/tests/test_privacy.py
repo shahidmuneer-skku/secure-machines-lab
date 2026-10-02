@@ -91,9 +91,11 @@ def test_the_user_view_never_names_detectors(api, user, finished_job):
     text = json.dumps([detail, listing])
     for word in detector_words(job):
         assert word not in text, word
-    for key in ("tasks", "summary", "models", "audit_steps"):
+    for key in ("tasks", "summary", "models", "audit_steps", "provenance", "checks"):
         assert key not in detail
-    assert [s["id"] for s in detail["steps"]] == ["queued", "checks", "analysis", "results"]
+    # The checks are part of the analysis stage; nothing names them or the file's metadata.
+    assert [s["id"] for s in detail["steps"]] == ["queued", "analysis", "results"]
+    assert not any(w in text.lower() for w in ("metadata", "c2pa", "exif", "provenance", "liveness"))
     assert all(s["status"] == "done" for s in detail["steps"])
     assert detail["verdict"] == "fake" and detail["fake_probability"] == pytest.approx(0.9)
     assert detail["verdict_reasons"][0]["code"] == "analysis"
@@ -118,8 +120,10 @@ def test_live_events_and_the_timeline_are_generic(api, finished_job):
     words = detector_words(job)
     live = json.dumps([payload for _, payload in memory_events])
     assert not any(w in live for w in words)
+    assert "metadata" not in live.lower() and "provenance" not in live.lower()
     messages = [e["message"] for e in api.get(f"/api/v1/jobs/{job.pk}").json()["events"]]
-    assert "Checking file metadata and provenance" in messages
+    assert not any(m in messages for m in ("Checking file metadata and provenance", "Looking for faces",
+                                            "Checking content safety", "Checking face liveness"))
     assert messages.count("Analysing the image") == 1  # once, however many detectors run
     assert not any(w in m for m in messages for w in words)
 
@@ -152,8 +156,11 @@ def test_reports_and_the_explanation_prompt_never_name_detectors(finished_job):
     csv_text = generators.render_csv(data).decode("utf-8")
     rtf = generators.render_hwp(data).decode("ascii")
     assert not any(w in csv_text or w in rtf for w in words)
-    assert "Likely AI-generated" in rtf and "Content Credentials declare AI" in csv_text
+    assert "Likely AI-generated" in rtf  # the label stays; why it reads so does not
+    for text in (csv_text, rtf, generators.render_pdf(data).decode("latin-1")):
+        assert not any(w in text.lower() for w in ("content credentials", "c2pa", "metadata", "provenance"))
     context = explain._context(job)
+    assert not {"provenance", "checks", "reasons"} & set(context)
     # Storage keys only tell the worker what to download; the agent sees the files as heatmap_N.png.
     readable = json.dumps({k: v for k, v in context.items() if k != "artifacts"})
     assert not any(w in readable for w in words) and "summary" not in context
@@ -207,15 +214,16 @@ def test_no_configured_detector_gives_a_generic_error(user, make_media, use_dete
 # --- metadata markers (EXIEF weighs into the AI-generation analysis; test_exief_vote.py) ---------
 
 @pytest.mark.parametrize(("indicators", "flagged"), [(STRONG, True), (WEAK, False), ({}, False)])
-def test_metadata_evidence_is_shown_and_only_a_declaration_reads_ai_generated(api, finished_job, indicators,
-                                                                               flagged):
+def test_metadata_findings_stay_hidden_and_only_a_declaration_reads_ai_generated(api, finished_job, indicators,
+                                                                                 flagged):
     job = finished_job(prob=0.9, indicators=indicators)
     detail = api.get(f"/api/v1/jobs/{job.pk}").json()
     assert (detail["verdict"], detail["ai_generated"]) == ("fake", flagged)
     assert (detail["verdict_label"] == "Likely AI-generated") is flagged
-    if indicators:
-        assert detail["provenance"]["evidence"][0]["detail"] == indicators["evidence"][0]["detail"]
-    assert "exief" not in json.dumps(detail).lower()  # the tool behind the evidence is not named
+    text = json.dumps(detail).lower()
+    assert "provenance" not in detail and "exief" not in text
+    if indicators:  # users never see what the metadata showed, or that it was read (owner, 2026-10-02)
+        assert indicators["evidence"][0]["detail"].lower() not in text
 
 
 def test_the_admin_chooses_whose_heatmaps_users_see(api, user, make_media, use_detectors, show_heatmaps, platform):
@@ -251,3 +259,36 @@ def test_admin_toggles_heatmaps_per_detector(client_for, make_user):
     listed = {m["id"]: m for m in admin.get("/api/v1/admin/models").json()}
     assert listed[model]["show_heatmap"] is True
     assert listed["center"]["show_heatmap"] is True  # owner's default (models.yaml)
+
+
+# --- model-written text (explanations, news reports) is filtered (owner, 2026-10-02) ------------------
+
+def test_explanations_never_tell_how_the_analysis_works(api, user, finished_job):
+    from sml.jobs.explain import record_explanation_event
+    from sml.jobs.models import Explanation
+
+    job = finished_job()
+    exp = explain.request_explanation(job, user, "en")
+    record_explanation_event({"explanation_id": str(exp.pk), "event": "started"})
+    record_explanation_event({"explanation_id": str(exp.pk), "event": "finished", "status": "succeeded",
+                              "content": "### Summary\nThe face looks pasted. The EXIF data names an AI tool.\n"
+                                         "### Provenance\nNo C2PA manifest.\n### Caveats\nLow resolution."})
+    exp.refresh_from_db()
+    assert exp.status == Explanation.Status.SUCCEEDED
+    assert exp.content == "### Summary\nThe face looks pasted.\n### Caveats\nLow resolution."
+    # Explanations written before the rule are filtered when they are read.
+    Explanation.objects.filter(pk=exp.pk).update(content="Two detectors agreed. The skin is smooth.")
+    shown = api.get(f"/api/v1/jobs/{job.pk}").json()["explanations"][0]["content"]
+    assert shown == "The skin is smooth."
+
+
+def test_news_reports_are_filtered_too(api, finished_job):
+    job = finished_job()
+    job.summary = {**(job.summary or {}), "news": {"status": "done", "confidence": 70, "meta": {
+        "authenticity": {"verdict": "fake", "reasoning": "Metadata shows editing. The scene is staged."}},
+        "report_markdown": "# Case Summary\nThe photo was posted in 2019. Its EXIF date is 2017."}}
+    job.save(update_fields=["summary"])
+    news = api.get(f"/api/v1/jobs/{job.pk}").json()["news"]
+    assert news["report_markdown"] == "# Case Summary\nThe photo was posted in 2019."
+    assert news["meta"]["authenticity"]["reasoning"] == "The scene is staged."
+

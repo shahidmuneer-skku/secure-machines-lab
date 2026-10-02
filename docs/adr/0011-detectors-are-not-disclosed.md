@@ -1,5 +1,8 @@
 # 0011 · Users never see which detectors run or how
 
+> **Partly superseded by [0015](0015-confidential-method-and-assistant.md) (2026-10-02):** metadata
+> evidence, provenance and check results are no longer shown to users either.
+
 **Context.** The detectors are private models. The owner decided (2026-10-01) that only the
 administrator chooses what runs, and that users — in the web app, the public API, reports,
 explanations and the live processing view — learn the verdict and its evidence but never which

@@ -376,11 +376,6 @@ export function ScanHero() {
             <dd>{t("report.regionNote")}</dd>
           </div>
           <div className={styles.reportRow}>
-            <dt>{t("report.provenance")}</dt>
-            <dd><span className={styles.swatch} data-tone="neutral" aria-hidden />{t("report.provenanceValue")}</dd>
-            <dd>{t("report.provenanceNote")}</dd>
-          </div>
-          <div className={styles.reportRow}>
             <dt>{t("report.findings")}</dt>
             <dd>
               <ul className={styles.findings}>

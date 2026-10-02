@@ -5,6 +5,13 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 ## [Unreleased] — first release candidate
 
 ### Added
+- Assistant (`/assistant`; the dashboard's *Assistant* link opens it in a new tab): chat about images
+  and videos with the platform's AI model (the Qwen model the agents use, through Ollama). Attached
+  files are analysed at the normal price per file; chatting is free. The assistant describes what it
+  sees, explains each file's result on its own once the analysis finishes, and answers questions about
+  deepfakes, AI-generated media and the service, quoting the current prices. Conversations are listed,
+  renamed and deleted; replies stream sentence by sentence and can be stopped; *Ask the assistant* on a
+  result page starts a chat about that result without analysing it again. English, Korean and German.
 - Image studio (`/app/studio`): generate images from a prompt or edit up to 3–10 of your images by
   instruction, with formats, image count, steps, guidance, seed, negative prompt and transparent
   backgrounds offered according to the model the administrator chose for each mode (Admin → Studio:
@@ -61,6 +68,12 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   with the per-frame timeline and the most suspicious frame's heatmap.
 
 ### Changed
+- How the analysis works stays confidential everywhere (owner, 2026-10-02; ADR 0015): results, the AI
+  explanation, reports, the developer API, the homepage, docs and the free trial no longer show file
+  metadata (EXIF / XMP / C2PA), provenance, face / content-safety / liveness check results or
+  metadata-based reasons — only the verdict, each analysis's result, heatmaps and a "no face found"
+  note. Explanations, news reports and assistant replies are filtered sentence by sentence for anything
+  about the method (detectors, metadata, checks, thresholds, what the analysis looks for).
 - New homepage, the 3D scan design (ADR 0014): a 3D head goes through a scroll-driven forensic scan —
   map the face, inspect the regions, explain the evidence — and hands over to the free image check;
   on phones and with reduced motion the steps are buttons. The head opens its eyes once it appears and
@@ -104,6 +117,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 - Xception is offered for video only until its image weights are restored.
 
 ### Security
+- The admin console is decided on the server: anyone who is not staff gets a 404 for its pages, and its
+  texts (detectors, weights, the metadata vote) are no longer sent to them. The detector breakdown on
+  result pages — its texts and its code — reaches administrators only.
 - The Django data admin no longer accepts password-only logins; it requires a superuser
   session verified with two-factor authentication.
 - API keys cannot raise their own rate limit above the platform limit.
@@ -117,6 +133,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   parameters from the API once. The published OpenAPI document omits the admin API.
 
 ### Fixed
+- Submitting several files at once failed with a 500 after the jobs had been created (the replay copy
+  kept for the idempotency key could not encode the batch id); the jobs ran anyway and a retry was
+  refused. Failing to keep the replay copy no longer turns a successful request into an error.
 - Video detectors failed on this server: conda envs copied from another machine could not verify
   HTTPS certificates, BEYBI's dlib could not find its own libraries, and two weight sets that the
   old machine had downloaded at runtime were missing. The anti-spoofing check now reports a

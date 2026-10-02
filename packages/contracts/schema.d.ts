@@ -722,6 +722,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My conversations (newest first) */
+        get: operations["assistant_conversations_list"];
+        put?: never;
+        /** Start a conversation (listed once it has a message) */
+        post: operations["assistant_conversations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A conversation with its messages */
+        get: operations["assistant_conversations_retrieve"];
+        put?: never;
+        post?: never;
+        /** Delete (the analyses stay in Results) */
+        delete: operations["assistant_conversations_destroy"];
+        options?: never;
+        head?: never;
+        /** Rename */
+        patch: operations["assistant_conversations_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a message. Attached files are analysed at the normal price per file; the reply streams.
+         * @description Sends a message to the assistant. Attached files are analysed at the normal price per file; the
+         *     reply arrives as Server-Sent Events. Errors before the reply starts are JSON problem details.
+         */
+        post: operations["assistant_conversations_messages_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{id}/messages/{message_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Have the assistant explain the results once every analysis a message started has finished.
+         * @description Once every analysis a message started has finished, the assistant explains the results (once per
+         *     message), as Server-Sent Events.
+         */
+        post: operations["assistant_conversations_messages_results_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/billing/catalog": {
         parameters: {
             query?: never;
@@ -2085,6 +2164,13 @@ export interface components {
          * @enum {string}
          */
         ArtifactKindEnum: "xai" | "face" | "video" | "frames" | "report" | "other";
+        Attachment: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            media_type: components["schemas"]["MediaTypeEnum"];
+            readonly thumbnail_url: string;
+        };
         AuditLog: {
             /** Format: uuid */
             readonly id: string;
@@ -2137,21 +2223,6 @@ export interface components {
             media_type: string;
             thumbnail_url: string | null;
         };
-        Check: {
-            id: components["schemas"]["CheckIdEnum"];
-            status: string;
-            /** @description faces_found, sensitive_content or spoof_detected */
-            result: {
-                [key: string]: unknown;
-            };
-        };
-        /**
-         * @description * `face` - face
-         *     * `safety` - safety
-         *     * `fas` - fas
-         * @enum {string}
-         */
-        CheckIdEnum: "face" | "safety" | "fas";
         CheckoutRequest: {
             product: components["schemas"]["ProductEnum"];
             /** Format: uuid */
@@ -2176,6 +2247,28 @@ export interface components {
         };
         ConsentRequest: {
             granted?: boolean;
+        };
+        Conversation: {
+            /** Format: uuid */
+            readonly id: string;
+            title: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        ConversationDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            title: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly messages: components["schemas"]["Message"][];
+        };
+        ConversationRequest: {
+            title?: string;
         };
         Count: {
             removed?: number;
@@ -2315,11 +2408,6 @@ export interface components {
             auc: number | null;
             dataset: string;
         };
-        Evidence: {
-            source: string;
-            detail: string;
-            strength: string;
-        };
         /**
          * @description * `heatmap` - heatmap
          *     * `face` - face
@@ -2366,7 +2454,7 @@ export interface components {
             readonly id: string;
             status: components["schemas"]["ExplanationStatusEnum"];
             locale: string;
-            content: string;
+            readonly content: string;
             credits_charged: number;
             error_message: string;
             /** Format: date-time */
@@ -2497,8 +2585,6 @@ export interface components {
             quote_lines: unknown;
             readonly steps: components["schemas"]["JobStep"][];
             readonly analyses: components["schemas"]["AnalysisResult"][];
-            readonly provenance: components["schemas"]["Provenance"] | null;
-            readonly checks: components["schemas"]["Check"][];
             readonly timeline: components["schemas"]["TimelinePoint"][];
             readonly long_video: components["schemas"]["LongVideoSummary"] | null;
             readonly news: components["schemas"]["NewsReport"] | null;
@@ -2594,13 +2680,12 @@ export interface components {
         };
         /**
          * @description * `queued` - queued
-         *     * `checks` - checks
          *     * `analysis` - analysis
          *     * `verification` - verification
          *     * `results` - results
          * @enum {string}
          */
-        JobStepEnum: "queued" | "checks" | "analysis" | "verification" | "results";
+        JobStepEnum: "queued" | "analysis" | "verification" | "results";
         JobTruth: {
             truth: (components["schemas"]["TruthEnum"] | components["schemas"]["NullEnum"]) | null;
             /** Format: email */
@@ -2787,6 +2872,27 @@ export interface components {
          * @enum {string}
          */
         MediaTypeEnum: "image" | "video";
+        Message: {
+            /** Format: uuid */
+            readonly id: string;
+            role: components["schemas"]["RoleEnum"];
+            status: components["schemas"]["MessageStatusEnum"];
+            readonly content: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly attachments: components["schemas"]["Attachment"][];
+            readonly jobs: components["schemas"]["JobList"][];
+            started_analyses: boolean;
+            /** Format: uuid */
+            readonly results_reply: string;
+        };
+        /**
+         * @description * `complete` - Complete
+         *     * `stopped` - Stopped by the user
+         *     * `failed` - Failed
+         * @enum {string}
+         */
+        MessageStatusEnum: "complete" | "stopped" | "failed";
         ModelRef: {
             id: string;
             name: string;
@@ -2801,9 +2907,10 @@ export interface components {
          *     * `long_video` - long_video
          *     * `news` - news
          *     * `studio` - studio
+         *     * `assistant` - assistant
          * @enum {string}
          */
-        ModuleEnum: "detect" | "long_video" | "news" | "studio";
+        ModuleEnum: "detect" | "long_video" | "news" | "studio" | "assistant";
         ModuleInfo: {
             id: components["schemas"]["ModuleEnum"];
             allowed: boolean;
@@ -2874,8 +2981,6 @@ export interface components {
             quote_lines: unknown;
             readonly steps: components["schemas"]["JobStep"][];
             readonly analyses: components["schemas"]["AnalysisResult"][];
-            readonly provenance: components["schemas"]["Provenance"] | null;
-            readonly checks: components["schemas"]["Check"][];
             readonly timeline: components["schemas"]["TimelinePoint"][];
             readonly long_video: components["schemas"]["LongVideoSummary"] | null;
             readonly news: components["schemas"]["NewsReport"] | null;
@@ -2961,6 +3066,19 @@ export interface components {
              */
             previous: string | null;
             results: components["schemas"]["AuditLog"][];
+        };
+        PaginatedConversationList: {
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
+             */
+            next: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+             */
+            previous: string | null;
+            results: components["schemas"]["Conversation"][];
         };
         PaginatedJobListList: {
             /**
@@ -3071,6 +3189,9 @@ export interface components {
             rate_limit_per_minute?: number | null;
             /** Format: date-time */
             expires_at?: string | null;
+        };
+        PatchedConversationRequest: {
+            title?: string;
         };
         PatchedCreditPackAdminRequest: {
             slug?: string;
@@ -3364,15 +3485,6 @@ export interface components {
          * @enum {string}
          */
         ProductEnum: "pack" | "plan";
-        Provenance: {
-            ai_generated: boolean;
-            confidence: string;
-            c2pa_status: string;
-            camera: string | null;
-            software: string | null;
-            evidence: components["schemas"]["Evidence"][];
-            notes: string[];
-        };
         /**
          * @description * `toss` - Toss Payments
          *     * `stripe` - Stripe
@@ -3526,6 +3638,12 @@ export interface components {
             readonly members: number;
         };
         /**
+         * @description * `user` - User
+         *     * `assistant` - Assistant
+         * @enum {string}
+         */
+        RoleEnum: "user" | "assistant";
+        /**
          * @description * `image` - image
          *     * `video` - video
          * @enum {string}
@@ -3542,6 +3660,21 @@ export interface components {
          * @enum {string}
          */
         ScopesEnum: "detect:write" | "jobs:read" | "jobs:write" | "reports:read" | "credits:read" | "news:write" | "studio:write";
+        /**
+         * @description * `en` - en
+         *     * `ko` - ko
+         *     * `de` - de
+         * @enum {string}
+         */
+        SendMessageLocaleEnum: "en" | "ko" | "de";
+        SendMessageRequest: {
+            /** @default  */
+            content: string;
+            media_ids?: string[];
+            /** @description Your earlier results to discuss; nothing is analysed again. */
+            job_ids?: string[];
+            locale?: components["schemas"]["SendMessageLocaleEnum"];
+        };
         /**
          * @description * `ok` - ok
          *     * `error` - error
@@ -5480,6 +5613,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IdLabel"][];
+                };
+            };
+        };
+    };
+    assistant_conversations_list: {
+        parameters: {
+            query?: {
+                /** @description The pagination cursor value. */
+                cursor?: string;
+                /** @description Number of results to return per page. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedConversationList"];
+                };
+            };
+        };
+    };
+    assistant_conversations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConversationRequest"];
+                "multipart/form-data": components["schemas"]["ConversationRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConversationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    assistant_conversations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
+                };
+            };
+        };
+    };
+    assistant_conversations_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    assistant_conversations_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedConversationRequest"];
+                "multipart/form-data": components["schemas"]["PatchedConversationRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedConversationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+        };
+    };
+    assistant_conversations_messages_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+                "multipart/form-data": components["schemas"]["SendMessageRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Server-Sent Events: `meta` (the stored user message and any analyses it started), `delta` (reply text, sentence by sentence), then `done` (the stored reply) or `error`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+        };
+    };
+    assistant_conversations_messages_results_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server-Sent Events: `meta` (the stored user message and any analyses it started), `delta` (reply text, sentence by sentence), then `done` (the stored reply) or `error`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
                 };
             };
         };

@@ -5,6 +5,7 @@ import { Brain, Download, FileSpreadsheet, FileText, FileArchive, Loader2, Spark
 import { useLocale, useTranslations } from "next-intl"
 import { useState } from "react"
 import ReactMarkdown from "react-markdown"
+import remarkBreaks from "remark-breaks"
 import remarkGfm from "remark-gfm"
 import { toast } from "sonner"
 
@@ -22,11 +23,12 @@ import type { JobDetail } from "@/lib/api/types"
 import { formatBytes, formatDateTime } from "@/lib/format"
 import { useCan } from "@/hooks/use-me"
 
-export function Markdown({ children }: { children: string }) {
+/** `breaks`: a single line break is kept, as in chat messages. */
+export function Markdown({ children, breaks = false }: { children: string; breaks?: boolean }) {
   return (
     <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight
       [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:uppercase [&_h3]:tracking-wider [&_p]:leading-relaxed [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_table]:text-xs">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={breaks ? [remarkGfm, remarkBreaks] : [remarkGfm]}>{children}</ReactMarkdown>
     </div>
   )
 }

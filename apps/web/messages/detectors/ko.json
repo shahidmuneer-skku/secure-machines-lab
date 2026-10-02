@@ -1,0 +1,60 @@
+{
+  "job": {
+    "detectors": {
+      "eyebrow": "관리자 전용",
+      "title": "탐지기별 결과",
+      "hint": "이 파일에 대한 각 탐지기의 판정입니다. 이 카드는 관리자만 볼 수 있으며, 사용자에게는 두 가지 분석 결과만 표시됩니다.",
+      "none": "이 파일에 실행된 탐지기가 없습니다.",
+      "analysis": {
+        "face_swap": "얼굴 교체 탐지기",
+        "ai_generated": "AI 생성 탐지기"
+      },
+      "weight": "가중치 {weight}",
+      "fallback": "대체 실행",
+      "probabilityOf": "{name}: 조작 확률",
+      "alsoCounts": {
+        "face_swap": "얼굴 교체 분석에도 반영됨",
+        "ai_generated": "AI 생성 분석에도 반영됨"
+      },
+      "perFrame": "프레임별 조작 확률",
+      "perFrameOf": "{name}: 프레임별 조작 확률",
+      "heatmapOf": "{name} 히트맵",
+      "truth": {
+        "label": "실제 정답",
+        "none": "미지정",
+        "value": {
+          "authentic": "진본",
+          "face_swap": "얼굴 교체",
+          "ai_generated": "AI 생성"
+        },
+        "hint": "이 파일의 실제 정답을 지정하면 각 탐지기의 정확도를 측정합니다.",
+        "by": "{email} 님이 지정",
+        "saved": "정답을 저장했습니다",
+        "failed": "정답을 저장하지 못했습니다."
+      },
+      "accuracy": {
+        "benchmark": "벤치마크",
+        "measured": "측정값",
+        "acc": "정확도 {value}",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {라벨링된 파일 #개} other {라벨링된 파일 #개}} (조작 {fake}개, 진본 {authentic}개) · 정밀도 {precision} · 재현율 {recall}",
+        "notMeasured": "아직 라벨링된 파일이 없습니다"
+      },
+      "exief": {
+        "name": "EXIEF 메타데이터 신호",
+        "score": "점수 {score}",
+        "weight": "가중치 {weight}",
+        "verdict": {
+          "confirmed": "확정",
+          "suspect": "의심",
+          "weak": "약함",
+          "unknown": "신호 없음"
+        },
+        "counted": "AI 생성 분석에 조작 확률 {probability}로 반영됨",
+        "notCounted": "신호 없음 — 반영되지 않음",
+        "notTrusted": "반영되지 않음: 메타데이터가 손상되었거나 변조된 것으로 보입니다",
+        "signalWeight": "등급 {tier}, +{weight}"
+      }
+    }
+  }
+}

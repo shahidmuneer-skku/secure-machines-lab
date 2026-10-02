@@ -19,8 +19,6 @@ export type Explanation = Schemas["Explanation"]
 
 // What users see of a job: generic steps and evidence, never the detectors behind them.
 export type JobStep = JobDetail["steps"][number]
-export type JobCheck = JobDetail["checks"][number]
-export type Provenance = NonNullable<JobDetail["provenance"]>
 export type TimelinePoint = JobDetail["timeline"][number]
 export type JobArtifact = JobDetail["artifacts"][number]
 export type TimelineEvent = JobDetail["events"][number]

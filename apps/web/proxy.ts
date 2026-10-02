@@ -5,7 +5,7 @@ import { safeNext } from "@/lib/safe-next"
 /**
  * Next.js Proxy (formerly "middleware"), runs before every page request:
  *  1. Request ID      — forwarded to Django via the /api rewrite for log correlation
- *  2. Auth redirect   — optimistic: /app and /admin need a session cookie (Django re-checks every
+ *  2. Auth redirect   — optimistic: /app, /admin and /assistant need a session cookie (Django re-checks every
  *                       API call). We deliberately do NOT bounce "signed-in" users away from /login:
  *                       a cookie also exists mid-login (e.g. during the 2FA step), so only the API
  *                       can tell whether a session is authenticated — the login page asks it.
@@ -15,7 +15,7 @@ import { safeNext } from "@/lib/safe-next"
  */
 
 const SESSION_COOKIES = ["sml_session", "__Host-sml_session"]
-const PROTECTED = ["/app", "/admin"]
+const PROTECTED = ["/app", "/admin", "/assistant"]
 const LOCALE_COOKIE = "NEXT_LOCALE"
 const LOCALES = ["en", "ko", "de"]
 

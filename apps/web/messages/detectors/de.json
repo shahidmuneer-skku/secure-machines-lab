@@ -1,0 +1,60 @@
+{
+  "job": {
+    "detectors": {
+      "eyebrow": "Nur für Admins",
+      "title": "Ergebnisse je Detektor",
+      "hint": "Was jeder Detektor zu dieser Datei sagt. Nur Administratoren sehen diese Karte; Nutzer sehen die beiden Analysen.",
+      "none": "Für diese Datei lief kein Detektor.",
+      "analysis": {
+        "face_swap": "Face-Swap-Detektoren",
+        "ai_generated": "KI-Erkennungsdetektoren"
+      },
+      "weight": "Gewicht {weight}",
+      "fallback": "Ersatz",
+      "probabilityOf": "{name}: Fälschungswahrscheinlichkeit",
+      "alsoCounts": {
+        "face_swap": "Zählt auch in der Face-Swap-Analyse",
+        "ai_generated": "Zählt auch in der KI-Analyse"
+      },
+      "perFrame": "Fälschungswahrscheinlichkeit je Frame",
+      "perFrameOf": "{name}: Fälschungswahrscheinlichkeit je Frame",
+      "heatmapOf": "Heatmap von {name}",
+      "truth": {
+        "label": "Tatsächlicher Befund",
+        "none": "Nicht markiert",
+        "value": {
+          "authentic": "Echt",
+          "face_swap": "Face-Swap",
+          "ai_generated": "KI-generiert"
+        },
+        "hint": "Markieren Sie, was diese Datei wirklich ist, um die Genauigkeit jedes Detektors zu messen.",
+        "by": "Markiert von {email}",
+        "saved": "Markierung gespeichert",
+        "failed": "Die Markierung konnte nicht gespeichert werden."
+      },
+      "accuracy": {
+        "benchmark": "Benchmark",
+        "measured": "Gemessen",
+        "acc": "{value} Genauigkeit",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {# markierte Datei} other {# markierte Dateien}} ({fake} gefälscht, {authentic} echt) · Präzision {precision} · Trefferquote {recall}",
+        "notMeasured": "Noch keine markierten Dateien"
+      },
+      "exief": {
+        "name": "EXIEF-Metadatensignale",
+        "score": "Wert {score}",
+        "weight": "Gewicht {weight}",
+        "verdict": {
+          "confirmed": "Bestätigt",
+          "suspect": "Verdächtig",
+          "weak": "Schwach",
+          "unknown": "Kein Signal"
+        },
+        "counted": "In der KI-Analyse als {probability} gefälscht gezählt",
+        "notCounted": "Kein Signal — nicht gezählt",
+        "notTrusted": "Nicht gezählt: Die Metadaten wirken beschädigt oder verändert",
+        "signalWeight": "Stufe {tier}, +{weight}"
+      }
+    }
+  }
+}

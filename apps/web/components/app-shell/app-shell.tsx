@@ -16,10 +16,10 @@ import Toolbar from "@mui/material/Toolbar"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {
-  IconActivity, IconAdjustmentsHorizontal, IconArrowLeft, IconBook, IconChartBar, IconCoins, IconCpu,
-  IconFileDescription, IconFileText, IconGauge, IconKey, IconLayoutDashboard, IconListCheck, IconMenu2, IconMovie,
-  IconNews, IconPalette, IconPhotoScan, IconReceipt, IconSettings, IconShieldCheck, IconSparkles, IconUserShield,
-  IconUsers, type Icon,
+  IconActivity, IconAdjustmentsHorizontal, IconArrowLeft, IconArrowUpRight, IconBook, IconChartBar, IconCoins, IconCpu,
+  IconFileDescription, IconFileText, IconGauge, IconKey, IconLayoutDashboard, IconListCheck, IconMenu2,
+  IconMessageChatbot, IconMovie, IconNews, IconPalette, IconPhotoScan, IconReceipt, IconSettings, IconShieldCheck,
+  IconSparkles, IconUserShield, IconUsers, type Icon,
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -38,7 +38,8 @@ import { CreditChip, LanguageMenu, ProfileMenu, ThemeButton } from "./header-con
 
 const SIDEBAR_WIDTH = 270
 
-type NavItem = { href: string; key: string; icon: Icon; capability?: string; exact?: boolean }
+/** `newTab`: a page with its own window (the assistant), opened in a new browser tab. */
+type NavItem = { href: string; key: string; icon: Icon; capability?: string; exact?: boolean; newTab?: boolean }
 
 const APP_NAV: { group: string; items: NavItem[] }[] = [
   {
@@ -46,6 +47,7 @@ const APP_NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/app", key: "dashboard", icon: IconLayoutDashboard, exact: true },
       { href: "/app/detect", key: "detect", icon: IconPhotoScan, capability: "run_detection" },
+      { href: "/assistant", key: "assistant", icon: IconMessageChatbot, capability: "use_assistant", newTab: true },
       { href: "/app/long-video", key: "longVideo", icon: IconMovie, capability: "run_long_video" },
       { href: "/app/news", key: "news", icon: IconNews, capability: "run_news_verification" },
       { href: "/app/studio", key: "studio", icon: IconSparkles, capability: "use_studio" },
@@ -107,10 +109,11 @@ function SidebarContent({ area, onNavigate }: { area: "app" | "admin"; onNavigat
               fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "text.primary" }}>
               {t(section.group)}</ListSubheader>}>
             {section.items.filter((i) => !i.capability || caps.has(i.capability)).map((item) => {
-              const active = isActive(pathname, item)
+              const active = !item.newTab && isActive(pathname, item)
               const ItemIcon = item.icon
+              const target = item.newTab ? { component: "a" as const, target: "_blank", rel: "noopener" } : { component: Link }
               return (
-                <ListItemButton key={item.href} component={Link} href={item.href} onClick={onNavigate} selected={active}
+                <ListItemButton key={item.href} {...target} href={item.href} onClick={onNavigate} selected={active}
                   aria-current={active ? "page" : undefined}
                   sx={{
                     mb: 0.5, px: 1.5, py: 1, color: "text.secondary",
@@ -119,6 +122,7 @@ function SidebarContent({ area, onNavigate }: { area: "app" | "admin"; onNavigat
                   }}>
                   <ListItemIcon sx={{ minWidth: 36, color: "inherit" }}><ItemIcon size={21} stroke={1.5} /></ListItemIcon>
                   <ListItemText primary={t(item.key)} slotProps={{ primary: { sx: { fontSize: "0.9375rem", fontWeight: active ? 600 : 500 } } }} />
+                  {item.newTab && <><IconArrowUpRight size={16} stroke={1.6} aria-hidden /><span className="sr-only">{` (${t("newTab")})`}</span></>}
                 </ListItemButton>
               )
             })}

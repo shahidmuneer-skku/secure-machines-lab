@@ -86,7 +86,16 @@ export function useUploads(concurrency = 3) {
     })
   }, [])
 
+  /** Hands the files over (previews kept, for the caller to release) and empties the list; `restore` puts them back. */
+  const take = useCallback((): UploadItem[] => {
+    const taken = items
+    setItems([])
+    return taken
+  }, [items])
+
+  const restore = useCallback((taken: UploadItem[]) => setItems((prev) => [...taken, ...prev]), [])
+
   const ready = items.filter((i) => i.state === "ready" && i.media)
   const busy = items.some((i) => i.state === "uploading")
-  return { items, add, remove, retry, clear, ready, busy }
+  return { items, add, remove, retry, clear, take, restore, ready, busy }
 }

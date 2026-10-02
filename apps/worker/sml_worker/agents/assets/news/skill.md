@@ -110,7 +110,7 @@ Geolocation: [decimal coordinates, e.g., 31.506008, 34.430122]
 
 Time: [Date or date range with confidence level]
 
-[Methodology: publication timeline, reverse image search results, metadata analysis, shadow/weather analysis, satellite temporal bounds.]
+[Methodology: publication timeline, reverse image search results, shadow/weather analysis, satellite temporal bounds.]
 
 - **Who? (Entities Involved):**
 
@@ -123,9 +123,9 @@ Time: [Date or date range with confidence level]
 # Forensic Analysis
 
 - **Authenticity Assessment:** [Original / Modified / Recaptured / Synthetic — with reasoning]
-- **Verification Tools & Methods:** [Bulleted list of all tools and techniques used throughout the investigation]
+- **Verification Tools & Methods:** [Bulleted list of the open-source techniques used (search, geolocation, chronolocation…); the media analysis is listed only as "automated media analysis", never how it works]
 - **Synthetic Type (if applicable):** [GAN / Stable Diffusion / Other — or N/A if content appears authentic]
-- **Other Artifacts:** [Detected anomalies, metadata inconsistencies, compression artifacts, temporal discontinuities]
+- **Other Artifacts:** [Detected anomalies, compression artifacts, temporal discontinuities]
 
 # Other Evidence & Findings
 

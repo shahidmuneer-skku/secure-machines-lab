@@ -217,10 +217,6 @@ function DetectVisual() {
             <Typography sx={{ fontSize: "0.9375rem", fontWeight: 600 }}>{label}</Typography>
           </Stack>
         ))}
-        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", color: "#a6b5cb" }}>
-          <Box sx={{ width: 10, height: 10, borderRadius: "3px", border: "1.5px solid #a6b5cb", flexShrink: 0 }} />
-          <Typography sx={{ fontSize: "0.875rem" }}>{t("suite.provenance")}</Typography>
-        </Stack>
         <Typography component="p" sx={{ ...MONO, fontSize: "0.625rem", color: "#ffad70", mt: 1 }}>{t("suite.illustrative")}</Typography>
       </Box>
     </Box>

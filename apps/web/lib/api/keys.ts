@@ -31,4 +31,6 @@ export const qk = {
   studioJobs: ["jobs", "list", "studio"] as const,
   studioJob: (id: string) => ["jobs", "detail", id, "studio"] as const,
   admin: (...parts: (string | object)[]) => ["admin", ...parts] as const,
+  conversations: ["assistant", "conversations"] as const,
+  conversation: (id: string) => ["assistant", "conversation", id] as const,
 }

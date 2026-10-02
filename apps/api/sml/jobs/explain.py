@@ -8,6 +8,7 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 
+from sml.core.confidential import scrub
 from sml.core.events import publish_job
 from sml.core.exceptions import Conflict
 from sml.core.models import PlatformSettings
@@ -40,13 +41,14 @@ def request_explanation(job: Job, user: Any, locale: str) -> Explanation:
 
 
 def _context(job: Job) -> dict[str, Any]:
-    """What the reasoning agent may know. Its answer is shown to the user, so it gets the verdict and
-    the evidence (as users see them) and never which detectors ran or their individual scores."""
+    """What the reasoning agent may know. Its answer is shown to the user, so it gets the result as users
+    see it — verdict, probability, the result of each analysis, the heatmaps — and never which detectors
+    ran, their scores, the file's metadata findings or the extra checks (owner, 2026-10-02)."""
     tasks = list(job.tasks.all())
     return {
-        "verdict": job.verdict, "fake_probability": job.fake_probability, "media_type": job.media_type,
-        "file_name": job.title, "reasons": public.reasons(job), "provenance": public.provenance(tasks),
-        "checks": public.checks(tasks), "analyses": public.analyses(job),
+        "verdict": job.verdict, "verdict_label": "Likely AI-generated" if public.ai_generated(job) else
+        job.get_verdict_display(), "fake_probability": job.fake_probability, "media_type": job.media_type,
+        "file_name": job.title, "no_face": job.verdict == Job.Verdict.NO_FACE, "analyses": public.analyses(job),
         "artifacts": [{"kind": public.artifact_label(a), "storage_key": a.storage_key}
                       for a in public.evidence_artifacts(job, tasks) if a.content_type.startswith("image/")],
     }
@@ -81,9 +83,11 @@ def record_explanation_event(payload: dict[str, Any]) -> None:
             exp.progress_log = [*exp.progress_log, payload.get("message", "")][-50:]
         elif event == "finished":
             exp.finished_at = timezone.now()
-            if payload.get("status") == "succeeded" and payload.get("content"):
+            # The answer is filtered before anyone sees it: sentences about the method are dropped.
+            content = scrub(str(payload.get("content") or ""))[:50_000]
+            if payload.get("status") == "succeeded" and content:
                 exp.status = Explanation.Status.SUCCEEDED
-                exp.content = str(payload["content"])[:50_000]
+                exp.content = content
                 if exp.hold_id:
                     exp.credits_charged = credits.capture(exp.hold, memo="Explain why").amount
             else:

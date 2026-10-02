@@ -19,6 +19,7 @@ MODULE_CAPABILITY = {
     "long_video": "run_long_video",
     "news": "run_news_verification",
     "studio": "use_studio",
+    "assistant": "use_assistant",
 }
 
 

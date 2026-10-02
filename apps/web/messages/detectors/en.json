@@ -1,0 +1,60 @@
+{
+  "job": {
+    "detectors": {
+      "eyebrow": "Admin only",
+      "title": "Detector breakdown",
+      "hint": "What each detector said about this file. Only administrators see this card; users see the two analyses.",
+      "none": "No detector ran on this file.",
+      "analysis": {
+        "face_swap": "Face-swap detectors",
+        "ai_generated": "AI-generation detectors"
+      },
+      "weight": "Weight {weight}",
+      "fallback": "Fallback",
+      "probabilityOf": "{name}: fake probability",
+      "alsoCounts": {
+        "face_swap": "Also counted in the face-swap analysis",
+        "ai_generated": "Also counted in the AI-generation analysis"
+      },
+      "perFrame": "Fake probability per frame",
+      "perFrameOf": "{name}: fake probability per frame",
+      "heatmapOf": "Heatmap of {name}",
+      "truth": {
+        "label": "Ground truth",
+        "none": "Not labelled",
+        "value": {
+          "authentic": "Authentic",
+          "face_swap": "Face swap",
+          "ai_generated": "AI-generated"
+        },
+        "hint": "Label what this file really is to measure each detector's accuracy.",
+        "by": "Labelled by {email}",
+        "saved": "Label saved",
+        "failed": "Could not save the label."
+      },
+      "accuracy": {
+        "benchmark": "Benchmark",
+        "measured": "Measured",
+        "acc": "{value} accuracy",
+        "auc": "AUC {value}",
+        "detail": "{files, plural, one {# labelled file} other {# labelled files}} ({fake} fake, {authentic} authentic) · precision {precision} · recall {recall}",
+        "notMeasured": "No labelled files yet"
+      },
+      "exief": {
+        "name": "EXIEF metadata signals",
+        "score": "Score {score}",
+        "weight": "Weight {weight}",
+        "verdict": {
+          "confirmed": "Confirmed",
+          "suspect": "Suspect",
+          "weak": "Weak",
+          "unknown": "No signal"
+        },
+        "counted": "Counted as {probability} fake in the AI-generation analysis",
+        "notCounted": "No signal — not counted",
+        "notTrusted": "Not counted: the metadata looks damaged or altered",
+        "signalWeight": "tier {tier}, +{weight}"
+      }
+    }
+  }
+}

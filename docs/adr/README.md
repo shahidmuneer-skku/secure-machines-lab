@@ -15,7 +15,8 @@ consequences. Add a new record instead of rewriting an accepted one; mark the ol
 | [0008](0008-model-workers.md) | Django-free workers running existing model scripts as subprocesses | Accepted |
 | [0009](0009-authentication.md) | Sessions for browsers, API keys for machines, MFA for staff | Accepted |
 | [0010](0010-long-form-streaming.md) | Long-form video streamed to a GPU service, charged per minute analysed | Accepted |
-| [0011](0011-detectors-are-not-disclosed.md) | Users never see which detectors run; the admin chooses them | Accepted |
+| [0011](0011-detectors-are-not-disclosed.md) | Users never see which detectors run; the admin chooses them | Accepted (visible metadata evidence superseded by 0015) |
 | [0012](0012-image-studio.md) | Image studio: generation and editing with the admin's model | Accepted |
 | [0013](0013-design-system.md) | Material UI (Modernize) with shadcn/ui; dark theme by default (updated) | Accepted (homepage part superseded by 0014) |
 | [0014](0014-3d-scan-homepage.md) | 3D scan homepage; previous design kept at /landing-legacy | Accepted |
+| [0015](0015-confidential-method-and-assistant.md) | How we detect stays confidential everywhere; a chat assistant explains results without it | Accepted |

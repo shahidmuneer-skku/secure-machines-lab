@@ -49,8 +49,11 @@ def test_the_metadata_verdict_is_a_weighted_vote(api, run_job, verdict, expected
     assert result["face_swap"]["fake_probability"] == pytest.approx(0.1)  # unaffected
     detail = api.get(f"/api/v1/jobs/{job.pk}").json()
     assert detail["verdict_label"] == label
-    codes = {r["code"] for r in detail["verdict_reasons"]}
-    assert ("metadata_ai_indicator" in codes) is (verdict != "unknown")
+    job.refresh_from_db()
+    internal = {r["code"] for r in job.verdict_reasons}
+    assert ("metadata_ai_indicator" in internal) is (verdict != "unknown")
+    # Users never learn that the file's metadata counted (owner, 2026-10-02).
+    assert "metadata_ai_indicator" not in {r["code"] for r in detail["verdict_reasons"]}
 
 
 def test_damaged_or_altered_metadata_does_not_count(api, run_job):

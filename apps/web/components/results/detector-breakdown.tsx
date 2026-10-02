@@ -34,7 +34,9 @@ const TRUTHS: JobTruth[] = ["authentic", "face_swap", "ai_generated"]
  */
 export function DetectorBreakdown({ job }: { job: JobDetail }) {
   const canView = useCan("view_all_jobs")
-  if (!canView || job.kind !== "detect") return null
+  const t = useTranslations("job")
+  // Its texts come from the server, to administrators only (app/app/results/[id]/page.tsx).
+  if (!canView || job.kind !== "detect" || !t.has("detectors.title")) return null
   return <BreakdownCard job={job} />
 }
 

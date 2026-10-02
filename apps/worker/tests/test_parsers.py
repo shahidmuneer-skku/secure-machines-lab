@@ -96,7 +96,9 @@ def test_prompts_never_name_detectors():
                "checks": [{"id": "face", "status": "done", "result": {"faces_found": True}}],
                "summary": {"models": [{"name": "Xception", "fake_prob": 0.9}]}}
     text = explain_prompt(context, "media.png", ["heatmap_1.png"], "en")
-    assert "Xception" not in text and "How the detectors agree" not in text and "Confidential" in text
+    assert "Xception" not in text and "How the detectors agree" not in text and "CONFIDENTIAL" in text
+    # nothing about the file's metadata or the extra checks reaches the model (owner, 2026-10-02)
+    assert "### Provenance" not in text and '"AI"' not in text and "faces_found" not in text
     news = news_prompt({"title": "x"}, [("a.png", "image")], [{"file": "a.png", "analyses": [
         {"analysis": "face_swap", "status": "no_face", "fake_prob": None},
         {"analysis": "ai_generated", "status": "done", "fake_prob": 0.8}]}], "en")
@@ -105,6 +107,7 @@ def test_prompts_never_name_detectors():
     text = explain_prompt({**context, "analyses": [{"id": "face_swap", "verdict": "fake", "fake_probability": 0.9,
                                                     "status": "done"}]}, "media.png", [], "en")
     assert '"analysis": "face-swap analysis"' in text and "Results by analysis" in text
+    assert "Never write about the attached files' metadata" in news
 
 
 def test_beybi_frame_csv_percents_and_frame_counts(tmp_path: Path):
