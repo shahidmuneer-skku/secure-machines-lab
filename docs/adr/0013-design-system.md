@@ -36,3 +36,10 @@ screens should use MUI and `DashboardCard`; shared colours change in `lib/theme/
 *Update (2026-10-02):* the owner chose dark as the default theme (whatever the system setting); light is
 the user's choice from the header toggle. `DEFAULT_THEME` in `lib/theme/palette.ts` sets it for
 next-themes, MUI and the pre-hydration fallbacks.
+
+*Update (2026-10-02):* the company logo replaces the placeholder. The owner's shield
+(`docs/brand/secure-machine-lab.svg`) is drawn exactly in `components/brand/logo.tsx`; its navy follows
+`--logo-ink` (white on the dark theme), the teal stays. The owner kept the name "Secure Machines Lab", so
+the wordmark is set in the site font with that name (the source file reads "Secure Machine Lab"), and
+the interface keeps Modernize blue. The shield is also the favicon and app icon, the email header
+(`public/brand/email-logo.png`, with the name as alt text) and the PDF report header.

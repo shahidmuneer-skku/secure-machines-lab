@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="600" viewBox="80 100 1840 560" role="img" aria-labelledby="title desc">
+<title id="title">Secure Machine Lab</title>
+<desc id="desc">Navy and teal shield formed from aperture blades, digital pixels, and a verification checkmark.</desc>
+<g id="symbol">
+<g fill="#00233F">
+<path d="M140 242 Q132 246 134 262 L135 298 Q135 308 144 316 L233 378 L348 164 Q354 150 341 153 Z"/>
+<path d="M193 549 L454 479 L365 650 Q360 661 348 654 Q256 606 193 549 Z"/>
+<path d="M397 639 L485 396 L574 433 Q583 437 578 452 Q543 555 397 639 Z"/>
+</g>
+<g fill="#009CA6">
+<path d="M376 153 Q380 149 389 154 L532 218 L288 303 Z"/>
+<path d="M135 312 L317 492 L190 526 Q180 529 174 518 Q132 430 134 321 Z"/>
+</g>
+<path d="M293 397 L337 442 L441 353" fill="none" stroke="#00233F" stroke-width="43" stroke-linecap="round" stroke-linejoin="round"/>
+<g stroke-width="0">
+<path d="M430 275 L470 257 L470 306 Q470 313 463 313 L436 313 Q430 313 430 307 Z" fill="#00233F"/>
+<rect x="485" y="239" width="43" height="44" rx="6" fill="#009CA6"/>
+<rect x="540" y="238" width="43" height="45" rx="6" fill="#00233F"/>
+<rect x="485" y="292" width="43" height="45" rx="6" fill="#00233F"/>
+<rect x="540" y="292" width="43" height="45" rx="6" fill="#009CA6"/>
+<path d="M485 347 L527 347 L527 396 L485 380 Z" fill="#00233F"/>
+<path d="M540 347 L583 347 L583 417 L540 401 Z" fill="#009CA6"/>
+</g>
+</g>
+<g id="wordmark" fill="#00233F" font-family="Arial, Helvetica, sans-serif">
+<text x="650" y="407" font-size="176" font-weight="700" letter-spacing="-6" textLength="1215" lengthAdjust="spacingAndGlyphs">Secure Machine</text>
+<text x="653" y="557" font-size="160" font-weight="300" letter-spacing="-3">Lab</text>
+</g>
+</svg>

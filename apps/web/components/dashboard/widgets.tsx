@@ -69,8 +69,9 @@ function ScanIllustration() {
       <rect x="52" y="74" width="108" height="3" rx="1.5" fill="url(#sml-g1)" opacity="0.85" />
       <rect x="52" y="124" width="68" height="7" rx="3.5" fill="#dfe5ef" />
       <rect x="52" y="136" width="44" height="6" rx="3" fill="#eaeff4" />
-      <path d="M190 64l30 13v21c0 19-13 35-30 42-17-7-30-23-30-42V77l30-13z" fill="url(#sml-g1)" />
-      <path d="M177 100l9 9 18-19" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      {/* a round "checked" badge, so it doesn't compete with the company shield beside the greeting */}
+      <circle cx="190" cy="100" r="33" fill="url(#sml-g1)" />
+      <path d="M176 101l10 10 19-20" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
     </Box>
   )
 }
@@ -90,7 +91,7 @@ export function WelcomeCard({ name, summary, days, canStudio }: {
         <Stack direction="row" spacing={3} sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ minWidth: 0 }}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 2 }}>
-              <LogoMark className="size-11 rounded-[11px]" />
+              <LogoMark className="h-12" />
               <Box>
                 <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "primary.main" }}>
                   Secure Machines Lab

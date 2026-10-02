@@ -58,7 +58,7 @@ def test_signup_sends_a_branded_confirmation_in_the_chosen_language(platform, lo
     assert subject_word in msg.subject
     html = dict((mime, body) for body, mime in msg.alternatives)["text/html"]
     assert "/verify-email/" in msg.body and "/verify-email/" in html
-    assert "SECURE MACHINES LAB" in html
+    assert 'alt="Secure Machines Lab"' in html and "/brand/email-logo.png" in html
     assert "127.0.0.1" not in msg.body and "example.com!" not in msg.body
 
 

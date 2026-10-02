@@ -12,9 +12,10 @@
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dbe3ec;">
         <tr>
-          <td style="background:#07121f;padding:20px 28px;">
-            <a href="{{ site_url }}" style="text-decoration:none;color:#e6f7fb;font-size:13px;font-weight:700;letter-spacing:0.16em;">
-              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22d3ee;margin-right:8px;vertical-align:middle;"></span>SECURE MACHINES LAB
+          <td style="background:#ffffff;padding:22px 28px 18px 28px;border-bottom:1px solid #e5eaef;">
+            <a href="{{ site_url }}" style="text-decoration:none;">
+              <img src="{{ site_url }}/brand/email-logo.png" width="203" height="48" alt="Secure Machines Lab"
+                style="display:block;border:0;outline:none;width:203px;height:48px;font-size:15px;font-weight:700;line-height:48px;color:#00233f;">
             </a>
           </td>
         </tr>
@@ -28,12 +29,12 @@
             {% endif %}
             {% if cta_url %}
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 20px 0;"><tr>
-              <td style="border-radius:8px;background:#0e7490;">
+              <td style="border-radius:8px;background:#426de8;">
                 <a href="{{ cta_url }}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">{{ cta }}</a>
               </td>
             </tr></table>
             <p style="margin:0 0 20px 0;font-size:12px;line-height:1.5;color:#64748b;">{{ common.button_fallback }}<br>
-              <a href="{{ cta_url }}" style="color:#0e7490;word-break:break-all;">{{ cta_url }}</a></p>
+              <a href="{{ cta_url }}" style="color:#426de8;word-break:break-all;">{{ cta_url }}</a></p>
             {% endif %}
             {% if notice %}
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 16px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">

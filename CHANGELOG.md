@@ -70,6 +70,9 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   free trial, about and contact, legal footer with the company details). The other pages keep their
   components with the same palette, larger controls and clearer tabs. All layouts work from phone to
   desktop.
+- The company logo (navy and teal shield) in the app and admin sidebar, the headers, the homepage, the
+  sign-in pages, the dashboard banner, the favicon and app icon, account emails and PDF reports; the navy
+  turns white on the dark theme. Emails use the current blue for buttons and links.
 - Videos: SKKU-P2, SKKU-P3 and Center score at most 128 frames spread evenly over the video (like
   XB-DFD) instead of every frame; a 1-minute video takes about 1.5 min for SKKU-P2 instead of about 22.
   Canceling a job now also stops its run inside a resident model server, and tasks wait for a model's

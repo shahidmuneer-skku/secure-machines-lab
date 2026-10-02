@@ -1,5 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#07121f"/>
-  <rect x="5.5" y="5.5" width="21" height="21" rx="5" fill="none" stroke="#22d3ee" stroke-opacity=".35" stroke-width="1.5"/>
-  <rect x="10" y="10" width="12" height="12" rx="3" fill="#22d3ee"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="98 145 520 520"><style>.n{fill:#00233f}.t{fill:#009ca6}.c{stroke:#00233f}@media (prefers-color-scheme:dark){.n{fill:#fff}.c{stroke:#fff}}</style>
+<path class="n" d="M140 242Q132 246 134 262L135 298Q135 308 144 316L233 378 348 164Q354 150 341 153Z"/>
+<path class="n" d="M193 549L454 479 365 650Q360 661 348 654 256 606 193 549Z"/>
+<path class="n" d="M397 639L485 396 574 433Q583 437 578 452 543 555 397 639Z"/>
+<path class="t" d="M376 153Q380 149 389 154L532 218 288 303Z"/>
+<path class="t" d="M135 312L317 492 190 526Q180 529 174 518 132 430 134 321Z"/>
+<path class="c" d="M293 397L337 442 441 353" fill="none" stroke-width="43" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="n" d="M430 275L470 257V306Q470 313 463 313H436Q430 313 430 307Z"/>
+<rect class="t" x="485" y="239" width="43" height="44" rx="6"/>
+<rect class="n" x="540" y="238" width="43" height="45" rx="6"/>
+<rect class="n" x="485" y="292" width="43" height="45" rx="6"/>
+<rect class="t" x="540" y="292" width="43" height="45" rx="6"/>
+<path class="n" d="M485 347H527V396L485 380Z"/>
+<path class="t" d="M540 347H583V417L540 401Z"/>
 </svg>

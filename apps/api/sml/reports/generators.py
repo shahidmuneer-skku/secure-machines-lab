@@ -14,6 +14,7 @@ import logging
 import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from reportlab.lib import colors
@@ -46,6 +47,8 @@ FAKE = colors.HexColor("#d92d3f")
 REAL = colors.HexColor("#16a34a")
 MUTED = colors.HexColor("#5b6170")
 LINE = colors.HexColor("#d9dce3")
+# The company shield, white and teal for the dark header band (rendered from the logo, 266 x 300 px).
+LOGO_REVERSED = Path(__file__).resolve().parent / "assets" / "logo-mark-reversed.png"
 
 pdfmetrics.registerFont(UnicodeCIDFont("HYGothic-Medium"))
 
@@ -245,10 +248,12 @@ def render_pdf(d: ReportData) -> bytes:
         width, height = A4
         canvas.setFillColor(BG_BAND)
         canvas.rect(0, height - 28 * mm, width, 28 * mm, stroke=0, fill=1)
+        logo_h = 16 * mm
+        canvas.drawImage(str(LOGO_REVERSED), width - 18 * mm - logo_h * 266 / 300, height - 14 * mm - logo_h / 2,
+                         width=logo_h * 266 / 300, height=logo_h, mask="auto")
         canvas.setFillColor(ACCENT_LIGHT)
-        canvas.circle(18 * mm + 1.6 * mm, height - 11 * mm + 1.2 * mm, 1.3 * mm, stroke=0, fill=1)
         canvas.setFont("Courier", 8)
-        canvas.drawString(22 * mm, height - 11 * mm, "SML / DASH · SECURE MACHINES LAB")
+        canvas.drawString(18 * mm, height - 11 * mm, "SML / DASH · SECURE MACHINES LAB")
         canvas.setFillColor(colors.white)
         canvas.setFont(bold, 15)
         canvas.drawString(18 * mm, height - 20 * mm, t["title"])

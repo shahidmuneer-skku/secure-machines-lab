@@ -17,6 +17,9 @@
   --sml-mono: var(--font-jetbrains), var(--font-noto-kr), ui-monospace, monospace;
   --brand: #5d87ff;
   --brand-2: #49beff;
+  /* Company logo (owner, 2026-10-02): navy and teal; the navy is drawn white on the dark theme. */
+  --logo-ink: #00233f;
+  --logo-teal: #009ca6;
   --card-shadow: rgb(145 158 171 / 30%) 0px 0px 2px 0px, rgb(145 158 171 / 12%) 0px 12px 24px -4px;
 
   --background: #f5f8fc;
@@ -95,6 +98,7 @@
   --warn: #ffae1f;
   --violet: #a28bf2;
   --primary-soft: #253662;
+  --logo-ink: #ffffff;
   --fake-soft: #4b313d;
   --real-soft: #1b3c48;
   --warn-soft: #4d3a2a;
@@ -161,6 +165,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
+  --color-logo-ink: var(--logo-ink);
+  --color-logo-teal: var(--logo-teal);
   --color-primary-soft: var(--primary-soft);
   --color-fake-soft: var(--fake-soft);
   --color-real-soft: var(--real-soft);
