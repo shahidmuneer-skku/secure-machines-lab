@@ -198,6 +198,13 @@ models; `run_services.sh stop` stops everything. A task that arrives while its m
 is still loading waits for it (up to 15 min) instead of loading a second copy, which would not fit on
 the GPU (`GPU_OOM`). Canceling a job also stops its run inside a resident server.
 
+**Tasks stay "In queue" although workers are online.** Check the worker processes:
+`for p in $(pgrep -f "sml_worker --detectors"); do echo $p $(cat /proc/$p/wchan); done`. An idle pool
+process waits in `pipe_read`; one stuck in `futex_wait_queue` is frozen. `kill -USR2 <pid>` writes
+its Python stack to the worker log; `apps/worker/run_services.sh workers` restarts the workers (their
+tasks go back to the queue). The heartbeat now starts only after the pool has forked, which removed the
+known cause (2026-10-02).
+
 **Video frame budget.** SKKU-P2, SKKU-P3 and Center score at most 128 frames per video, spread evenly
 (owner, 2026-10-02; `env: {FAKEDETECTOR_VIDEO_MAX_FRAMES: "128"}` in their video blocks of
 `config/models.yaml`; XB-DFD uses the same budget). Scoring every frame took about 20 minutes per minute
