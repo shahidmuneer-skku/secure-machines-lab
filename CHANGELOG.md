@@ -61,6 +61,13 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   with the per-frame timeline and the most suspicious frame's heatmap.
 
 ### Changed
+- New homepage, the 3D scan design (ADR 0014): a 3D head goes through a scroll-driven forensic scan —
+  map the face, inspect the regions, explain the evidence — and hands over to the free image check;
+  on phones and with reduced motion the steps are buttons. Below it: partners and publications, the
+  product suite, how it works, benefits, research with linked publications, a call to action, about and
+  contact. Publication titles and venues are corrected and linked; benchmark figures without a source
+  are no longer shown. The previous homepage stays available at `/landing-legacy` (git tag
+  `landing-modernize`).
 - New look after the Modernize template (ADR 0013): dark theme by default whatever the system setting,
   light theme from the header toggle (remembered per browser), Modernize blue, Plus Jakarta Sans. Material UI builds the app and
   admin shell (sidebar with the Secure Machines Lab logo, header with credits, language, theme and

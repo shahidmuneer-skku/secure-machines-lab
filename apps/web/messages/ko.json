@@ -2096,6 +2096,144 @@
       "privacy": "개인정보 처리방침",
       "refunds": "환불 정책",
       "rights": "© {year} Secure Machines Lab. All rights reserved."
+    },
+    "scan": {
+      "eyebrow": "AI 보안 · 미디어 검증",
+      "title": "무엇이 진짜인지 확인하세요.",
+      "subtitle": "프레임마다 숨은 증거를 살펴보세요.",
+      "description": "AI 생성 이미지를 검사하고, 딥페이크를 조사하고, 팀이 검토할 수 있는 증거로 멀티미디어를 검증하세요.",
+      "primary": "이미지 검사하기",
+      "secondary": "스캔 살펴보기",
+      "sceneLabel": "인터랙티브 시연",
+      "sceneNote": "예시 샘플 · 탐지 결과가 아닙니다",
+      "hint": "스크롤하여 살펴보기 · 영역 선택",
+      "hintManual": "단계 선택 · 영역 선택",
+      "skip": "이미지 업로드로 건너뛰기",
+      "steps": "스캔 단계",
+      "stageCount": "{n}/5단계",
+      "stages": {
+        "intro": {
+          "label": "소개",
+          "title": "무엇이 진짜인지 확인하세요.",
+          "body": "단계를 선택해 얼굴의 포렌식 검토가 어떻게 진행되는지 보거나, 영역을 선택해 분석가가 무엇을 살펴보는지 알아보세요."
+        },
+        "scan": {
+          "label": "스캔",
+          "title": "얼굴을 매핑합니다.",
+          "body": "얼굴 랜드마크로 눈, 코, 입, 턱선의 위치를 찾아 각 영역을 따로 살펴볼 수 있게 합니다.",
+          "note": "랜드마크는 영역의 위치를 찾을 뿐, 조작 여부를 보여 주지는 않습니다."
+        },
+        "inspect": {
+          "label": "검사",
+          "title": "세부를 살펴봅니다.",
+          "body": "편집 흔적이 남기 쉬운 경계, 즉 눈 주변과 입술 선, 얼굴 윤곽에 분석을 집중합니다."
+        },
+        "explain": {
+          "label": "설명",
+          "title": "신호를 증거로 바꿉니다.",
+          "body": "결과는 영역별로 정리하고 출처는 따로 확인하므로, 팀이 결론에 이른 과정을 볼 수 있습니다."
+        },
+        "handoff": {
+          "label": "내 이미지",
+          "title": "이제 직접 이미지를 검사해 보세요.",
+          "body": "다음 섹션에서 사진을 올리세요. 매일 무료 검사가 제공되며 계정이 필요 없습니다.",
+          "cta": "이미지 업로드"
+        }
+      },
+      "regions": {
+        "group": "얼굴 영역",
+        "eyeL": {
+          "label": "눈 영역 · 왼쪽",
+          "short": "눈 영역",
+          "body": "눈과 눈꺼풀에서 반사, 선명도, 눈꺼풀 선의 합성 흔적이 일관적인지 비교합니다."
+        },
+        "eyeR": {
+          "label": "눈 영역 · 오른쪽",
+          "short": "눈 영역",
+          "body": "눈과 눈꺼풀에서 반사, 선명도, 눈꺼풀 선의 합성 흔적이 일관적인지 비교합니다."
+        },
+        "mouth": {
+          "label": "입 경계",
+          "short": "입 경계",
+          "body": "입술 선과 입꼬리는 얼굴 교체나 입 모양 재합성에서 합성·질감 이음새가 가장 자주 남는 곳입니다."
+        },
+        "jaw": {
+          "label": "얼굴 경계",
+          "short": "얼굴 경계",
+          "body": "턱과 볼의 윤곽은 교체된 얼굴이 원래 머리와 만나는 곳이므로, 경계와 조명이 어긋나는지 확인합니다."
+        },
+        "caveat": "분석이 살펴보는 부분을 영역 단위로 시각화한 것입니다. 강조된 영역 자체가 조작의 증거는 아닙니다.",
+        "close": "설명 닫기",
+        "illustrative": "예시"
+      },
+      "layers": {
+        "group": "보기",
+        "follow": "스크롤 따라가기",
+        "surface": "표면",
+        "mesh": "메시",
+        "evidence": "증거"
+      },
+      "pause": "움직임 일시 정지",
+      "resume": "움직임 다시 시작",
+      "report": {
+        "title": "샘플 보고서",
+        "tag": "예시",
+        "subject": "대상",
+        "subjectValue": "3D 샘플 두상",
+        "region": "검토 영역",
+        "regionValue": "입 경계",
+        "regionNote": "입술 선을 따라 경계와 질감이 이어지는지 확인합니다.",
+        "provenance": "출처",
+        "provenanceValue": "콘텐츠 자격 증명 없음",
+        "provenanceNote": "따로 기록합니다. 자격 증명이 없다는 사실만으로 조작되었다고 볼 수는 없습니다.",
+        "findings": "결과",
+        "findingsList": [
+          "얼굴 영역 매핑: 눈, 코, 입, 턱선",
+          "입과 얼굴 경계를 정밀 검토 대상으로 표시",
+          "결론을 내리기 전에 분석가가 증거를 검토"
+        ]
+      },
+      "frame": "샘플 · 예시",
+      "poster": "인터랙티브 스캔 시연에 쓰이는, 촘촘한 삼각형 메시가 입혀진 3D 조각 두상",
+      "fallback": "3D 보기를 사용할 수 없어 정지 이미지를 표시합니다.",
+      "credit": "3D 두상 스캔: Lee Perry-Smith, CC BY 3.0"
+    },
+    "credibility": {
+      "title": "제품을 뒷받침하는 연구",
+      "papers": "엄선한 동료 심사 논문 {count}편",
+      "papersSub": "{from}–{to} · 성균관대학교 DASH 연구실",
+      "venues": "발표 학회",
+      "dataset": "공개 데이터셋",
+      "datasetSub": "NeurIPS 2021 Datasets & Benchmarks",
+      "all": "논문 보기"
+    },
+    "suite": {
+      "featured": "대표 제품",
+      "available": "지금 이용 가능",
+      "illustrative": "예시",
+      "regionMap": "영역 맵",
+      "regionFindings": "영역별 결과",
+      "provenance": "출처는 별도로 확인",
+      "timeline": "프레임 타임라인",
+      "marked": "검토 표시 구간",
+      "sources": "인용 출처",
+      "source1": "원본 게시물",
+      "source2": "통신사 보도",
+      "source3": "보관된 사본",
+      "before": "원본",
+      "after": "편집본",
+      "consent": "얼굴 이미지 동의 확인"
+    },
+    "benefits": {
+      "eyebrow": "Secure Machines Lab을 선택하는 이유"
+    },
+    "researchV2": {
+      "inProduct": "탐지기에 적용된 연구",
+      "direction": "연구 방향",
+      "directionNote": "연구 방향은 진행 중인 연구이며 제품 기능이 아닙니다.",
+      "workshop": "워크숍",
+      "dataset": "데이터셋·벤치마크",
+      "open": "논문 열기"
     }
   }
 }

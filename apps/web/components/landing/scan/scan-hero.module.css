@@ -1,0 +1,1075 @@
+/*
+ * The 3D scan hero. Always a dark "forensics" environment (also in the light theme), using the
+ * landing palette from globals.css (--scan-*). Layout:
+ *  - scroll mode (≥ 768 px, motion allowed): a sticky 100svh stage inside a section that is 240vh
+ *    taller, so the stage stays pinned while the master timeline plays; native scrolling throughout.
+ *  - manual mode (< 768 px, or reduced motion): no pinning; stage buttons drive the same timeline.
+ */
+
+.root {
+  --nav-h: 72px;
+  --pad: clamp(16px, 4vw, 48px);
+  position: relative;
+  background: var(--scan-bg);
+  color: var(--scan-text);
+  isolation: isolate;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .root[data-mode="scroll"] {
+    height: calc(100svh + 240vh);
+  }
+}
+
+.stage {
+  position: relative;
+  overflow: clip;
+}
+
+.root[data-mode="scroll"] .stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 560px;
+  container-type: size;
+}
+
+/* ---------- atmosphere ---------- */
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 70% at 72% 52%, rgb(66 104 246 / 0.16), transparent 70%),
+    radial-gradient(40% 50% at 78% 40%, rgb(57 217 230 / 0.06), transparent 70%),
+    linear-gradient(180deg, #0a1322 0%, var(--scan-bg) 55%, var(--scan-bg) 100%);
+}
+
+/* A faint static lattice, only while the live field is unavailable (poster / no WebGL). */
+.atmosphere[data-static="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='208' viewBox='0 0 240 208'%3E%3Cg fill='none' stroke='%2339D9E6' stroke-opacity='.07'%3E%3Cpath d='M0 0h240M0 104h240M0 208h240M0 0l60 104L120 0l60 104L240 0M0 208l60-104 60 104 60-104 60 104'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: linear-gradient(90deg, transparent 30%, #000 65%);
+}
+
+.canvasLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+.canvasLayer[data-ready="true"] {
+  opacity: 1;
+}
+
+/* ---------- poster (matches the first frame of the 3D scene) ---------- */
+
+.poster {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.7s ease 0.15s;
+  /* The poster image is 900 × 1100 px (rendered from the scene) with a 702 px tall head centred at (450, 500). */
+  --head: min(0.62 * (100cqh - var(--nav-h)), 0.46 * 100cqw);
+  width: calc(var(--head) * 900 / 702);
+  height: auto;
+  left: calc(71.5cqw - var(--head) * 450 / 702);
+  top: calc(var(--nav-h) + 0.5 * (100cqh - var(--nav-h)) - var(--head) * 500 / 702);
+}
+
+.poster[data-hidden="true"] {
+  opacity: 0;
+}
+
+.root[data-mode="manual"] .poster {
+  --head: min(0.74 * 100cqh, 0.78 * 100cqw);
+  left: calc(50cqw - var(--head) * 450 / 702);
+  top: calc(50cqh - var(--head) * 500 / 702);
+}
+
+/* ---------- content grid ---------- */
+
+.content {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 24px) var(--pad) 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "text scene"
+    "bar scene";
+  pointer-events: none;
+}
+
+.content > * {
+  pointer-events: auto;
+  min-width: 0;
+}
+
+.textCol {
+  grid-area: text;
+  display: grid;
+  align-items: center;
+  position: relative;
+}
+
+/* All panels share one cell; only one is visible at a time (opacity driven by the timeline). */
+.textCol > .panel {
+  grid-area: 1 / 1;
+}
+
+.panel {
+  max-width: 34rem;
+  will-change: opacity, transform;
+}
+
+.root[data-mode="scroll"] .panel:not([data-panel="0"]) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel[data-panel="manual"] {
+  display: none;
+}
+
+.eyebrow {
+  font-family: var(--sml-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--scan-cyan);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.title {
+  margin: 18px 0 0;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-size: clamp(2.45rem, 1.55rem + 3.7vw, 5.25rem);
+  color: var(--scan-text);
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin: 14px 0 0;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  font-size: clamp(1.25rem, 0.95rem + 1.1vw, 1.875rem);
+  color: var(--scan-text-2);
+  text-wrap: balance;
+}
+
+.subtitle em {
+  font-style: normal;
+  color: var(--scan-text);
+}
+
+.description {
+  margin: 22px 0 0;
+  max-width: 31rem;
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.65;
+  color: var(--scan-text-2);
+}
+
+.ctas {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btnPrimary,
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: var(--scan-action);
+  color: #ffffff;
+  border: 1px solid var(--scan-action);
+}
+
+.btnPrimary:hover {
+  background: #3557d8;
+}
+
+.btnSecondary {
+  background: rgb(17 29 48 / 0.7);
+  color: var(--scan-text);
+  border: 1px solid var(--scan-line-strong);
+}
+
+.btnSecondary:hover {
+  border-color: var(--scan-cyan);
+}
+
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.chip:focus-visible,
+.step:focus-visible,
+.iconBtn:focus-visible,
+.skip:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--scan-cyan);
+  outline-offset: 3px;
+}
+
+.hint {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sml-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--scan-text-2);
+}
+
+.hint::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--scan-cyan);
+  box-shadow: 0 0 0 4px rgb(57 217 230 / 0.15);
+}
+
+.stageIndex {
+  font-family: var(--sml-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--scan-cyan);
+  margin: 0;
+}
+
+.stageTitle {
+  margin: 14px 0 0;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  font-size: clamp(2rem, 1.3rem + 2.6vw, 3.75rem);
+  text-wrap: balance;
+}
+
+.stageBody {
+  margin: 18px 0 0;
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.65;
+  color: var(--scan-text-2);
+  max-width: 30rem;
+}
+
+.note {
+  margin: 16px 0 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--scan-text-2);
+  max-width: 30rem;
+}
+
+.note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--scan-cyan);
+}
+
+/* ---------- bottom bar: steps + skip link ---------- */
+
+.bar {
+  grid-area: bar;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.steps {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.step {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--scan-text-2);
+  font-family: var(--sml-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.step:hover {
+  color: var(--scan-text);
+  border-color: var(--scan-line);
+}
+
+.step[aria-current="step"],
+.step[aria-selected="true"] {
+  color: var(--scan-text);
+  border-color: var(--scan-line-strong);
+  background: rgb(17 29 48 / 0.8);
+}
+
+.stepNum {
+  color: var(--scan-cyan);
+}
+
+.step[data-done="true"] .stepNum {
+  color: var(--scan-done);
+}
+
+.skip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--scan-text-2);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--scan-line-strong);
+}
+
+.skip:hover {
+  color: var(--scan-text);
+}
+
+/* ---------- scene column chrome ---------- */
+
+.sceneCol {
+  grid-area: scene;
+  position: relative;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.sceneCol > * {
+  pointer-events: auto;
+}
+
+.sceneTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-left: clamp(8px, 3vw, 48px);
+}
+
+.sceneLabel {
+  margin: 0;
+  font-family: var(--sml-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--scan-text-2);
+  line-height: 1.6;
+}
+
+.sceneLabel strong {
+  display: block;
+  color: var(--scan-text);
+  font-weight: 500;
+}
+
+.sceneBottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.sceneCol > .chips {
+  margin-top: 12px;
+}
+
+.groupLabel {
+  font-family: var(--sml-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scan-text-2);
+  align-self: center;
+  margin-right: 4px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--scan-line-strong);
+  background: rgb(8 15 28 / 0.72);
+  backdrop-filter: blur(6px);
+  color: var(--scan-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--scan-cyan);
+}
+
+.chip:hover {
+  border-color: var(--scan-cyan);
+}
+
+.chip[aria-expanded="true"],
+.chip[aria-pressed="true"] {
+  border-color: var(--scan-amber);
+  color: #fff;
+}
+
+.chip[aria-expanded="true"]::before {
+  border-color: var(--scan-amber);
+  background: var(--scan-amber);
+}
+
+.layers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 26px;
+}
+
+.panel .layers .chip {
+  min-height: 40px;
+}
+
+.layers .chip::before {
+  display: none;
+}
+
+.credit {
+  font-size: 0.6875rem;
+  color: var(--scan-text-2);
+  margin: 0;
+}
+
+.credit a {
+  color: inherit;
+}
+
+.iconBtn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--scan-line);
+  background: rgb(8 15 28 / 0.6);
+  color: var(--scan-text-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  color: var(--scan-text);
+  border-color: var(--scan-line-strong);
+}
+
+/* ---------- report preview (explain stage) ---------- */
+
+.report {
+  position: absolute;
+  z-index: 4;
+  right: max(var(--pad), calc((100cqw - 1440px) / 2 + var(--pad)));
+  top: calc(50% + 36px);
+  width: min(340px, 27cqw);
+  opacity: 0;
+  transform: translateY(calc(-50% + 16px));
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.root[data-mode="manual"] .report {
+  position: static;
+  width: auto;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  margin-top: 20px;
+}
+
+.card {
+  background: rgb(17 29 48 / 0.92);
+  border: 1px solid var(--scan-line-strong);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.7);
+}
+
+.reportHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--scan-line);
+}
+
+.reportHead h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.tag {
+  font-family: var(--sml-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scan-amber);
+  border: 1px solid rgb(255 173 112 / 0.5);
+  border-radius: 999px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.reportBody {
+  padding: 4px 16px 14px;
+  margin: 0;
+}
+
+.reportRow {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--scan-line);
+}
+
+.reportRow:last-child {
+  border-bottom: 0;
+}
+
+.reportRow dt {
+  font-family: var(--sml-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scan-text-2);
+}
+
+.reportRow dd {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--scan-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reportRow dd + dd {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--scan-text-2);
+  line-height: 1.5;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--scan-amber);
+  flex-shrink: 0;
+}
+
+.swatch[data-tone="neutral"] {
+  background: transparent;
+  border: 1.5px solid var(--scan-text-2);
+}
+
+.findings {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: grid;
+  gap: 6px;
+}
+
+.findings li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--scan-text-2);
+}
+
+.findings li::before {
+  content: "";
+  margin-top: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  transform: rotate(45deg);
+  background: var(--scan-done);
+  flex-shrink: 0;
+}
+
+/* ---------- anchored labels and the selected explanation ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.label::before {
+  /* the anchor dot on the face */
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--scan-cyan);
+  box-shadow: 0 0 0 3px rgb(57 217 230 / 0.2);
+}
+
+.leader {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--scan-cyan), rgb(57 217 230 / 0.35));
+  transform-origin: 0 50%;
+}
+
+.labelBox {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgb(8 15 28 / 0.86);
+  border: 1px solid rgb(57 217 230 / 0.45);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--scan-text);
+}
+
+.labelBox small {
+  display: block;
+  font-family: var(--sml-mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--scan-text-2);
+  margin-top: 2px;
+}
+
+.explain {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.explain::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--scan-amber);
+  box-shadow: 0 0 0 4px rgb(255 173 112 / 0.22);
+}
+
+.explain .leader {
+  background: linear-gradient(90deg, var(--scan-amber), rgb(255 173 112 / 0.35));
+}
+
+.explainBox {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: min(300px, 80vw);
+  padding: 16px 16px 14px;
+  pointer-events: auto;
+}
+
+.explain[data-anchored="0"] {
+  opacity: 0.001;
+}
+
+/* Without the 3D scene (poster, no WebGL) the explanation sits at a fixed place in the scene column. */
+.stage[data-scene="off"] .explain {
+  left: auto;
+  top: auto;
+  right: calc(var(--pad) + 300px);
+  bottom: 140px;
+  transform: none !important;
+}
+
+.stage[data-scene="off"] .explain::before,
+.stage[data-scene="off"] .explain .leader {
+  display: none;
+}
+
+.stage[data-scene="off"] .explainBox {
+  transform: none !important;
+}
+
+.root[data-mode="manual"] .explain {
+  position: static;
+  transform: none !important;
+}
+
+.root[data-mode="manual"] .explain::before,
+.root[data-mode="manual"] .explain .leader {
+  display: none;
+}
+
+.root[data-mode="manual"] .explainBox {
+  position: static;
+  transform: none !important;
+  width: auto;
+  margin-top: 12px;
+}
+
+.explainHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.explainHead h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.explainBox p {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--scan-text-2);
+}
+
+.explainBox p.caveat {
+  font-size: 0.8125rem;
+  padding-top: 8px;
+  border-top: 1px solid var(--scan-line);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  margin: -12px -12px 0 0;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--scan-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.close:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.06);
+}
+
+/* ---------- framed sample (hand-off) ---------- */
+
+.frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 18px;
+  border: 1px solid var(--scan-line);
+}
+
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--scan-done);
+}
+
+.frame::before {
+  left: -1px;
+  top: -1px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 18px;
+}
+
+.frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 18px;
+}
+
+.frameCaption {
+  position: absolute;
+  left: 18px;
+  top: -10px;
+  padding: 0 8px;
+  background: var(--scan-bg);
+  font-family: var(--sml-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scan-done);
+  white-space: nowrap;
+}
+
+/* ---------- manual mode (small screens, reduced motion) ---------- */
+
+.root[data-mode="manual"] .stage {
+  height: auto;
+}
+
+.root[data-mode="manual"] .content {
+  height: auto;
+  padding-bottom: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "text"
+    "scene"
+    "copy"
+    "bar";
+  row-gap: 20px;
+}
+
+.root[data-mode="manual"] .textCol {
+  display: block;
+}
+
+.root[data-mode="manual"] .panel[data-panel="0"] .hint {
+  display: none;
+}
+
+.sceneBox {
+  display: none;
+}
+
+.root[data-mode="manual"] .sceneBox {
+  display: block;
+  grid-area: scene;
+  position: relative;
+  height: clamp(320px, 92vw, 420px);
+  border-radius: 18px;
+  border: 1px solid var(--scan-line);
+  overflow: clip;
+  container-type: size;
+  touch-action: pan-y;
+}
+
+.root[data-mode="manual"] .copy {
+  grid-area: copy;
+  display: block;
+}
+
+.copy {
+  display: none;
+}
+
+.copy .panel {
+  display: none;
+}
+
+.copy .panel[data-active="true"] {
+  display: block;
+}
+
+.copy .stageTitle {
+  font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
+}
+
+
+.root[data-mode="manual"] .steps {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.root[data-mode="manual"] .bar {
+  gap: 8px;
+}
+
+/* In manual mode the scene chrome lives in the copy area. */
+.copyChrome {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.copyChrome .chips,
+.copyChrome .layers {
+  justify-content: flex-start;
+  margin-top: 0;
+}
+
+/* Desktop with reduced motion: side by side, nothing pinned. */
+@media (min-width: 768px) {
+  .root[data-mode="manual"] .content {
+    grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+    grid-template-areas:
+      "text scene"
+      "copy scene"
+      "bar scene";
+    column-gap: 32px;
+    align-items: start;
+  }
+
+  .root[data-mode="manual"] .sceneBox {
+    height: min(78vh, 640px);
+    position: sticky;
+    top: calc(var(--nav-h) + 16px);
+  }
+}
+
+/* Smaller desktops and tablets */
+@media (max-width: 1023.98px) {
+  .report {
+    width: min(300px, 34cqw);
+  }
+
+  .reportRow dd + dd {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .root {
+    --nav-h: 64px;
+  }
+
+  .content {
+    padding-top: calc(var(--nav-h) + 20px);
+  }
+
+  .ctas > a {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvasLayer,
+  .poster,
+  .label,
+  .layers {
+    transition: none;
+  }
+}
+
+/* Visually hidden, still read by screen readers. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

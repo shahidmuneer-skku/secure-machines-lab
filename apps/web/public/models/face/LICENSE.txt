@@ -1,0 +1,19 @@
+3D head model — attribution
+===========================
+
+Files: head.glb, head-lite.glb, normal.webp, normal-512.webp
+
+Source: "Lee Perry-Smith" head scan by Lee Perry-Smith (Infinite Realities, ir-ltd.net),
+as distributed with the three.js examples (examples/models/gltf/LeePerrySmith/).
+
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+https://creativecommons.org/licenses/by/3.0/
+
+Changes made for Secure Machines Lab's landing page (2026-10-02):
+- shoulders below the neck removed; geometry re-packed with gltfpack (KHR_mesh_quantization,
+  no decoder needed); head-lite.glb is a simplified version (~42% of the triangles) for small devices
+- tangent-space normal map re-encoded as WebP (1024 px and 512 px)
+- the colour and specular maps are not used: the head is rendered as a neutral sculpture
+
+The landing page credits the scan next to the 3D scene, as the license requires.
+The head is an illustrative sample. It is never analysed, classified or labelled as manipulated.

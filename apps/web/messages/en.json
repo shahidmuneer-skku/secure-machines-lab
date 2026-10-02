@@ -2096,6 +2096,144 @@
       "privacy": "Privacy policy",
       "refunds": "Refund policy",
       "rights": "© {year} Secure Machines Lab. All rights reserved."
+    },
+    "scan": {
+      "eyebrow": "AI security · Media verification",
+      "title": "Know what’s real.",
+      "subtitle": "See the evidence behind every frame.",
+      "description": "Examine AI-generated images, investigate deepfakes, and verify multimedia with evidence your team can review.",
+      "primary": "Try an image",
+      "secondary": "Explore the scan",
+      "sceneLabel": "Interactive demonstration",
+      "sceneNote": "Illustrative sample · not a detection result",
+      "hint": "Scroll to inspect · Select a region",
+      "hintManual": "Choose a step · Select a region",
+      "skip": "Skip to image upload",
+      "steps": "Scan steps",
+      "stageCount": "Step {n} of 5",
+      "stages": {
+        "intro": {
+          "label": "Intro",
+          "title": "Know what’s real.",
+          "body": "Choose a step to see how a forensic review of a face works, or select a region to learn what analysts look for."
+        },
+        "scan": {
+          "label": "Scan",
+          "title": "Map the face.",
+          "body": "Facial landmarks locate the eyes, nose, mouth and jawline so each region can be examined on its own.",
+          "note": "Landmarks only locate regions. They do not show that anything was manipulated."
+        },
+        "inspect": {
+          "label": "Inspect",
+          "title": "Inspect the details.",
+          "body": "Analysis concentrates on the boundaries where edits tend to leave traces: around the eyes, along the mouth and at the edge of the face."
+        },
+        "explain": {
+          "label": "Explain",
+          "title": "Turn signals into evidence.",
+          "body": "Findings are written up region by region, and provenance is checked separately, so your team can see how a conclusion was reached."
+        },
+        "handoff": {
+          "label": "Your image",
+          "title": "Now inspect your own image.",
+          "body": "Upload a photo in the next section. A few free checks every day, no account needed.",
+          "cta": "Upload an image"
+        }
+      },
+      "regions": {
+        "group": "Facial regions",
+        "eyeL": {
+          "label": "Eye region · left",
+          "short": "Eye region",
+          "body": "The eyes and lids are compared for consistent reflections, sharpness and blending along the lid line."
+        },
+        "eyeR": {
+          "label": "Eye region · right",
+          "short": "Eye region",
+          "body": "The eyes and lids are compared for consistent reflections, sharpness and blending along the lid line."
+        },
+        "mouth": {
+          "label": "Mouth boundary",
+          "short": "Mouth boundary",
+          "body": "The lip line and mouth corners are where face swaps and lip re-animation most often leave blending or texture seams."
+        },
+        "jaw": {
+          "label": "Face boundary",
+          "short": "Face boundary",
+          "body": "The jaw and cheek contour is where a replaced face meets the original head, so edges and lighting are checked for mismatches."
+        },
+        "caveat": "This is a region-level visualization of what an analysis looks at. A highlighted region is not, on its own, evidence of manipulation.",
+        "close": "Close explanation",
+        "illustrative": "Illustrative"
+      },
+      "layers": {
+        "group": "View",
+        "follow": "Follow scroll",
+        "surface": "Surface",
+        "mesh": "Mesh",
+        "evidence": "Evidence"
+      },
+      "pause": "Pause motion",
+      "resume": "Resume motion",
+      "report": {
+        "title": "Sample report",
+        "tag": "Illustrative",
+        "subject": "Subject",
+        "subjectValue": "3D sample head",
+        "region": "Region reviewed",
+        "regionValue": "Mouth boundary",
+        "regionNote": "Edge and texture continuity along the lip line.",
+        "provenance": "Provenance",
+        "provenanceValue": "No content credentials attached",
+        "provenanceNote": "Recorded separately. Missing credentials alone do not mean an image was manipulated.",
+        "findings": "Findings",
+        "findingsList": [
+          "Facial regions mapped: eyes, nose, mouth, jawline",
+          "Mouth and face boundary marked for closer review",
+          "An analyst reviews the evidence before any conclusion"
+        ]
+      },
+      "frame": "Sample · illustrative",
+      "poster": "A sculpted 3D head with a fine triangulated mesh, used for the interactive scan demonstration",
+      "fallback": "3D view unavailable — showing a still image.",
+      "credit": "3D head scan: Lee Perry-Smith, CC BY 3.0"
+    },
+    "credibility": {
+      "title": "Research behind the product",
+      "papers": "{count} selected peer-reviewed publications",
+      "papersSub": "{from}–{to} · DASH Lab, Sungkyunkwan University",
+      "venues": "Venues",
+      "dataset": "Open dataset",
+      "datasetSub": "NeurIPS 2021 Datasets & Benchmarks",
+      "all": "See the publications"
+    },
+    "suite": {
+      "featured": "Flagship",
+      "available": "Available now",
+      "illustrative": "Illustrative",
+      "regionMap": "Region map",
+      "regionFindings": "Region-level findings",
+      "provenance": "Provenance checked separately",
+      "timeline": "Frame timeline",
+      "marked": "Marked for review",
+      "sources": "Cited sources",
+      "source1": "Original upload",
+      "source2": "Wire agency report",
+      "source3": "Archived copy",
+      "before": "Original",
+      "after": "Edited",
+      "consent": "Consent checked for faces"
+    },
+    "benefits": {
+      "eyebrow": "Why Secure Machines Lab"
+    },
+    "researchV2": {
+      "inProduct": "Research behind the detector",
+      "direction": "Research direction",
+      "directionNote": "Research directions are ongoing work, not product features.",
+      "workshop": "Workshop",
+      "dataset": "Datasets & Benchmarks",
+      "open": "Open publication"
     }
   }
 }

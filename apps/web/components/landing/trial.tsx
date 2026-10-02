@@ -2,8 +2,6 @@
 
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import Card from "@mui/material/Card"
-import CardContent from "@mui/material/CardContent"
 import Chip from "@mui/material/Chip"
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid"
@@ -11,7 +9,7 @@ import LinearProgress from "@mui/material/LinearProgress"
 import Stack from "@mui/material/Stack"
 import Typography from "@mui/material/Typography"
 import { Turnstile } from "@marsidev/react-turnstile"
-import { IconArrowRight, IconGift, IconLoader2, IconRefresh, IconSparkles } from "@tabler/icons-react"
+import { IconArrowRight, IconGift, IconLoader2, IconLock, IconRefresh, IconSparkles } from "@tabler/icons-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useTheme } from "next-themes"
@@ -25,7 +23,11 @@ import { ApiError, isApiError, problemFromResponse } from "@/lib/api/errors"
 import { qk } from "@/lib/api/keys"
 import type { Language } from "@/lib/marketing/i18n"
 
-/** Guest trial on the landing page: one image, no account (admin-set daily allowance). */
+/**
+ * Guest trial on the landing page: one image, no account (admin-set daily allowance). The hero hands off
+ * here ("Try an image"). Retouched with the 3D scan redesign (2026-10-02); upload, quota, captcha,
+ * progress, errors and results work exactly as before.
+ */
 const COPY = {
   en: {
     eyebrow: "Free trial", title: "Test an image — no account needed",
@@ -36,6 +38,8 @@ const COPY = {
     queued: "Queued", disclaimer: "Probabilistic estimate — not legal evidence.", fake: "Fake probability", metadata: "AI indicator found in metadata",
     analyses: { face_swap: "Face-swap analysis", ai_generated: "AI-generation analysis" },
     noFace: "No face found", notCompleted: "Not completed",
+    privacy: "Files are stored privately and deleted on schedule.", unavailableHint: "Create a free account to analyse images now.",
+    preview: "Uploaded image",
   },
   ko: {
     eyebrow: "무료 체험", title: "계정 없이 이미지 검사하기",
@@ -46,6 +50,8 @@ const COPY = {
     queued: "대기 중", disclaimer: "확률적 추정치이며 법적 증거가 아닙니다.", fake: "가짜 확률", metadata: "메타데이터에서 AI 생성 흔적 발견",
     analyses: { face_swap: "얼굴 합성(페이스 스왑) 분석", ai_generated: "AI 생성 분석" },
     noFace: "얼굴 없음", notCompleted: "완료하지 못함",
+    privacy: "파일은 비공개로 보관되고 일정에 따라 삭제됩니다.", unavailableHint: "무료 계정을 만들면 지금 바로 이미지를 분석할 수 있습니다.",
+    preview: "업로드한 이미지",
   },
   de: {
     eyebrow: "Kostenlos testen", title: "Bild prüfen – ohne Konto",
@@ -57,6 +63,8 @@ const COPY = {
     disclaimer: "Probabilistische Schätzung – kein rechtlicher Beweis.", fake: "Fake-Wahrscheinlichkeit", metadata: "KI-Hinweis in den Metadaten",
     analyses: { face_swap: "Face-Swap-Analyse", ai_generated: "KI-Generierungs-Analyse" },
     noFace: "Kein Gesicht", notCompleted: "Nicht abgeschlossen",
+    privacy: "Dateien werden privat gespeichert und planmäßig gelöscht.", unavailableHint: "Mit einem kostenlosen Konto können Sie Bilder sofort analysieren.",
+    preview: "Hochgeladenes Bild",
   },
 } as const
 
@@ -112,98 +120,127 @@ export function TrialSection({ language }: { language: Language }) {
   const running = j && (j.status === "queued" || j.status === "running")
   const aiMeta = !!j?.ai_generated
 
+  const corner = (pos: "tl" | "br") => ({
+    content: '""', position: "absolute", width: 22, height: 22, borderColor: "var(--landing-accent)", borderStyle: "solid", borderWidth: 0,
+    ...(pos === "tl" ? { left: -1, top: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: "16px" }
+      : { right: -1, bottom: -1, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: "16px" }),
+  })
+
   return (
-    <Box component="section" id="trial" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: 72 }}>
+    <Box component="section" id="trial" aria-labelledby="trial-title" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: 72 }}>
       <Container maxWidth="lg">
         <Grid container spacing={{ xs: 4, md: 6 }} sx={{ alignItems: "stretch" }}>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Typography variant="overline" sx={{ color: "primary.main" }}>{c.eyebrow}</Typography>
-            <Typography variant="h2" component="h2" sx={{ mt: 1, fontWeight: 800 }}>{c.title}</Typography>
-            <Typography sx={{ mt: 2, color: "text.secondary", fontSize: "1.0625rem", lineHeight: 1.7 }}>{c.body}</Typography>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Typography component="p" sx={{ fontFamily: "var(--sml-mono)", fontSize: "0.75rem", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "var(--landing-accent)" }}>{c.eyebrow}</Typography>
+            <Typography id="trial-title" variant="h2" component="h2" sx={{ mt: 1.5, fontWeight: 800, letterSpacing: "-0.025em",
+              fontSize: { xs: "2rem", md: "2.5rem" }, lineHeight: 1.1, textWrap: "balance" }}>{c.title}</Typography>
+            <Typography sx={{ mt: 2, color: "text.secondary", fontSize: { xs: "1rem", md: "1.0625rem" }, lineHeight: 1.65 }}>{c.body}</Typography>
             {s && s.enabled && (
-              <Chip label={c.left(s.remaining, s.per_day)} sx={{ mt: 2.5, bgcolor: "primary.light", color: "primary.main", fontWeight: 700 }} />
+              <Chip label={c.left(s.remaining, s.per_day)} sx={{ mt: 2.5, bgcolor: "transparent", border: "1px solid", borderColor: "divider",
+                color: "text.primary", fontWeight: 700 }} />
             )}
-            <Card sx={{ mt: 4, bgcolor: "primary.light", boxShadow: "none" }}>
-              <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1 }}>
-                  <IconGift size={22} color="var(--mui-palette-primary-main)" />
-                  <Typography variant="h6">{c.signup}</Typography>
-                </Stack>
-                <Typography variant="subtitle1" sx={{ color: "text.secondary", mb: 2 }}>{c.signupBody}</Typography>
-                <Button component={Link} href="/signup" variant="contained" endIcon={<IconArrowRight size={18} />}>{c.signup}</Button>
-              </CardContent>
-            </Card>
+            <Stack direction="row" spacing={1} sx={{ mt: 2.5, color: "text.secondary", alignItems: "flex-start" }}>
+              <IconLock size={18} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
+              <Typography sx={{ fontSize: "0.875rem", lineHeight: 1.5 }}>{c.privacy}</Typography>
+            </Stack>
+            <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1 }}>
+                <IconGift size={20} color="var(--landing-done)" aria-hidden />
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 700 }}>{c.signup}</Typography>
+              </Stack>
+              <Typography sx={{ color: "text.secondary", mb: 2, fontSize: "0.9375rem", lineHeight: 1.55 }}>{c.signupBody}</Typography>
+              <Button component={Link} href="/signup" variant="outlined" endIcon={<IconArrowRight size={18} />} sx={{ minHeight: 44 }}>{c.signup}</Button>
+            </Box>
           </Grid>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent sx={{ p: { xs: 2.5, md: 4 }, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
-                {!s?.enabled ? (
-                  <Typography sx={{ color: "text.secondary", textAlign: "center", py: 6 }}>{status.isLoading ? "…" : c.disabled}</Typography>
-                ) : !jobId ? (
-                  <>
-                    {s.remaining > 0 ? <Dropzone onFiles={submit} imagesOnly multiple={false} disabled={busy} className="min-h-64 flex-1" /> : (
-                      <Box sx={{ textAlign: "center", py: 6 }}>
-                        <Typography sx={{ mb: 2, fontWeight: 600 }}>{c.exhausted}</Typography>
-                        <Button component={Link} href="/signup" variant="contained">{c.signup}</Button>
-                      </Box>
-                    )}
-                    {s.captcha_required && s.captcha_site_key && (
-                      <Turnstile siteKey={s.captcha_site_key} onSuccess={setCaptcha}
-                        options={{ theme: resolvedTheme === "dark" ? "dark" : "light", size: "flexible" }} />
-                    )}
-                    {busy && (
-                      <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}>
-                        <IconLoader2 size={18} className="animate-spin" /><Typography variant="subtitle2">{c.analyzing}…</Typography>
-                      </Stack>
-                    )}
-                  </>
-                ) : (
-                  <Stack spacing={2.5}>
-                    <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                      {j?.thumbnail_url && (
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Box sx={{ position: "relative", height: "100%", minHeight: { md: 420 }, borderRadius: "16px", border: "1px solid", borderColor: "divider",
+              bgcolor: "background.paper", p: { xs: 2, md: 3 }, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2,
+              "&::before": corner("tl"), "&::after": corner("br") }}>
+              {!s?.enabled ? (
+                <Stack spacing={2} sx={{ alignItems: "center", textAlign: "center", py: { xs: 4, md: 6 } }}>
+                  <Typography sx={{ color: "text.secondary" }}>{status.isLoading ? "…" : c.disabled}</Typography>
+                  {!status.isLoading && (
+                    <>
+                      <Typography sx={{ color: "text.secondary", fontSize: "0.9375rem" }}>{c.unavailableHint}</Typography>
+                      <Button component={Link} href="/signup" variant="contained" endIcon={<IconArrowRight size={18} />} sx={{ minHeight: 44 }}>{c.signup}</Button>
+                    </>
+                  )}
+                </Stack>
+              ) : !jobId ? (
+                <>
+                  {s.remaining > 0 ? <Dropzone onFiles={submit} imagesOnly multiple={false} disabled={busy} className="min-h-72 flex-1" /> : (
+                    <Box sx={{ textAlign: "center", py: 6 }}>
+                      <Typography sx={{ mb: 2, fontWeight: 600 }}>{c.exhausted}</Typography>
+                      <Button component={Link} href="/signup" variant="contained">{c.signup}</Button>
+                    </Box>
+                  )}
+                  {s.captcha_required && s.captcha_site_key && (
+                    <Turnstile siteKey={s.captcha_site_key} onSuccess={setCaptcha}
+                      options={{ theme: resolvedTheme === "dark" ? "dark" : "light", size: "flexible" }} />
+                  )}
+                  {busy && (
+                    <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}>
+                      <IconLoader2 size={18} className="animate-spin" /><Typography variant="subtitle2">{c.analyzing}…</Typography>
+                    </Stack>
+                  )}
+                </>
+              ) : (
+                <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ alignItems: "flex-start" }}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    {/* The uploaded image gets the room: it is what the evidence is about. */}
+                    <Box sx={{ position: "relative", borderRadius: "12px", overflow: "hidden", bgcolor: "background.default", border: "1px solid",
+                      borderColor: "divider", aspectRatio: "4 / 3", display: "grid", placeItems: "center" }}>
+                      {j?.thumbnail_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={j.thumbnail_url} alt="" className="size-20 rounded-[9px] object-cover" />
+                        <img src={j.thumbnail_url} alt={c.preview} className="size-full object-contain" />
+                      ) : (
+                        <IconLoader2 size={24} className="animate-spin" aria-hidden />
                       )}
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Stack spacing={2}>
+                      <Box sx={{ minWidth: 0 }}>
                         <Typography variant="h6" noWrap>{j?.title}</Typography>
                         {running ? (
                           <Box sx={{ mt: 1 }}>
-                            <LinearProgress variant="determinate" value={j?.progress ?? 0} sx={{ height: 6, borderRadius: 3 }} />
+                            <LinearProgress variant="determinate" value={j?.progress ?? 0} sx={{ height: 6, borderRadius: 3 }} aria-label={c.analyzing} />
                             <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.75 }}>{j?.status === "queued" ? c.queued : c.analyzing}</Typography>
                           </Box>
                         ) : j?.status === "succeeded" ? <VerdictBadge verdict={j.verdict} aiGenerated={j.ai_generated} className="mt-2" /> : null}
                       </Box>
-                    </Stack>
-                    {j?.status === "succeeded" && (
-                      <>
-                        <ProbabilityGauge value={j.fake_probability} label={c.fake} />
-                        {aiMeta && (
-                          <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "error.main" }}>
-                            <IconSparkles size={18} /><Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{c.metadata}</Typography>
-                          </Stack>
-                        )}
-                        <Stack spacing={1}>
-                          {j.analyses.map((a) => (
-                            <Stack key={a.id} direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, px: 2, py: 1.25,
-                              border: "1px solid", borderColor: "divider", borderRadius: "7px" }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{c.analyses[a.id]}</Typography>
-                              {a.status === "done" ? <VerdictBadge verdict={a.verdict} probability={a.fake_probability} size="sm" />
-                                : <Typography variant="body2" sx={{ color: "text.secondary" }}>{a.status === "no_face" ? c.noFace : c.notCompleted}</Typography>}
+                      {j?.status === "succeeded" && (
+                        <>
+                          <ProbabilityGauge value={j.fake_probability} label={c.fake} />
+                          {aiMeta && (
+                            <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "error.main" }}>
+                              <IconSparkles size={18} /><Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{c.metadata}</Typography>
                             </Stack>
-                          ))}
-                        </Stack>
-                        <Typography variant="body2" sx={{ color: "text.secondary" }}>{c.disclaimer}</Typography>
-                      </>
-                    )}
-                    {j && !running && (
-                      <Button variant="outlined" startIcon={<IconRefresh size={18} />} sx={{ alignSelf: "flex-start" }}
-                        onClick={() => { setJobId(null); setCaptcha("") }}>{c.again}</Button>
-                    )}
-                  </Stack>
-                )}
-                {error && <Typography role="alert" sx={{ color: "error.main", fontWeight: 600 }}>{error}</Typography>}
-              </CardContent>
-            </Card>
+                          )}
+                          <Stack spacing={1}>
+                            {j.analyses.map((a) => (
+                              <Stack key={a.id} direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, px: 2, py: 1.25,
+                                border: "1px solid", borderColor: "divider", borderRadius: "8px" }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{c.analyses[a.id]}</Typography>
+                                {a.status === "done" ? <VerdictBadge verdict={a.verdict} probability={a.fake_probability} size="sm" />
+                                  : <Typography variant="body2" sx={{ color: "text.secondary" }}>{a.status === "no_face" ? c.noFace : c.notCompleted}</Typography>}
+                              </Stack>
+                            ))}
+                          </Stack>
+                          <Typography variant="body2" sx={{ color: "text.secondary" }}>{c.disclaimer}</Typography>
+                        </>
+                      )}
+                      {j && !running && (
+                        <Button variant="outlined" startIcon={<IconRefresh size={18} />} sx={{ alignSelf: "flex-start", minHeight: 44 }}
+                          onClick={() => { setJobId(null); setCaptcha("") }}>{c.again}</Button>
+                      )}
+                    </Stack>
+                  </Grid>
+                </Grid>
+              )}
+              {error && <Typography role="alert" sx={{ color: "error.main", fontWeight: 600 }}>{error}</Typography>}
+            </Box>
           </Grid>
         </Grid>
       </Container>

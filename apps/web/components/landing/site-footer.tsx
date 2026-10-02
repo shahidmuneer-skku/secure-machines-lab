@@ -26,6 +26,18 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+/**
+ * Legal values in lib/company.ts that are still placeholders ("[REPRESENTATIVE NAME]" …) are marked in
+ * development builds so they are replaced with verified information before launch.
+ */
+function Legal({ value }: { value: string }) {
+  if (process.env.NODE_ENV === "production" || !/\[[^\]]+\]/.test(value)) return <>{value}</>
+  return (
+    <Box component="mark" title="Placeholder: replace with verified information (lib/company.ts)"
+      sx={{ bgcolor: "transparent", color: "inherit", borderBottom: "1px dashed", borderColor: "warning.main" }}>{value}</Box>
+  )
+}
+
 /** Public footer (landing, pricing, docs, legal). */
 export function SiteFooter() {
   const t = useTranslations("landing.footer")
@@ -66,9 +78,9 @@ export function SiteFooter() {
         <Divider sx={{ my: 4 }} />
         {/* Business details required on the site by Korean e-commerce law (lib/company.ts). */}
         <Typography variant="body2" component="p" sx={{ color: "text.secondary", lineHeight: 1.8 }}>
-          {COMPANY.name} · {legal("representative")}: {COMPANY.representative} · {legal("bizNo")}: {COMPANY.businessRegistrationNo} ·{" "}
-          {legal("mailOrderNo")}: {COMPANY.mailOrderRegistrationNo}<br />
-          {COMPANY.address} · {COMPANY.supportEmail} · {COMPANY.phone}
+          <Legal value={COMPANY.name} /> · {legal("representative")}: <Legal value={COMPANY.representative} /> · {legal("bizNo")}:{" "}
+          <Legal value={COMPANY.businessRegistrationNo} /> · {legal("mailOrderNo")}: <Legal value={COMPANY.mailOrderRegistrationNo} /><br />
+          <Legal value={COMPANY.address} /> · {COMPANY.supportEmail} · <Legal value={COMPANY.phone} />
         </Typography>
         <Typography variant="body1" sx={{ color: "text.secondary", mt: 2 }}>{t("rights", { year: new Date().getFullYear() })}</Typography>
       </Container>

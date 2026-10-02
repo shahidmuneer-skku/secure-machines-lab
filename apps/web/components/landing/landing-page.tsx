@@ -5,31 +5,32 @@ import { useLocale } from "next-intl"
 
 import { isLanguage, type Language } from "@/lib/marketing/i18n"
 
-import { Hero } from "./hero"
-import { AboutAndContact, CallToAction, Features, HowItWorks, Products, Research, TrustStrip } from "./sections"
+import { ScanHero } from "./scan/scan-hero"
+import { AboutAndContact, Benefits, CredibilityBand, FinalCta, ProductSuite, Research, Workflow } from "./sections"
 import { SiteFooter } from "./site-footer"
 import { SiteNav } from "./site-nav"
 import { TrialSection } from "./trial"
 
 /**
- * Landing page (owner, 2026-10-02): product-focused, Modernize design, dark by default. Keeps the
- * lab's content (research areas, publications, collaborators, contact) and the guest trial.
+ * Landing page (3D scan redesign, 2026-10-02). The previous design is kept in ./legacy and served at
+ * /landing-legacy. Order: scan hero → free upload (the hero hands off to it) → credibility → products →
+ * workflow → benefits → research → final CTA → about & contact.
  */
 export function LandingPage() {
   const locale = useLocale()
   const language: Language = isLanguage(locale) ? locale : "en"
   return (
-    <Box sx={{ bgcolor: "background.default", color: "text.primary", minHeight: "100vh" }}>
+    <Box className="sml-landing" sx={{ bgcolor: "background.default", color: "text.primary", minHeight: "100vh" }}>
       <SiteNav />
       <main>
-        <Hero />
-        <TrustStrip language={language} />
+        <ScanHero />
         <TrialSection language={language} />
-        <Products />
-        <HowItWorks />
-        <Features />
+        <CredibilityBand language={language} />
+        <ProductSuite />
+        <Workflow />
+        <Benefits />
         <Research language={language} />
-        <CallToAction />
+        <FinalCta />
         <AboutAndContact language={language} />
       </main>
       <SiteFooter />

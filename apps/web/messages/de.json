@@ -2096,6 +2096,144 @@
       "privacy": "Datenschutzerklärung",
       "refunds": "Erstattungsrichtlinie",
       "rights": "© {year} Secure Machines Lab. Alle Rechte vorbehalten."
+    },
+    "scan": {
+      "eyebrow": "KI-Sicherheit · Medienverifikation",
+      "title": "Wissen, was echt ist.",
+      "subtitle": "Die Belege hinter jedem Frame sehen.",
+      "description": "Prüfen Sie KI-generierte Bilder, untersuchen Sie Deepfakes und verifizieren Sie Multimedia – mit Belegen, die Ihr Team nachvollziehen kann.",
+      "primary": "Bild prüfen",
+      "secondary": "Scan erkunden",
+      "sceneLabel": "Interaktive Demonstration",
+      "sceneNote": "Illustratives Beispiel · kein Prüfergebnis",
+      "hint": "Scrollen zum Untersuchen · Region auswählen",
+      "hintManual": "Schritt wählen · Region auswählen",
+      "skip": "Zum Bild-Upload springen",
+      "steps": "Scan-Schritte",
+      "stageCount": "Schritt {n} von 5",
+      "stages": {
+        "intro": {
+          "label": "Start",
+          "title": "Wissen, was echt ist.",
+          "body": "Wählen Sie einen Schritt, um zu sehen, wie die forensische Prüfung eines Gesichts abläuft, oder eine Region, um zu erfahren, worauf Analysten achten."
+        },
+        "scan": {
+          "label": "Scan",
+          "title": "Das Gesicht kartieren.",
+          "body": "Gesichtsmerkmale verorten Augen, Nase, Mund und Kieferlinie, damit jede Region einzeln geprüft werden kann.",
+          "note": "Merkmalspunkte verorten nur Regionen. Sie zeigen nicht, dass etwas manipuliert wurde."
+        },
+        "inspect": {
+          "label": "Prüfen",
+          "title": "Die Details untersuchen.",
+          "body": "Die Analyse konzentriert sich auf Übergänge, an denen Bearbeitungen Spuren hinterlassen: um die Augen, entlang des Mundes und am Gesichtsrand."
+        },
+        "explain": {
+          "label": "Erklären",
+          "title": "Aus Signalen werden Belege.",
+          "body": "Befunde werden Region für Region festgehalten und die Herkunft separat geprüft – so sieht Ihr Team, wie eine Schlussfolgerung zustande kam."
+        },
+        "handoff": {
+          "label": "Ihr Bild",
+          "title": "Jetzt Ihr eigenes Bild prüfen.",
+          "body": "Laden Sie im nächsten Abschnitt ein Foto hoch. Täglich einige kostenlose Prüfungen, kein Konto nötig.",
+          "cta": "Bild hochladen"
+        }
+      },
+      "regions": {
+        "group": "Gesichtsregionen",
+        "eyeL": {
+          "label": "Augenregion · links",
+          "short": "Augenregion",
+          "body": "Augen und Lider werden auf stimmige Reflexionen, Schärfe und Übergänge an der Lidkante verglichen."
+        },
+        "eyeR": {
+          "label": "Augenregion · rechts",
+          "short": "Augenregion",
+          "body": "Augen und Lider werden auf stimmige Reflexionen, Schärfe und Übergänge an der Lidkante verglichen."
+        },
+        "mouth": {
+          "label": "Mundkontur",
+          "short": "Mundkontur",
+          "body": "Lippenlinie und Mundwinkel sind die Stellen, an denen Gesichtstausch und Lippen-Reanimation am häufigsten Übergangs- oder Texturnähte hinterlassen."
+        },
+        "jaw": {
+          "label": "Gesichtsrand",
+          "short": "Gesichtsrand",
+          "body": "An der Kiefer- und Wangenkontur trifft ein ersetztes Gesicht auf den ursprünglichen Kopf – dort werden Kanten und Licht auf Brüche geprüft."
+        },
+        "caveat": "Dies visualisiert auf Regionsebene, was eine Analyse betrachtet. Eine hervorgehobene Region ist für sich genommen kein Beleg für eine Manipulation.",
+        "close": "Erklärung schließen",
+        "illustrative": "Illustrativ"
+      },
+      "layers": {
+        "group": "Ansicht",
+        "follow": "Dem Scrollen folgen",
+        "surface": "Oberfläche",
+        "mesh": "Netz",
+        "evidence": "Belege"
+      },
+      "pause": "Bewegung pausieren",
+      "resume": "Bewegung fortsetzen",
+      "report": {
+        "title": "Beispielbericht",
+        "tag": "Illustrativ",
+        "subject": "Objekt",
+        "subjectValue": "3D-Beispielkopf",
+        "region": "Geprüfte Region",
+        "regionValue": "Mundkontur",
+        "regionNote": "Kanten- und Texturverlauf entlang der Lippenlinie.",
+        "provenance": "Herkunft",
+        "provenanceValue": "Keine Inhaltsnachweise vorhanden",
+        "provenanceNote": "Separat erfasst. Fehlende Nachweise allein bedeuten nicht, dass ein Bild manipuliert wurde.",
+        "findings": "Befunde",
+        "findingsList": [
+          "Gesichtsregionen kartiert: Augen, Nase, Mund, Kieferlinie",
+          "Mundkontur und Gesichtsrand zur genaueren Prüfung markiert",
+          "Vor jeder Schlussfolgerung prüft ein Analyst die Belege"
+        ]
+      },
+      "frame": "Beispiel · illustrativ",
+      "poster": "Ein modellierter 3D-Kopf mit feinem Dreiecksnetz für die interaktive Scan-Demonstration",
+      "fallback": "3D-Ansicht nicht verfügbar – es wird ein Standbild gezeigt.",
+      "credit": "3D-Kopfscan: Lee Perry-Smith, CC BY 3.0"
+    },
+    "credibility": {
+      "title": "Forschung hinter dem Produkt",
+      "papers": "{count} ausgewählte begutachtete Publikationen",
+      "papersSub": "{from}–{to} · DASH Lab, Sungkyunkwan University",
+      "venues": "Konferenzen",
+      "dataset": "Offener Datensatz",
+      "datasetSub": "NeurIPS 2021 Datasets & Benchmarks",
+      "all": "Publikationen ansehen"
+    },
+    "suite": {
+      "featured": "Kernprodukt",
+      "available": "Jetzt verfügbar",
+      "illustrative": "Illustrativ",
+      "regionMap": "Regionenkarte",
+      "regionFindings": "Befunde pro Region",
+      "provenance": "Herkunft separat geprüft",
+      "timeline": "Frame-Zeitleiste",
+      "marked": "Zur Prüfung markiert",
+      "sources": "Zitierte Quellen",
+      "source1": "Originalupload",
+      "source2": "Agenturmeldung",
+      "source3": "Archivkopie",
+      "before": "Original",
+      "after": "Bearbeitet",
+      "consent": "Einwilligung bei Gesichtern geprüft"
+    },
+    "benefits": {
+      "eyebrow": "Warum Secure Machines Lab"
+    },
+    "researchV2": {
+      "inProduct": "Forschung hinter dem Detektor",
+      "direction": "Forschungsrichtung",
+      "directionNote": "Forschungsrichtungen sind laufende Arbeiten, keine Produktfunktionen.",
+      "workshop": "Workshop",
+      "dataset": "Datasets & Benchmarks",
+      "open": "Publikation öffnen"
     }
   }
 }

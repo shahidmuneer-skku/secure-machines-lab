@@ -200,6 +200,53 @@
   }
 }
 
+/*
+ * Landing page (3D scan redesign, 2026-10-02). The hero is always a dark forensics environment; in
+ * the dark theme the rest of the landing page uses the same deep navy palette, in the light theme the
+ * site's light tokens. Contrast (WCAG 2.x, checked with scripts in the redesign notes):
+ *   #EEF4FF on #080F1C 17.6:1 · #A6B5CB on #080F1C 9.6:1 · #A6B5CB on #111D30 8.4:1
+ *   #FFFFFF on #4268F6 4.6:1 (buttons) · #39D9E6 on #080F1C 11.4:1 · #FFAD70 on #111D30 9.6:1
+ */
+:root {
+  --scan-bg: #080f1c;
+  --scan-raised: #111d30;
+  --scan-text: #eef4ff;
+  --scan-text-2: #a6b5cb;
+  --scan-action: #4268f6;
+  --scan-cyan: #39d9e6;
+  --scan-done: #30d2b0;
+  --scan-amber: #ffad70;
+  --scan-line: rgb(166 181 203 / 0.14);
+  --scan-line-strong: rgb(166 181 203 / 0.3);
+}
+
+/* Landing accents: text-safe on the light tokens, the hero palette in the dark theme. */
+.sml-landing {
+  --landing-accent: #0a7480;
+  --landing-amber: #b45309;
+  --landing-done: #047a65;
+  --landing-line: rgb(42 53 71 / 0.25);
+}
+
+.dark .sml-landing {
+  --landing-accent: #39d9e6;
+  --landing-amber: #ffad70;
+  --landing-done: #30d2b0;
+  --landing-line: rgb(166 181 203 / 0.35);
+  --mui-palette-background-default: #080f1c;
+  --mui-palette-background-defaultChannel: 8 15 28;
+  --mui-palette-background-paper: #111d30;
+  --mui-palette-background-paperChannel: 17 29 48;
+  --mui-palette-text-primary: #eef4ff;
+  --mui-palette-text-secondary: #a6b5cb;
+  --mui-palette-divider: rgb(166 181 203 / 0.16);
+  --background: #080f1c;
+  --card: #111d30;
+  --foreground: #eef4ff;
+  --muted-foreground: #a6b5cb;
+  --border: rgb(166 181 203 / 0.18);
+}
+
 /* ---- Small labels (Modernize's sidebar sub-headings: small, bold, uppercase) ---- */
 
 @utility hud-eyebrow {
