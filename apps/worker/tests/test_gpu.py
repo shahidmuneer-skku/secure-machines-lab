@@ -173,3 +173,21 @@ def test_final_results_are_kept_for_the_api_sweep(redis_ok):  # type: ignore[no-
     assert r.get(RESULT_KEY.format("test-started")) is None  # only final results are kept
     assert [n for n, _ in sent] == [RESULT_TASK, RESULT_TASK]
     r.delete(RESULT_KEY.format("test-kept-result"))
+
+
+def test_the_heartbeat_thread_is_idle_until_its_interval_passes(monkeypatch):
+    # The first beat runs in the main thread before Celery forks (sml_worker/__main__.py); the thread
+    # only beats after waiting, so it is never busy at the moment the worker processes are forked.
+    from sml_worker import heartbeat
+
+    beats: list[float] = []
+    hb = heartbeat.Heartbeat(["q"], "", interval=0.2)
+    monkeypatch.setattr(hb, "beat", lambda: beats.append(1.0))
+    hb.start()
+    import time
+
+    time.sleep(0.1)
+    assert beats == []  # nothing in the first interval
+    time.sleep(0.25)
+    hb._stop_event.set()
+    assert len(beats) >= 1

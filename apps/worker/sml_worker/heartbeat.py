@@ -44,17 +44,19 @@ class Heartbeat(threading.Thread):
         self.started = datetime.now(timezone.utc).isoformat()
         self._stop_event = threading.Event()
 
+    def beat(self) -> None:
+        payload = {"id": self.worker_id, "hostname": config().hostname, "pid": os.getpid(), "gpu": self.gpu,
+                   "queues": self.queues, "started_at": self.started, "current_task": dict(current_task) or None,
+                   "gpu_stats": gpu_stats(self.gpu), "simulate": config().simulate,
+                   "updated_at": datetime.now(timezone.utc).isoformat()}
+        try:
+            redis_client().set(KEY.format(self.worker_id), json.dumps(payload), ex=int(self.interval * 3))
+        except Exception:
+            logger.debug("heartbeat failed", exc_info=True)
+
     def run(self) -> None:
-        while not self._stop_event.is_set():
-            payload = {"id": self.worker_id, "hostname": config().hostname, "pid": os.getpid(), "gpu": self.gpu,
-                       "queues": self.queues, "started_at": self.started, "current_task": dict(current_task) or None,
-                       "gpu_stats": gpu_stats(self.gpu), "simulate": config().simulate,
-                       "updated_at": datetime.now(timezone.utc).isoformat()}
-            try:
-                redis_client().set(KEY.format(self.worker_id), json.dumps(payload), ex=int(self.interval * 3))
-            except Exception:
-                logger.debug("heartbeat failed", exc_info=True)
-            self._stop_event.wait(self.interval)
+        while not self._stop_event.wait(self.interval):
+            self.beat()
 
     def stop(self) -> None:
         self._stop_event.set()

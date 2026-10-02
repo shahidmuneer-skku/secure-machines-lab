@@ -61,11 +61,23 @@ def main() -> None:
         os.environ["SML_WORKER_GPU"] = args.gpu
     logging.basicConfig(level=args.loglevel, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
+    import faulthandler
+    import signal
+
+    from celery.signals import worker_ready
+
     from .app import app
     from .heartbeat import Heartbeat
 
+    # `kill -USR2 <pid>` writes every thread's stack to the log (a frozen worker process can be read).
+    faulthandler.register(signal.SIGUSR2, all_threads=True)
     beat = Heartbeat(queues, args.gpu)
-    beat.start()
+    # The first beat runs here, before any thread exists: it imports and connects everything the
+    # heartbeat uses. The thread starts only once Celery has forked its worker processes: a thread
+    # busy (importing, connecting, running nvidia-smi) while the worker forks leaves its locks held in
+    # the children, which then freeze on their first task (2026-10-02: 6 of 8 detector processes).
+    beat.beat()
+    worker_ready.connect(lambda **_: beat.start(), weak=False)
     role = ("agents" if args.agents and not args.detectors else "studio" if args.studio and not args.detectors
             else f"gpu{args.gpu or 'x'}")
     name = args.name or f"sml-worker-{role}-{os.getpid()}@%h"

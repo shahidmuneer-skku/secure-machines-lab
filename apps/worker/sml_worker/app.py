@@ -50,8 +50,12 @@ def run_task(self: Any, envelope: dict[str, Any]) -> None:
 
 @worker_process_init.connect
 def _init(**_: Any) -> None:
+    import faulthandler
+    import signal
+
     from .runner import ensure_scratch
 
+    faulthandler.register(signal.SIGUSR2, all_threads=True)  # `kill -USR2 <pid>`: stacks to the log
     ensure_scratch()
 
 
