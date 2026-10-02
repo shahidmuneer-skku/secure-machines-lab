@@ -420,6 +420,8 @@ models:
         conda_env: wacv
         cwd: "{models_root}"
         argv: ["bash", "detection_models/SKKU-P2/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        # At most 128 frames per video, spread evenly (owner, 2026-10-02; every frame took ~20 min per minute).
+        env: {FAKEDETECTOR_VIDEO_MAX_FRAMES: "128"}
         parser: standard
         timeout_seconds: 3600
 
@@ -457,6 +459,8 @@ models:
         conda_env: wacv
         cwd: "{models_root}"
         argv: ["bash", "detection_models/SKKU-P3/inference.sh", "{input}", "{stem}", "video", "{page_type}"]
+        # At most 128 frames per video, spread evenly (owner, 2026-10-02; every frame took ~20 min per minute).
+        env: {FAKEDETECTOR_VIDEO_MAX_FRAMES: "128"}
         parser: standard
         timeout_seconds: 3600
 
@@ -589,6 +593,8 @@ models:
                "--file_name", "{stem}", "--original_name", "{original_name_b64}", "--output_path", "./detected",
                "--base_dir", "{models_root}",
                "--config_path", "{models_root}/detection_models/Center/Centaur_avif/configs/args.json"]
+        # At most 128 frames per video, spread evenly (owner, 2026-10-02; every frame took ~20 min per minute).
+        env: {FAKEDETECTOR_VIDEO_MAX_FRAMES: "128"}
         parser: standard
         timeout_seconds: 1800
 

@@ -5,6 +5,8 @@
 #
 #   apps/worker/run_services.sh               # everything (detector workers on GPUs 0 and 3)
 #   GPUS="0" apps/worker/run_services.sh      # detector workers on other GPUs
+#   apps/worker/run_services.sh workers       # restart only the workers (after a code change); the loaded
+#                                             # models, Celery API and stream service keep running
 #   apps/worker/run_services.sh stop          # stop everything, start nothing
 #
 # Logs: var/log/{celery-api,worker-gpu<N>,agents,resident,resident-<server>,studio}.log
@@ -49,6 +51,15 @@ start_stream() {  # long-form stream service (legacy `safe` env, its own GPU; po
 stop "sml_worker --detectors"
 stop "sml_worker --agents"
 stop "sml_worker --studio"
+if [[ "${1:-}" == "workers" ]]; then
+  for gpu in $GPUS; do
+    start "worker-gpu$gpu" --detectors --gpu "$gpu" --concurrency 4
+  done
+  start agents --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
+  start studio --studio --concurrency 2
+  echo "done (workers only)."
+  exit 0
+fi
 # The supervisor stops its model servers; any left behind (a killed supervisor) are stopped too, so
 # no model stays loaded twice on a GPU.
 stop "sml_worker --resident"

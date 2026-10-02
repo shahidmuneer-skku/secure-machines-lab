@@ -163,3 +163,79 @@ def test_a_task_waiting_for_memory_moves_to_its_resident_server_once_ready(monke
     with runner._admission("t", envelope, ctx):
         pass
     assert len(waits) == 2 and waits[0] > 0  # waited once for memory, then ran with no reservation
+
+
+SLOW = textwrap.dedent('''
+    import argparse, sys, time
+
+    def main():
+        p = argparse.ArgumentParser()
+        p.add_argument("--seconds", type=float)
+        args = p.parse_args()
+        print("started", flush=True)
+        end = time.monotonic() + args.seconds
+        while time.monotonic() < end:  # a frame loop that swallows ordinary errors
+            try:
+                time.sleep(0.05)
+            except Exception:
+                pass
+        print("finished", flush=True)
+        return 0
+
+    if __name__ == "__main__":
+        sys.exit(main())
+''')
+
+
+def test_a_canceled_launch_stops_its_run_in_the_server(tmp_path):
+    script = tmp_path / "slow.py"
+    script.write_text(SLOW)
+    sock = tmp_path / "s.sock"
+    cfg = tmp_path / "cfg.json"
+    cfg.write_text(json.dumps({"socket": str(sock), "script": str(script), "mode": "main", "cwd": str(tmp_path)}))
+    server = subprocess.Popen([sys.executable, str(SERVER), "--config", str(cfg)], stderr=subprocess.PIPE, text=True)
+    try:
+        for _ in range(100):
+            if sock.exists():
+                break
+            time.sleep(0.05)
+        env = {**os.environ, "PYTHONPATH": str(supervisor.HOOK_DIR),
+               "SML_RESIDENT": json.dumps({str(script): str(sock)})}
+        long_run = subprocess.Popen([sys.executable, str(script), "--seconds", "60"], cwd=tmp_path, env=env,
+                                    stdout=subprocess.PIPE, text=True)
+        assert long_run.stdout.readline().strip() == "started"
+        long_run.kill()  # the worker kills the launch when its job is canceled
+        long_run.wait()
+        started = time.monotonic()
+        next_run = launch(script, sock, "--seconds", "0", cwd=tmp_path)
+        assert next_run.returncode == 0 and "finished" in next_run.stdout
+        assert time.monotonic() - started < 15  # did not wait for the abandoned 60 s run
+    finally:
+        server.terminate()
+        _, err = server.communicate(timeout=10)
+    assert "the caller went away; stopping the run" in err and "exited 130" in err
+
+
+def test_a_task_waits_for_a_loading_server_instead_of_loading_a_second_copy(monkeypatch, tmp_path):
+    from sml_worker import runner
+    from sml_worker.context import TaskContext
+
+    states = iter([["loading"], ["loading"], ["ready"]])
+    seen: list[str] = []
+
+    def loading(model, media):  # type: ignore[no-untyped-def]
+        current = next(states, ["ready"])
+        seen.append(current[0])
+        return ["skku-p2"] if current == ["loading"] else []
+
+    monkeypatch.setattr(runner.resident, "loading_servers", loading)
+    monkeypatch.setattr(runner.resident, "ready_servers", lambda model, media: [])
+    monkeypatch.setattr(runner.time, "sleep", lambda s: None)
+    monkeypatch.setattr("sml_worker.context.redis_client", lambda: (_ for _ in ()).throw(redis.RedisError()))
+    envelope = {"task_id": "t", "job_id": "j", "kind": "model", "target": "skku-p2", "media_type": "video"}
+    runner._await_resident(envelope, TaskContext(envelope, tmp_path, "0"))
+    assert seen == ["loading", "loading", "ready"]  # waited while loading, went on once it was not
+
+    monkeypatch.setattr(runner, "RESIDENT_LOAD_WAIT_SECONDS", -1)  # a server that never finishes loading
+    monkeypatch.setattr(runner.resident, "loading_servers", lambda model, media: ["skku-p2"])
+    runner._await_resident(envelope, TaskContext(envelope, tmp_path, "0"))  # gives up and returns

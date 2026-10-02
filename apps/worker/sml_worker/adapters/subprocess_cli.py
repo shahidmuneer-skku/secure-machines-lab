@@ -107,7 +107,9 @@ class SubprocessAdapter:
         return argv
 
     def _env(self, routing: dict[str, str] | None = None) -> dict[str, str]:
-        return {**model_env(self.spec.get("conda_env")), **(routing or {})}
+        # `env` in a media block: settings the model's scripts read (e.g. FAKEDETECTOR_VIDEO_MAX_FRAMES).
+        extra = {str(k): str(v) for k, v in (self.spec.get("env") or {}).items()}
+        return {**model_env(self.spec.get("conda_env")), **extra, **(routing or {})}
 
     # --- run ----------------------------------------------------------------------------
 

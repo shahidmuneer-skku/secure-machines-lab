@@ -28,7 +28,9 @@ import importlib.util
 import json
 import os
 import runpy
+import select
 import signal
+import socket
 import socketserver
 import sys
 import threading
@@ -114,6 +116,42 @@ def patch(namespace, name: str, label: str) -> None:
 
 # --- one run of the script -----------------------------------------------------------------------
 
+class ClientGone(BaseException):
+    """The launch that asked for this run went away (its task was canceled or timed out).
+
+    A BaseException, so scripts' `except Exception` blocks do not swallow it."""
+
+
+INTERRUPTIBLE = threading.Event()  # set only while a request's script is running
+
+
+def _interrupt(_signum, _frame) -> None:
+    if INTERRUPTIBLE.is_set():
+        raise ClientGone()
+
+
+def watch_client(conn: socket.socket, done: threading.Event) -> None:
+    """Stop the run when its caller disconnects, instead of finishing work nobody waits for (a long
+    video would otherwise keep every later task of this model waiting). The run is interrupted in the
+    main thread at its next Python instruction; a script that swallows it is asked again every 5 s."""
+    while not done.is_set():
+        readable, _, _ = select.select([conn], [], [], 1.0)
+        if not readable:
+            continue
+        try:
+            data = conn.recv(1, socket.MSG_PEEK)
+        except OSError:
+            data = b""
+        if data:
+            time.sleep(1.0)  # the caller sends nothing after its request; ignore stray bytes
+            continue
+        log("the caller went away; stopping the run")
+        while not done.is_set():
+            if INTERRUPTIBLE.is_set():
+                signal.pthread_kill(threading.main_thread().ident, signal.SIGUSR1)
+            done.wait(5.0)
+        return
+
 class Script:
     def __init__(self, cfg: dict) -> None:
         self.path = os.path.realpath(cfg["script"])
@@ -143,6 +181,8 @@ class Script:
                 return result if isinstance(result, int) else 0  # `sys.exit(main())` scripts
             runpy.run_path(self.path, run_name="__main__")
             return 0
+        except ClientGone:
+            return 130
         except SystemExit as exc:
             if exc.code is None:
                 return 0
@@ -252,8 +292,19 @@ class Handler(socketserver.StreamRequestHandler):
             return
         started = time.monotonic()
         SERVER.busy_since = started
-        with request_context(request["cwd"], request.get("env") or {}), captured_output(send):
-            code = SERVER.script.run(request["argv"])
+        done = threading.Event()
+        threading.Thread(target=watch_client, args=(self.connection, done), daemon=True).start()
+        try:
+            with request_context(request["cwd"], request.get("env") or {}), captured_output(send):
+                INTERRUPTIBLE.set()
+                try:
+                    code = SERVER.script.run(request["argv"])
+                finally:
+                    INTERRUPTIBLE.clear()
+        except ClientGone:  # raised just outside the script (e.g. while restoring the context)
+            code = 130
+        finally:
+            done.set()
         SERVER.busy_since = None
         free_gpu_cache()
         SERVER.runs += 1
@@ -322,6 +373,7 @@ def main() -> None:
     os.chmod(path, 0o600)
     bound = os.stat(path).st_ino
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # remove the socket on the way out
+    signal.signal(signal.SIGUSR1, _interrupt)  # watch_client: the caller of the current run went away
     try:
         SERVER.serve_forever()
     finally:

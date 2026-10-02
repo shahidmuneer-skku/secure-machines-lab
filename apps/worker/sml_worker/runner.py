@@ -174,6 +174,31 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+# How long a task waits for its model's resident server to finish loading before it loads the model itself.
+RESIDENT_LOAD_WAIT_SECONDS = 900
+
+
+def _await_resident(envelope: dict[str, Any], ctx: TaskContext) -> None:
+    """While the model's resident server is still loading, wait for it instead of loading a second copy
+    next to it: two copies of a large model (SKKU-P2, 14 GB) do not fit on one GPU, and the task would
+    fail with GPU_OOM. A server that is down, or still loading after the limit, does not hold the task."""
+    if envelope.get("kind") != "model":
+        return
+    target, media_type = envelope.get("target", ""), envelope.get("media_type", "")
+    deadline = time.monotonic() + RESIDENT_LOAD_WAIT_SECONDS
+    announced = False
+    while resident.loading_servers(target, media_type) and not resident.ready_servers(target, media_type):
+        if time.monotonic() > deadline:
+            ctx.log("The model's resident server is still loading; loading the model for this task")
+            return
+        if not announced:
+            ctx.log("Waiting for the model's resident server to finish loading")
+            announced = True
+        ctx.progress(0, "Waiting for the model to load")
+        ctx.check_canceled()
+        time.sleep(2)
+
+
 class _ResidentReady(Exception):
     """A task waiting for GPU memory can run on its model's resident server instead."""
 
@@ -183,6 +208,7 @@ def _admission(task_id: str, envelope: dict[str, Any], ctx: TaskContext) -> Iter
     """Hold the GPU memory the task needs while it runs. A task that arrived before its model's resident
     server was ready waits for memory to load the model itself; once the server is ready it stops
     waiting and runs there (needing no memory of its own)."""
+    _await_resident(envelope, ctx)
     with contextlib.ExitStack() as stack:
         while True:
             need = _gpu_need(envelope)

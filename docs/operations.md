@@ -188,6 +188,21 @@ per task until it is back. A server runs one task at a time; a run that exceeds 
 `var/log/resident.log` and `var/log/resident-<server>.log`. After changing a model's code or weights, restart
 the resident service.
 
+**Starting and restarting the background services.** `apps/worker/run_services.sh` stops any running
+copy of each service, then starts the Celery API worker (`apps/api/run_celery_api.sh`), the detector
+workers (`GPUS`, default "0 3"), the agents, the resident supervisor (detectors + image studio server),
+the studio worker and the long-form stream service, each detached and logging to `var/log/`. Run it
+again at any time: nothing ever runs twice (the resident supervisor also refuses to start a second
+copy). `run_services.sh workers` restarts only the workers after a code change, keeping the loaded
+models; `run_services.sh stop` stops everything. A task that arrives while its model's resident server
+is still loading waits for it (up to 15 min) instead of loading a second copy, which would not fit on
+the GPU (`GPU_OOM`). Canceling a job also stops its run inside a resident server.
+
+**Video frame budget.** SKKU-P2, SKKU-P3 and Center score at most 128 frames per video, spread evenly
+(owner, 2026-10-02; `env: {FAKEDETECTOR_VIDEO_MAX_FRAMES: "128"}` in their video blocks of
+`config/models.yaml`; XB-DFD uses the same budget). Scoring every frame took about 20 minutes per minute
+of video for SKKU-P2 and held up every other job waiting for that model.
+
 **Image studio (ADR 0012).** Two processes: the studio server (started by the resident supervisor
 above, log `var/log/resident-studio.log`) and the studio worker (`python -m sml_worker --studio
 --concurrency 2`, `sml-studio.service`, log `var/log/studio.log`). The server needs the `imagegen`

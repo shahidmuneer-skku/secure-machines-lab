@@ -61,6 +61,11 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   with the per-frame timeline and the most suspicious frame's heatmap.
 
 ### Changed
+- Videos: SKKU-P2, SKKU-P3 and Center score at most 128 frames spread evenly over the video (like
+  XB-DFD) instead of every frame; a 1-minute video takes about 1.5 min for SKKU-P2 instead of about 22.
+  Canceling a job now also stops its run inside a resident model server, and tasks wait for a model's
+  server that is still loading instead of loading a second copy (which ran out of GPU memory).
+- `apps/worker/run_services.sh` (re)starts every background service exactly once.
 - Users no longer choose detectors or checks: the administrator sets which detectors run on every
   image and every video, the extra checks, and the long-form detector (Admin → Models). Users and
   API clients see the verdict, its evidence and generic progress steps only — no detector names,

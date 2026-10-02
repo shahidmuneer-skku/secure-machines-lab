@@ -108,21 +108,27 @@ def studio_servers() -> list[ServerSpec]:
 
 # --- what detector workers use --------------------------------------------------------------------
 
-def ready_servers(model_id: str, media_type: str) -> list[ServerSpec]:
-    """Servers of this model and media type that report ready and have their socket in place."""
+def _states(model_id: str, media_type: str) -> list[tuple[ServerSpec, str]]:
+    """(server, published state) for this model's servers of this media type; "" when not published."""
     candidates = [s for s in servers() if s.model_id == model_id and media_type in s.media]
     if not candidates:
         return []
     try:
-        states = redis_client().mget([STATUS_KEY.format(s.id) for s in candidates])
+        raws = redis_client().mget([STATUS_KEY.format(s.id) for s in candidates])
     except redis.RedisError:
         return []
-    ready = []
-    for spec, raw in zip(candidates, states, strict=True):
-        status = json.loads(raw) if raw else {}
-        if status.get("state") == "ready" and Path(spec.socket).exists():
-            ready.append(spec)
-    return ready
+    return [(spec, (json.loads(raw) if raw else {}).get("state", ""))
+            for spec, raw in zip(candidates, raws, strict=True)]
+
+
+def ready_servers(model_id: str, media_type: str) -> list[ServerSpec]:
+    """Servers of this model and media type that report ready and have their socket in place."""
+    return [spec for spec, state in _states(model_id, media_type) if state == "ready" and Path(spec.socket).exists()]
+
+
+def loading_servers(model_id: str, media_type: str) -> list[ServerSpec]:
+    """Servers of this model and media type that are starting up (loading their model)."""
+    return [spec for spec, state in _states(model_id, media_type) if state == "loading"]
 
 
 def routing_env(model_id: str, media_type: str) -> dict[str, str]:

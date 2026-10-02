@@ -244,3 +244,15 @@ def test_predicted_masks_are_collected_as_heatmaps(worker_env, ctx_factory):
     assert collected == {("xai", "Predicted mask"), ("xai", "Face predicted mask"), ("xai", "Original"),
                          ("face", "face 0")}
     assert _label_for("abc_mask.png", "abc") == "Predicted mask"
+
+
+def test_a_media_blocks_env_reaches_the_script(worker_env, ctx_factory, image):
+    # e.g. FAKEDETECTOR_VIDEO_MAX_FRAMES: the frame budget SKKU-P2/P3 and Center read (owner, 2026-10-02)
+    write_script(worker_env["models"], """
+        import os
+        assert os.environ["FAKEDETECTOR_VIDEO_MAX_FRAMES"] == "128"
+        print("Fake Prob: 0.4")
+    """)
+    spec = {"conda_env": "fake", "argv": ["{python}", "fake_model.py", "{input}"], "cwd": "{models_root}",
+            "parser": "standard", "env": {"FAKEDETECTOR_VIDEO_MAX_FRAMES": 128}}
+    assert SubprocessAdapter(MODEL, spec, 30).run(image, "image", ctx_factory()).fake_prob == pytest.approx(0.4)
