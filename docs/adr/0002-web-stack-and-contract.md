@@ -13,3 +13,5 @@ are client components that fetch through the typed client; the browser talks to 
 same origin (nginx in production, a Next rewrite in development), so cookies stay first-party
 and no CORS is needed. The homepage from the lab's existing site is kept as-is in its own
 namespaced stylesheet.
+
+*Update (2026-10-02):* the homepage and the app shell were rebuilt with Material UI; see ADR 0013.

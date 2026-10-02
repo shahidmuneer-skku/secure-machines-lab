@@ -54,7 +54,7 @@ export function ProcessingPanel({ job }: { job: JobDetail }) {
                 {(step.id === "analysis" || step.id === "verification") && active && (
                   <div className="mt-2 flex items-center gap-2 pl-7">
                     <Progress value={step.progress} className="h-1.5" aria-label={t(`step.${step.id}`, { media })} />
-                    <span className="w-10 font-mono text-xs tabular-nums text-muted-foreground">{Math.round(step.progress)}%</span>
+                    <span className="w-10 text-xs font-semibold tabular-nums text-muted-foreground">{Math.round(step.progress)}%</span>
                   </div>
                 )}
               </li>

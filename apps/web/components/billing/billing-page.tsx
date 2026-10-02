@@ -81,7 +81,7 @@ function BalanceCard() {
         {isLoading || !b ? <Skeleton className="h-32" /> : (
           <>
             <div className="flex items-end gap-2">
-              <span className="font-mono text-4xl font-semibold tabular-nums">{b.unlimited ? "∞" : b.balance}</span>
+              <span className="text-4xl font-bold tabular-nums">{b.unlimited ? "∞" : b.balance}</span>
               <span className="mb-1 mono-label text-muted-foreground">{t("credits")}</span>
             </div>
             {b.held > 0 && <p className="text-xs text-muted-foreground">{t("balance.held", { count: b.held })}</p>}
@@ -89,7 +89,7 @@ function BalanceCard() {
               {sources.map(([source, amount]) => (
                 <li key={source} className="flex justify-between">
                   <span className="text-muted-foreground">{t(`source.${source}`)}</span>
-                  <span className="font-mono tabular-nums">{amount}</span>
+                  <span className="font-semibold tabular-nums">{amount}</span>
                 </li>
               ))}
             </ul>
@@ -193,7 +193,7 @@ function PacksAndPlans() {
                 </CardHeader>
                 <CardContent className="flex-1 space-y-3">
                   <div>
-                    <span className="font-mono text-3xl font-semibold">{plan.prices[currency].display}</span>
+                    <span className="text-3xl font-bold tracking-tight">{plan.prices[currency].display}</span>
                     <span className="text-sm text-muted-foreground"> / {t("month")}</span>
                   </div>
                   <ul className="space-y-1.5 text-sm">
@@ -232,10 +232,10 @@ function PacksAndPlans() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2"><Coins className="size-5 text-primary" />
-                  <span className="font-mono text-2xl font-semibold">{pack.credits.toLocaleString(locale)}</span>
+                  <span className="text-2xl font-bold">{pack.credits.toLocaleString(locale)}</span>
                   <span className="mono-label text-muted-foreground">{t("credits")}</span></div>
                 {pack.bonus_credits > 0 && <p className="text-xs text-primary">{t("packs.bonus", { count: pack.bonus_credits })}</p>}
-                <p className="font-mono text-xl">{pack.prices[currency].display}</p>
+                <p className="text-xl font-bold">{pack.prices[currency].display}</p>
                 <p className="text-xs text-muted-foreground">{t("packs.expiry", { days: pack.credit_expiry_days ?? 365 })}</p>
               </CardContent>
               <CardFooter>
@@ -275,7 +275,7 @@ function Payments() {
             <TableCell className="whitespace-nowrap">{formatDateTime(p.paid_at ?? p.created_at, locale)}</TableCell>
             <TableCell>{p.order_name}<span className="block text-xs text-muted-foreground">{t(`provider.${p.provider}`)} · {p.order_id}</span></TableCell>
             <TableCell><StatusChip status={p.status === "paid" ? "succeeded" : p.status === "failed" ? "failed" : p.status} /></TableCell>
-            <TableCell className="text-right font-mono tabular-nums">{p.display_amount}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums">{p.display_amount}</TableCell>
             <TableCell className="text-right">
               {p.receipt_url ? <Button asChild size="sm" variant="ghost"><a href={p.receipt_url} target="_blank" rel="noopener noreferrer">
                 <Receipt className="size-4" /></a></Button> : "—"}
@@ -315,9 +315,9 @@ function Ledger() {
               <TableRow key={e.id}>
                 <TableCell className="whitespace-nowrap text-xs">{formatDateTime(e.created_at, locale)}</TableCell>
                 <TableCell>{t(`kind.${e.kind}`)}<span className="block text-xs text-muted-foreground">{e.memo}</span></TableCell>
-                <TableCell className={cn("text-right font-mono tabular-nums", e.delta > 0 && "text-real", e.delta < 0 && "text-foreground")}>
+                <TableCell className={cn("text-right font-semibold tabular-nums", e.delta > 0 && "text-real", e.delta < 0 && "text-foreground")}>
                   {e.delta > 0 ? `+${e.delta}` : e.delta === 0 ? "·" : e.delta}</TableCell>
-                <TableCell className="text-right font-mono tabular-nums">{e.balance_after}</TableCell>
+                <TableCell className="text-right font-semibold tabular-nums">{e.balance_after}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -362,7 +362,7 @@ function PriceList() {
           {prices?.prices.filter((p) => show.includes(p.key)).map((p) => (
             <li key={p.key} className="flex justify-between gap-2">
               <span className="text-muted-foreground">{t(`prices.${p.key}`)}</span>
-              <span className="font-mono tabular-nums">{p.credits}</span>
+              <span className="font-semibold tabular-nums">{p.credits}</span>
             </li>
           ))}
         </ul>

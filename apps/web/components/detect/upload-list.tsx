@@ -48,7 +48,7 @@ export function UploadList({ items, onRemove, onRetry }: { items: UploadItem[]; 
           </div>
           <div className="flex items-center gap-1">
             {item.state === "ready" && <CheckCircle2 className="size-5 text-real" aria-label={t("uploaded")} />}
-            {item.state === "uploading" && <span className="font-mono text-xs tabular-nums">{Math.round(item.progress * 100)}%</span>}
+            {item.state === "uploading" && <span className="text-xs font-semibold tabular-nums">{Math.round(item.progress * 100)}%</span>}
             {item.state === "error" && (
               <Button variant="ghost" size="icon" onClick={() => onRetry(item.key)} aria-label={t("retryUpload")}>
                 <RotateCcw className="size-4" />

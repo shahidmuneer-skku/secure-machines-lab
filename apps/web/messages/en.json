@@ -269,7 +269,8 @@
     },
     "jobsChart": {
       "eyebrow": "Verdicts",
-      "title": "Jobs over time by verdict"
+      "title": "Jobs over time by verdict",
+      "subtitle": "Verdicts per day, last {days} days"
     },
     "creditsChart": {
       "eyebrow": "Credits",
@@ -306,7 +307,33 @@
       "image": "Images",
       "video": "Videos",
       "long_video": "Long-form",
-      "news": "News"
+      "news": "News",
+      "studio": "Image studio"
+    },
+    "welcome": {
+      "greeting": "Welcome back, {name}",
+      "subtitle": "Detect deepfakes and AI-generated media, verify news and create images — all in one workspace.",
+      "studio": "Open image studio",
+      "analyses": "Analyses in {days} days",
+      "manipulated": "Likely manipulated"
+    },
+    "verdicts": {
+      "title": "Verdict breakdown",
+      "total": "Analyses"
+    },
+    "credits": {
+      "title": "Credits",
+      "spent": "spent in the last {days} days"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "studioDone": "Images created"
+    },
+    "table": {
+      "file": "File",
+      "result": "Result",
+      "credits": "Credits",
+      "when": "When"
     }
   },
   "detect": {
@@ -398,7 +425,8 @@
     "kind": {
       "detect": "Detection",
       "long_video": "Long-form",
-      "news": "News"
+      "news": "News",
+      "studio": "Image studio"
     },
     "source": {
       "api": "API",
@@ -1872,5 +1900,202 @@
     "editAgain": "Edit this image",
     "detect": "Analyse for manipulation",
     "viewer": "Image viewer"
+  },
+  "landing": {
+    "nav": {
+      "products": "Products",
+      "how": "How it works",
+      "research": "Research",
+      "pricing": "Pricing",
+      "docs": "API",
+      "signIn": "Sign in",
+      "getStarted": "Get started",
+      "openApp": "Open dashboard",
+      "menu": "Menu"
+    },
+    "hero": {
+      "badge": "Research-grade media forensics",
+      "title": "Know what's real.",
+      "titleAccent": "Detect deepfakes and AI-generated media.",
+      "subtitle": "Upload an image or video and get a clear verdict in seconds — with heatmaps, metadata provenance and an explainable report. Built by the DASH Lab at Sungkyunkwan University.",
+      "primary": "Try it free",
+      "secondary": "Create free account",
+      "note": "3 free checks a day · No credit card · 50 credits when you sign up"
+    },
+    "preview": {
+      "file": "interview_frame.jpg",
+      "done": "Analysis complete · 4.2 s",
+      "verdict": "Likely manipulated",
+      "faceSwap": "Face swap",
+      "aiGenerated": "AI-generated",
+      "metadata": "No C2PA content credentials",
+      "heatmap": "Heatmap",
+      "explained": "Explained in plain language",
+      "report": "PDF report ready"
+    },
+    "trust": {
+      "title": "Working with organizations that keep information trustworthy"
+    },
+    "stats": [
+      {
+        "value": "99.4%",
+        "label": "Detection AUROC",
+        "sub": "CVPR’24 benchmark"
+      },
+      {
+        "value": "<120 ms",
+        "label": "Per-frame analysis",
+        "sub": "1080p video"
+      },
+      {
+        "value": "14",
+        "label": "Peer-reviewed papers",
+        "sub": "since 2023"
+      },
+      {
+        "value": "40+",
+        "label": "Generators covered",
+        "sub": "GAN, diffusion, face swap"
+      }
+    ],
+    "trial": {
+      "eyebrow": "Free trial"
+    },
+    "products": {
+      "eyebrow": "Products",
+      "title": "One platform for media integrity",
+      "subtitle": "From a single photo to an hour-long broadcast, every analysis comes with evidence you can explain.",
+      "learnMore": "Learn more",
+      "items": {
+        "detect": {
+          "title": "Deepfake & AI-image detection",
+          "desc": "Images and videos are checked for face swaps and AI generation, with heatmaps that show where.",
+          "points": [
+            "Face swap and AI-generation verdicts",
+            "Heatmaps and per-frame timelines",
+            "EXIF, XMP and C2PA provenance"
+          ]
+        },
+        "longVideo": {
+          "title": "Long-form video scanning",
+          "desc": "Scan interviews and broadcasts that run for hours, minute by minute, without storing the file.",
+          "points": [
+            "Streamed analysis, nothing stored",
+            "Pay per minute analysed",
+            "Timeline of suspicious segments"
+          ]
+        },
+        "news": {
+          "title": "News verification agent",
+          "desc": "An AI analyst cross-checks a story, its sources and its media, then writes a cited report.",
+          "points": [
+            "Web search with citations",
+            "Forensics on attached media",
+            "Reports in English, Korean or German"
+          ]
+        },
+        "studio": {
+          "title": "Image studio",
+          "desc": "Generate and edit images by instruction with the latest open models — with consent and safety checks.",
+          "points": [
+            "Text-to-image and multi-image editing",
+            "Consent check for faces",
+            "Charged only for delivered images"
+          ]
+        }
+      }
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "From upload to evidence in three steps",
+      "steps": [
+        {
+          "title": "Upload",
+          "body": "Drop images or videos, or send them through the API. Files are stored privately and deleted on schedule."
+        },
+        {
+          "title": "Analyse",
+          "body": "Specialised detectors examine faces, frequencies and generation traces while metadata and C2PA are verified."
+        },
+        {
+          "title": "Explain",
+          "body": "Get a clear verdict with heatmaps, timelines and a PDF, HWP or CSV report you can share."
+        }
+      ]
+    },
+    "features": {
+      "eyebrow": "Why Secure Machines Lab",
+      "title": "Built for teams that need to be sure",
+      "items": [
+        {
+          "title": "Explainable results",
+          "body": "Heatmaps and per-frame timelines show where the evidence is."
+        },
+        {
+          "title": "Provenance checks",
+          "body": "Reads C2PA content credentials, EXIF and XMP for AI declarations."
+        },
+        {
+          "title": "Live progress",
+          "body": "Follow every job in the queue as it runs, from upload to verdict."
+        },
+        {
+          "title": "Developer API",
+          "body": "Scoped API keys and the same credits as the web app."
+        },
+        {
+          "title": "Private by design",
+          "body": "Your files are never shared or used for training without your consent."
+        },
+        {
+          "title": "Three languages",
+          "body": "The app, reports and AI explanations in English, Korean and German."
+        }
+      ]
+    },
+    "research": {
+      "eyebrow": "Research",
+      "title": "Grounded in peer-reviewed research",
+      "subtitle": "Our detectors come out of the DASH Lab at Sungkyunkwan University. Three research threads: detect, prevent, predict.",
+      "publications": "Selected publications",
+      "all": "All publications"
+    },
+    "cta": {
+      "title": "Start with 50 free credits",
+      "subtitle": "Sign up in a minute. Free credits every day; credit packs and subscriptions when you need more.",
+      "primary": "Create free account",
+      "secondary": "See pricing"
+    },
+    "about": {
+      "eyebrow": "About the lab"
+    },
+    "contact": {
+      "eyebrow": "Contact",
+      "title": "Talk to us",
+      "email": "Email",
+      "visit": "Visit",
+      "write": "Write to us"
+    },
+    "footer": {
+      "tagline": "Deepfake and AI-generated media detection, built on research.",
+      "product": "Product",
+      "developers": "Developers",
+      "company": "Company",
+      "legal": "Legal",
+      "detection": "Detection",
+      "longVideo": "Long-form video",
+      "news": "News verification",
+      "studio": "Image studio",
+      "pricing": "Pricing",
+      "apiDocs": "API documentation",
+      "signIn": "Sign in",
+      "about": "About",
+      "research": "Research",
+      "contact": "Contact",
+      "terms": "Terms of service",
+      "privacy": "Privacy policy",
+      "refunds": "Refund policy",
+      "rights": "© {year} Secure Machines Lab. All rights reserved."
+    }
   }
 }

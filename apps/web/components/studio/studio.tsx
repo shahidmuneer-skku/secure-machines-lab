@@ -372,7 +372,7 @@ export function Studio() {
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 text-muted-foreground"><Coins className="size-4" />
                   {t("cost", { count, price })}</span>
-                <span className="font-mono text-base font-semibold tabular-nums">{t("creditsN", { count: cost })}</span>
+                <span className="text-base font-bold tabular-nums">{t("creditsN", { count: cost })}</span>
               </div>
               {!affordable && (
                 <Alert className="border-warn/40 bg-warn/10">
@@ -443,7 +443,7 @@ function RangeControl({ label, hint, spec, value, onChange, integer = false }: {
       <div className="flex items-center justify-between text-sm">
         <Label>{label}</Label>
         <span className="flex items-center gap-1">
-          <span className="font-mono tabular-nums">{integer ? current : current.toFixed(1)}</span>
+          <span className="font-semibold tabular-nums">{integer ? current : current.toFixed(1)}</span>
           {value != null && (
             <Button variant="ghost" size="icon" className="size-6" aria-label={t("reset")} onClick={() => onChange(null)}>
               <RotateCcw className="size-3.5" />
@@ -546,7 +546,7 @@ function JobPanel({ job, loading, onCancel, canceling, onOpen, onEdit, onDetect,
             <Progress value={job.status === "queued" ? 0 : progress} />
             <p className="flex justify-between text-xs text-muted-foreground">
               <span>{job.status === "queued" ? t("waiting") : job.live?.message || t("working")}</span>
-              <span className="font-mono tabular-nums">{Math.round(job.status === "queued" ? 0 : progress)}%</span>
+              <span className="font-semibold tabular-nums">{Math.round(job.status === "queued" ? 0 : progress)}%</span>
             </p>
           </div>
         )}

@@ -25,7 +25,7 @@ export function ProbabilityGauge({ value, label, className }: { value: number | 
         <line x1="80" y1="12" x2="80" y2="22" stroke="var(--border)" strokeWidth="2" />
       </svg>
       <div className="-mt-9 text-center">
-        <div className="font-mono text-3xl font-semibold tabular-nums" style={{ color }}>
+        <div className="text-3xl font-bold tabular-nums" style={{ color }}>
           {v == null ? "—" : `${(v * 100).toFixed(1)}%`}
         </div>
         <div className="mono-label text-muted-foreground">{label}</div>

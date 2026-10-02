@@ -34,7 +34,7 @@ every change to the browser over Server-Sent Events. See [docs/architecture.md](
 ```
 apps/api        Django 5.2 LTS · DRF · allauth (headless, MFA, passkeys) · Celery
 apps/worker     Model worker runtime: adapters for subprocess models, metadata/C2PA, agents
-apps/web        Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · TanStack Query · next-intl
+apps/web        Next.js 16 · React 19 · Material UI · Tailwind v4 · shadcn/ui · TanStack Query · next-intl
 packages/contracts  OpenAPI schema and generated TypeScript types (npm run gen:api)
 config          models.yaml (model registry), roles.yaml (RBAC)
 deploy          docker compose (infrastructure), nginx, systemd units

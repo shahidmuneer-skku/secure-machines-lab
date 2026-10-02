@@ -9,13 +9,14 @@ import { cn } from "@/lib/utils"
 
 /** Drag & drop, click-to-browse and paste-from-clipboard. Accepts images and videos. */
 export function Dropzone({ onFiles, imagesOnly = false, videosOnly = false, multiple = true, compact = false,
-  disabled = false }: {
+  disabled = false, className }: {
   onFiles: (files: File[]) => void
   imagesOnly?: boolean
   videosOnly?: boolean
   multiple?: boolean
   compact?: boolean
   disabled?: boolean
+  className?: string
 }) {
   const t = useTranslations("detect")
   const accept: Record<string, string[]> = {}
@@ -48,6 +49,7 @@ export function Dropzone({ onFiles, imagesOnly = false, videosOnly = false, mult
         compact ? "p-6" : "p-10",
         isDragActive && "border-primary bg-primary/5",
         disabled && "pointer-events-none opacity-60",
+        className,
       )}
       data-active={isDragActive}
     >

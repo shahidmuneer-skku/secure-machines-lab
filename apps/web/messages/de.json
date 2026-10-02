@@ -269,7 +269,8 @@
     },
     "jobsChart": {
       "eyebrow": "Ergebnisse",
-      "title": "Aufträge nach Ergebnis im Zeitverlauf"
+      "title": "Aufträge nach Ergebnis im Zeitverlauf",
+      "subtitle": "Urteile pro Tag, letzte {days} Tage"
     },
     "creditsChart": {
       "eyebrow": "Credits",
@@ -306,7 +307,33 @@
       "image": "Bilder",
       "video": "Videos",
       "long_video": "Langvideo",
-      "news": "Nachrichten"
+      "news": "Nachrichten",
+      "studio": "Bildstudio"
+    },
+    "welcome": {
+      "greeting": "Willkommen zurück, {name}",
+      "subtitle": "Deepfakes und KI-generierte Medien erkennen, Nachrichten prüfen und Bilder erstellen – alles an einem Ort.",
+      "studio": "Bildstudio öffnen",
+      "analyses": "Analysen in {days} Tagen",
+      "manipulated": "Wahrscheinlich manipuliert"
+    },
+    "verdicts": {
+      "title": "Urteile im Überblick",
+      "total": "Analysen"
+    },
+    "credits": {
+      "title": "Credits",
+      "spent": "verbraucht in den letzten {days} Tagen"
+    },
+    "activity": {
+      "title": "Letzte Aktivität",
+      "studioDone": "Bilder erstellt"
+    },
+    "table": {
+      "file": "Datei",
+      "result": "Ergebnis",
+      "credits": "Credits",
+      "when": "Wann"
     }
   },
   "detect": {
@@ -398,7 +425,8 @@
     "kind": {
       "detect": "Erkennung",
       "long_video": "Langvideo",
-      "news": "Nachrichten"
+      "news": "Nachrichten",
+      "studio": "Bildstudio"
     },
     "source": {
       "api": "API",
@@ -1872,5 +1900,202 @@
     "editAgain": "Dieses Bild bearbeiten",
     "detect": "Auf Manipulation prüfen",
     "viewer": "Bildansicht"
+  },
+  "landing": {
+    "nav": {
+      "products": "Produkte",
+      "how": "So funktioniert’s",
+      "research": "Forschung",
+      "pricing": "Preise",
+      "docs": "API",
+      "signIn": "Anmelden",
+      "getStarted": "Loslegen",
+      "openApp": "Dashboard öffnen",
+      "menu": "Menü"
+    },
+    "hero": {
+      "badge": "Medienforensik auf Forschungsniveau",
+      "title": "Wissen, was echt ist.",
+      "titleAccent": "Deepfakes und KI-generierte Medien erkennen.",
+      "subtitle": "Laden Sie ein Bild oder Video hoch und erhalten Sie in Sekunden ein klares Ergebnis – mit Heatmaps, Metadaten-Herkunft und einem nachvollziehbaren Bericht. Entwickelt vom DASH Lab der Sungkyunkwan University.",
+      "primary": "Kostenlos testen",
+      "secondary": "Kostenloses Konto erstellen",
+      "note": "3 kostenlose Prüfungen pro Tag · Keine Kreditkarte · 50 Credits bei der Registrierung"
+    },
+    "preview": {
+      "file": "interview_frame.jpg",
+      "done": "Analyse abgeschlossen · 4,2 s",
+      "verdict": "Wahrscheinlich manipuliert",
+      "faceSwap": "Gesichtstausch",
+      "aiGenerated": "KI-generiert",
+      "metadata": "Keine C2PA-Inhaltsnachweise",
+      "heatmap": "Heatmap",
+      "explained": "Verständlich erklärt",
+      "report": "PDF-Bericht bereit"
+    },
+    "trust": {
+      "title": "Wir arbeiten mit Organisationen, die Informationen vertrauenswürdig halten"
+    },
+    "stats": [
+      {
+        "value": "99,4 %",
+        "label": "Erkennungs-AUROC",
+        "sub": "CVPR’24-Benchmark"
+      },
+      {
+        "value": "<120 ms",
+        "label": "Analyse pro Frame",
+        "sub": "1080p-Video"
+      },
+      {
+        "value": "14",
+        "label": "Begutachtete Publikationen",
+        "sub": "seit 2023"
+      },
+      {
+        "value": "40+",
+        "label": "Abgedeckte Generatoren",
+        "sub": "GAN, Diffusion, Gesichtstausch"
+      }
+    ],
+    "trial": {
+      "eyebrow": "Kostenlos testen"
+    },
+    "products": {
+      "eyebrow": "Produkte",
+      "title": "Eine Plattform für Medienintegrität",
+      "subtitle": "Vom einzelnen Foto bis zur stundenlangen Sendung: Jede Analyse liefert Belege, die sich erklären lassen.",
+      "learnMore": "Mehr erfahren",
+      "items": {
+        "detect": {
+          "title": "Deepfake- & KI-Bilderkennung",
+          "desc": "Bilder und Videos werden auf Gesichtstausch und KI-Generierung geprüft – Heatmaps zeigen, wo.",
+          "points": [
+            "Ergebnisse zu Gesichtstausch und KI-Generierung",
+            "Heatmaps und Zeitverläufe pro Frame",
+            "EXIF-, XMP- und C2PA-Herkunft"
+          ]
+        },
+        "longVideo": {
+          "title": "Scan langer Videos",
+          "desc": "Interviews und Sendungen von mehreren Stunden Minute für Minute prüfen, ohne die Datei zu speichern.",
+          "points": [
+            "Gestreamte Analyse, nichts gespeichert",
+            "Bezahlung pro analysierter Minute",
+            "Zeitleiste verdächtiger Abschnitte"
+          ]
+        },
+        "news": {
+          "title": "Nachrichten-Prüfagent",
+          "desc": "Ein KI-Analyst gleicht eine Meldung, ihre Quellen und Medien ab und schreibt einen Bericht mit Belegen.",
+          "points": [
+            "Websuche mit Quellenangaben",
+            "Forensik angehängter Medien",
+            "Berichte auf Englisch, Koreanisch oder Deutsch"
+          ]
+        },
+        "studio": {
+          "title": "Bildstudio",
+          "desc": "Bilder per Anweisung erzeugen und bearbeiten – mit aktuellen offenen Modellen, Einwilligungs- und Sicherheitsprüfung.",
+          "points": [
+            "Text-zu-Bild und Bearbeitung mehrerer Bilder",
+            "Einwilligungsprüfung bei Gesichtern",
+            "Nur gelieferte Bilder werden berechnet"
+          ]
+        }
+      }
+    },
+    "how": {
+      "eyebrow": "So funktioniert’s",
+      "title": "Vom Upload zum Beleg in drei Schritten",
+      "steps": [
+        {
+          "title": "Hochladen",
+          "body": "Bilder oder Videos ablegen oder über die API senden. Dateien werden privat gespeichert und planmäßig gelöscht."
+        },
+        {
+          "title": "Analysieren",
+          "body": "Spezialisierte Detektoren prüfen Gesichter, Frequenzen und Generierungsspuren, Metadaten und C2PA werden verifiziert."
+        },
+        {
+          "title": "Erklären",
+          "body": "Ein klares Ergebnis mit Heatmaps, Zeitverläufen und einem teilbaren PDF-, HWP- oder CSV-Bericht."
+        }
+      ]
+    },
+    "features": {
+      "eyebrow": "Warum Secure Machines Lab",
+      "title": "Für Teams, die sicher sein müssen",
+      "items": [
+        {
+          "title": "Nachvollziehbare Ergebnisse",
+          "body": "Heatmaps und Zeitverläufe pro Frame zeigen, wo die Belege liegen."
+        },
+        {
+          "title": "Herkunftsprüfung",
+          "body": "Liest C2PA-Inhaltsnachweise, EXIF und XMP auf KI-Angaben."
+        },
+        {
+          "title": "Live-Fortschritt",
+          "body": "Jeden Auftrag in der Warteschlange verfolgen, vom Upload bis zum Ergebnis."
+        },
+        {
+          "title": "Entwickler-API",
+          "body": "API-Schlüssel mit Berechtigungen und dieselben Credits wie in der App."
+        },
+        {
+          "title": "Datenschutz by Design",
+          "body": "Ihre Dateien werden ohne Einwilligung nie geteilt oder zum Training genutzt."
+        },
+        {
+          "title": "Drei Sprachen",
+          "body": "App, Berichte und KI-Erklärungen auf Englisch, Koreanisch und Deutsch."
+        }
+      ]
+    },
+    "research": {
+      "eyebrow": "Forschung",
+      "title": "Fundiert durch begutachtete Forschung",
+      "subtitle": "Unsere Detektoren stammen aus dem DASH Lab der Sungkyunkwan University. Drei Forschungsstränge: erkennen, verhindern, vorhersagen.",
+      "publications": "Ausgewählte Publikationen",
+      "all": "Alle Publikationen"
+    },
+    "cta": {
+      "title": "Mit 50 kostenlosen Credits starten",
+      "subtitle": "In einer Minute registriert. Jeden Tag kostenlose Credits, Credit-Pakete und Abos, wenn Sie mehr brauchen.",
+      "primary": "Kostenloses Konto erstellen",
+      "secondary": "Preise ansehen"
+    },
+    "about": {
+      "eyebrow": "Über das Lab"
+    },
+    "contact": {
+      "eyebrow": "Kontakt",
+      "title": "Sprechen Sie mit uns",
+      "email": "E-Mail",
+      "visit": "Adresse",
+      "write": "Schreiben Sie uns"
+    },
+    "footer": {
+      "tagline": "Erkennung von Deepfakes und KI-generierten Medien, auf Forschung gebaut.",
+      "product": "Produkt",
+      "developers": "Entwickler",
+      "company": "Unternehmen",
+      "legal": "Rechtliches",
+      "detection": "Erkennung",
+      "longVideo": "Lange Videos",
+      "news": "Nachrichtenprüfung",
+      "studio": "Bildstudio",
+      "pricing": "Preise",
+      "apiDocs": "API-Dokumentation",
+      "signIn": "Anmelden",
+      "about": "Über uns",
+      "research": "Forschung",
+      "contact": "Kontakt",
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutzerklärung",
+      "refunds": "Erstattungsrichtlinie",
+      "rights": "© {year} Secure Machines Lab. Alle Rechte vorbehalten."
+    }
   }
 }

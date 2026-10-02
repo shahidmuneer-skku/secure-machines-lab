@@ -71,7 +71,7 @@ function SecretDialog({ secret, onClose }: { secret: string | null; onClose: () 
         </div>
         <div className="space-y-1.5">
           <p className="hud-eyebrow">{t("secret.tryIt")}</p>
-          <pre className="overflow-x-auto rounded-md border bg-black/40 p-3 font-mono text-xs text-[#b8f5ff]">{curl}</pre>
+          <pre className="overflow-x-auto rounded-md border bg-[#1f2a3d] p-3 font-mono text-xs text-[#dbe7ff]">{curl}</pre>
         </div>
         <DialogFooter><Button onClick={onClose}>{t("secret.done")}</Button></DialogFooter>
       </DialogContent>

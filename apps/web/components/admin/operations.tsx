@@ -131,7 +131,7 @@ export function AdminJobs() {
             <TableBody>
               {list.rows.map((j) => (
                 <TableRow key={j.id} className="cursor-pointer" onClick={() => setOpen(j.id)}>
-                  <TableCell><span className="font-medium">{j.title}</span><span className="block font-mono text-[10px] text-muted-foreground">{j.id}</span></TableCell>
+                  <TableCell><span className="block max-w-[24rem] truncate font-medium" title={j.title}>{j.title}</span><span className="block font-mono text-[10px] text-muted-foreground">{j.id}</span></TableCell>
                   <TableCell className="text-xs">{j.kind} · {j.source}</TableCell>
                   <TableCell><StatusChip status={j.status} /></TableCell>
                   <TableCell>{j.status === "succeeded" ? <VerdictBadge verdict={j.verdict} aiGenerated={j.ai_generated} probability={j.fake_probability} size="sm" /> :
@@ -216,7 +216,7 @@ function AdminTaskLog({ jobId, taskId, running }: { jobId: string; taskId: strin
   })
   const lines = log?.lines ?? []
   return (
-    <div className="max-h-64 overflow-auto rounded-md border bg-black/40 p-3 font-mono text-xs leading-relaxed text-[#b8f5ff]"
+    <div className="max-h-64 overflow-auto rounded-md border bg-[#1f2a3d] p-3 font-mono text-xs leading-relaxed text-[#dbe7ff]"
       role="log" aria-live="polite" aria-label={t("log")}>
       {lines.length ? lines.map((l, i) => (
         <div key={i} className="flex gap-3">

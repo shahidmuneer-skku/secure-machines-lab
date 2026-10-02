@@ -9,10 +9,10 @@ export function AuthCard({ eyebrow, title, description, children, footer }: {
   footer?: React.ReactNode
 }) {
   return (
-    <Card className="border-border/80 bg-card/85 shadow-2xl shadow-black/40 backdrop-blur">
-      <CardHeader className="space-y-2">
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <CardTitle className="text-2xl tracking-tight">{title}</CardTitle>
+    <Card className="shadow-[0_24px_48px_-16px_rgb(42_53_71/0.18)] dark:shadow-none">
+      <CardHeader className="space-y-2 pt-2 text-center">
+        <Eyebrow className="justify-center text-primary">{eyebrow}</Eyebrow>
+        <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent className="space-y-5">

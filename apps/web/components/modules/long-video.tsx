@@ -124,7 +124,7 @@ export function LongVideoScanner() {
                     }}
                     onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)} />
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span className="truncate font-mono">{file.name} · {formatBytes(file.size)}
+                    <span className="truncate">{file.name} · {formatBytes(file.size)}
                       {duration > 0 && ` · ${formatTimestamp(duration)}`}</span>
                     <label className="cursor-pointer text-primary hover:underline">
                       {t("replace")}
@@ -162,7 +162,7 @@ export function LongVideoScanner() {
               {mode === "intervals" && (
                 <div className="space-y-2">
                   <div className="flex justify-between"><Label htmlFor="interval" className="hud-eyebrow">{t("interval")}</Label>
-                    <span className="font-mono text-sm">{t("seconds", { count: interval })}</span></div>
+                    <span className="text-sm font-semibold tabular-nums">{t("seconds", { count: interval })}</span></div>
                   <Slider id="interval" min={1} max={60} step={1} value={[interval]} disabled={busy}
                     onValueChange={([v]) => setIntervalSec(v)} className="max-w-md" />
                   <p className="text-xs text-muted-foreground">{t("intervalHint")}</p>
@@ -173,7 +173,7 @@ export function LongVideoScanner() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label className="hud-eyebrow">{t("range")}</Label>
-                    <span className="font-mono text-sm">{formatTimestamp(start)} – {formatTimestamp(end)}</span>
+                    <span className="text-sm font-semibold tabular-nums">{formatTimestamp(start)} – {formatTimestamp(end)}</span>
                   </div>
                   <Slider min={0} max={duration} step={0.1} value={range} disabled={busy} minStepsBetweenThumbs={1}
                     onValueChange={(v) => setRange([v[0], v[1]] as [number, number])} aria-label={t("range")} />
@@ -200,9 +200,9 @@ export function LongVideoScanner() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">{t("selected")}</span>
-                <span className="font-mono">{formatTimestamp(seconds)}</span></div>
+                <span className="font-semibold tabular-nums">{formatTimestamp(seconds)}</span></div>
               <div className="flex justify-between text-base font-semibold"><span>{t("maxCost")}</span>
-                <span className="font-mono">{t("credits", { count: cost })}</span></div>
+                <span className="font-semibold tabular-nums">{t("credits", { count: cost })}</span></div>
               <p className="text-xs text-muted-foreground">{t("pricing", { price: pricePerMinute })}</p>
               {!busy ? (
                 <Button className="w-full" size="lg" disabled={!canStart} onClick={begin}>
@@ -228,7 +228,7 @@ export function LongVideoScanner() {
                 {(stream.phase === "uploading" || (stream.uploaded > 0 && stream.phase === "connecting")) && (
                   <div className="space-y-1">
                     <Progress value={uploadPct} />
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="text-xs tabular-nums text-muted-foreground">
                       {formatBytes(stream.uploaded)} / {formatBytes(file?.size)} · {Math.round(uploadPct)}%
                     </p>
                   </div>
@@ -241,7 +241,7 @@ export function LongVideoScanner() {
                 {(stream.phase === "analyzing" || stream.intervals.length > 0) && (
                   <div className="space-y-1">
                     <Progress value={progress ?? undefined} />
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="text-xs tabular-nums text-muted-foreground">
                       {t("intervalsDone", { count: stream.intervals.length })}
                       {stream.expected ? ` / ${stream.expected}` : ""}
                       {average != null && ` · ${t("runningAverage", { pct: Math.round(average * 100) })}`}

@@ -25,7 +25,7 @@ function Tile({ label, value, hint, icon: Icon, href, tone }: { label: string; v
       <CardContent className="space-y-1 px-4">
         <div className="flex items-center justify-between"><span className="mono-label text-muted-foreground">{label}</span>
           <Icon className={tone === "warn" ? "size-4 text-warn" : "size-4 text-muted-foreground"} /></div>
-        <div className="font-mono text-2xl font-semibold tabular-nums">{value}</div>
+        <div className="text-2xl font-bold tabular-nums">{value}</div>
         {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
       </CardContent>
     </HudCard>

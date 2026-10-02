@@ -54,7 +54,7 @@ export function JobRow({ job, compact = false, selected, onSelect }: {
         {job.status === "running" && (
           <div className="flex items-center gap-2">
             <Progress value={progress} className="h-1.5 max-w-64" aria-label={t("progress")} />
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">{Math.round(progress)}%</span>
+            <span className="text-xs font-semibold tabular-nums text-muted-foreground">{Math.round(progress)}%</span>
           </div>
         )}
         {job.status === "queued" && job.queue && (

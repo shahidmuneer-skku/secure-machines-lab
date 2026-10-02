@@ -222,6 +222,13 @@ export function AppShell({ children, area = "app" }: { children: ReactNode; area
               sx={{ color: "text.secondary", display: { xs: "inline-flex", lg: "none" } }}>
               <IconMenu2 size={22} stroke={1.5} />
             </IconButton>
+            {/* The sidebar (and its logo) is hidden below `lg`: the header carries the logo there. */}
+            <Box sx={{ display: { xs: "flex", sm: "none" }, mr: 0.5 }}>
+              <Logo href={area === "admin" ? "/admin" : "/app"} compact />
+            </Box>
+            <Box sx={{ display: { xs: "none", sm: "flex", lg: "none" }, mr: 1.5 }}>
+              <Logo href={area === "admin" ? "/admin" : "/app"} tag={area === "admin" ? "Admin" : undefined} />
+            </Box>
             <LiveIndicator connected={connected} />
             <Box sx={{ flexGrow: 1 }} />
             <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} sx={{ alignItems: "center" }}>

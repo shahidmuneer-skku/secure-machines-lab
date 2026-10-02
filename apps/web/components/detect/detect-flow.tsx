@@ -74,7 +74,7 @@ export function DetectFlow() {
             <CardContent className="space-y-4 text-sm">
               <dl className="space-y-2">
                 <div className="flex justify-between"><dt className="text-muted-foreground">{t("filesReady")}</dt>
-                  <dd className="font-mono tabular-nums">{uploads.ready.length}/{uploads.items.filter((i) => i.state !== "invalid").length}</dd></div>
+                  <dd className="font-semibold tabular-nums">{uploads.ready.length}/{uploads.items.filter((i) => i.state !== "invalid").length}</dd></div>
               </dl>
               <Separator />
               {quote.isFetching ? <Skeleton className="h-16" /> : quote.data ? (
@@ -87,7 +87,7 @@ export function DetectFlow() {
                   </ul>
                   <div className="flex items-center justify-between text-base font-semibold">
                     <span className="flex items-center gap-1.5"><Coins className="size-4" /> {t("total")}</span>
-                    <span className="font-mono tabular-nums">{t("creditsN", { count: quote.data.credits })}</span>
+                    <span className="font-semibold tabular-nums">{t("creditsN", { count: quote.data.credits })}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{t("balanceAfter", { balance: quote.data.balance,
                     after: Math.max(0, quote.data.balance - quote.data.credits) })}</p>

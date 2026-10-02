@@ -56,7 +56,7 @@ export default async function PricingPage() {
             ["explain", t("costs.explain", { count: price("explain") })], ["reports", t("costs.reports")]].map(([k, label]) => (
             <div key={k} className="flex items-center justify-between rounded-lg border bg-card/60 px-4 py-3 text-sm">
               <span>{label}</span>
-              {k === "image" && <span className="font-mono">{t("credits", { count: price("image") })}</span>}
+              {k === "image" && <span className="font-semibold tabular-nums">{t("credits", { count: price("image") })}</span>}
             </div>
           ))}
         </div>
@@ -76,7 +76,7 @@ export default async function PricingPage() {
                 <CardDescription>{plan.display_description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p><span className="font-mono text-3xl font-semibold">{plan.prices[primary].display}</span>
+                <p><span className="text-3xl font-bold tracking-tight">{plan.prices[primary].display}</span>
                   <span className="text-sm text-muted-foreground"> / {t("month")}</span></p>
                 <p className="text-xs text-muted-foreground">{plan.prices[secondary].display} / {t("month")}</p>
                 <ul className="space-y-1.5 text-sm">{plan.display_features.map((f) => (
@@ -98,7 +98,7 @@ export default async function PricingPage() {
             <Card key={pack.id} className="border-border/80 bg-card/80">
               <CardHeader><CardTitle>{pack.display_name}</CardTitle>
                 <CardDescription>{t("credits", { count: pack.credits })}</CardDescription></CardHeader>
-              <CardContent><p className="font-mono text-2xl">{pack.prices[primary].display}</p>
+              <CardContent><p className="text-2xl font-bold">{pack.prices[primary].display}</p>
                 <p className="text-xs text-muted-foreground">{pack.prices[secondary].display}</p></CardContent>
               <CardFooter><Button asChild variant="outline" className="w-full"><Link href="/signup?next=/app/billing">{t("buy")}</Link></Button></CardFooter>
             </Card>

@@ -116,11 +116,11 @@ function CreditsCard({ job }: { job: JobDetailT }) {
       <CardContent className="space-y-2 text-sm">
         {lines.map((l, i) => (
           <div key={i} className="flex justify-between"><span className="text-muted-foreground">{l.label}</span>
-            <span className="font-mono tabular-nums">{l.credits}</span></div>
+            <span className="font-semibold tabular-nums">{l.credits}</span></div>
         ))}
         <div className="flex justify-between border-t pt-2 font-medium">
           <span>{job.status === "succeeded" ? t("charged") : ["failed", "canceled", "expired"].includes(job.status) ? t("refunded") : t("reserved")}</span>
-          <span className="font-mono tabular-nums">{job.status === "succeeded" ? job.credits_charged : job.credits_quoted}</span>
+          <span className="font-semibold tabular-nums">{job.status === "succeeded" ? job.credits_charged : job.credits_quoted}</span>
         </div>
         {job.source === "trial" && <p className="text-xs text-muted-foreground">{t("trial")}</p>}
       </CardContent>

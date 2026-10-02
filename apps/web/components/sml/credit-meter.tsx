@@ -31,7 +31,7 @@ export function CreditMeter({ className }: { className?: string }) {
           )}
         >
           <Coins className="size-4" aria-hidden />
-          <span className="font-mono tabular-nums">{balance ? (balance.unlimited ? "∞" : balance.balance) : "—"}</span>
+          <span className="font-semibold tabular-nums">{balance ? (balance.unlimited ? "∞" : balance.balance) : "—"}</span>
           <span className="sr-only md:not-sr-only mono-label text-muted-foreground">{t("credits")}</span>
         </Link>
       </TooltipTrigger>

@@ -6,7 +6,7 @@ consequences. Add a new record instead of rewriting an accepted one; mark the ol
 | # | Decision | Status |
 | --- | --- | --- |
 | [0001](0001-django-backend.md) | Django + DRF for the backend (instead of FastAPI) | Accepted |
-| [0002](0002-web-stack-and-contract.md) | Next.js App Router, shadcn/ui, OpenAPI-generated client | Accepted |
+| [0002](0002-web-stack-and-contract.md) | Next.js App Router, shadcn/ui, OpenAPI-generated client | Accepted (homepage note superseded by 0013) |
 | [0003](0003-object-storage.md) | S3 API for media; SeaweedFS on the single host | Accepted |
 | [0004](0004-queues-and-dispatch.md) | Per-model RabbitMQ priority queues fed by a fair dispatcher | Accepted |
 | [0005](0005-credit-ledger.md) | Credits as expiring buckets, holds and an append-only ledger | Accepted |
@@ -17,3 +17,4 @@ consequences. Add a new record instead of rewriting an accepted one; mark the ol
 | [0010](0010-long-form-streaming.md) | Long-form video streamed to a GPU service, charged per minute analysed | Accepted |
 | [0011](0011-detectors-are-not-disclosed.md) | Users never see which detectors run; the admin chooses them | Accepted |
 | [0012](0012-image-studio.md) | Image studio: generation and editing with the admin's model | Accepted |
+| [0013](0013-design-system.md) | Material UI (Modernize) with shadcn/ui, light theme by default | Accepted |

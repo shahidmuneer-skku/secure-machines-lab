@@ -56,7 +56,7 @@ const ERRORS: [string, number, { en: string; ko: string }][] = [
 ]
 
 function Code({ children }: { children: string }) {
-  return <pre className="overflow-x-auto rounded-lg border bg-black/50 p-4 font-mono text-xs leading-relaxed text-[#b8f5ff]">{children}</pre>
+  return <pre className="overflow-x-auto rounded-lg border bg-[#1f2a3d] p-4 font-mono text-xs leading-relaxed text-[#dbe7ff]">{children}</pre>
 }
 
 function Samples({ curl, python, js }: { curl: string; python: string; js: string }) {
