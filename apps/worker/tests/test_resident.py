@@ -7,6 +7,7 @@ runs in place (loading per task, as before).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import subprocess
@@ -16,6 +17,7 @@ import time
 from pathlib import Path
 
 import pytest
+import redis
 
 from sml_worker.resident import supervisor
 
@@ -135,3 +137,29 @@ def test_a_task_for_a_ready_resident_model_needs_no_gpu_admission(monkeypatch):
     assert runner._gpu_need(envelope) > 0  # loads per task: reserves its memory first
     ready.append("skku-p2")
     assert runner._gpu_need(envelope) == 0  # its server already holds the memory
+
+
+def test_a_task_waiting_for_memory_moves_to_its_resident_server_once_ready(monkeypatch, tmp_path):
+    from sml_worker import runner
+    from sml_worker.context import TaskContext
+
+    ready: list[str] = []
+    waits: list[int] = []
+
+    @contextlib.contextmanager
+    def admitted(task_id, need, on_wait, should_stop):  # type: ignore[no-untyped-def]
+        while need:  # the GPU never has room: only the resident server can run it
+            waits.append(need)
+            should_stop()
+            ready.append("skku-p2")  # the server finishes loading while the task waits
+        yield
+
+    monkeypatch.setattr(runner.gpu_admission, "admitted", admitted)
+    monkeypatch.setattr(runner.resident, "ready_servers", lambda model, media: list(ready))
+    monkeypatch.setattr(runner.gpu_admission, "memory", lambda index: (23000, 0))
+    monkeypatch.setattr("sml_worker.context.redis_client", lambda: (_ for _ in ()).throw(redis.RedisError()))
+    envelope = {"task_id": "t", "job_id": "j", "kind": "model", "target": "skku-p2", "media_type": "image"}
+    ctx = TaskContext(envelope, tmp_path, "3")
+    with runner._admission("t", envelope, ctx):
+        pass
+    assert len(waits) == 2 and waits[0] > 0  # waited once for memory, then ran with no reservation

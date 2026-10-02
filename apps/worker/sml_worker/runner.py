@@ -9,6 +9,7 @@ import os
 import shutil
 import time
 import traceback
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -127,8 +128,7 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
         if ctx.canceled():
             raise Canceled()
         # Detectors start only when their GPU memory fits; until then the task stays queued.
-        with gpu_admission.admitted(task_id, _gpu_need(envelope), on_wait=lambda need, free: _waiting(ctx, need, free),
-                                    should_stop=ctx.check_canceled):
+        with _admission(task_id, envelope, ctx):
             started = time.monotonic()
             _send(app, RESULT_TASK, {**base, "event": "started", "worker": f"{config().hostname}:{os.getpid()}",
                                      "gpu": gpu, "at": _now()})
@@ -172,6 +172,34 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
     finally:
         current_task.clear()
         shutil.rmtree(workdir, ignore_errors=True)
+
+
+class _ResidentReady(Exception):
+    """A task waiting for GPU memory can run on its model's resident server instead."""
+
+
+@contextlib.contextmanager
+def _admission(task_id: str, envelope: dict[str, Any], ctx: TaskContext) -> Iterator[None]:
+    """Hold the GPU memory the task needs while it runs. A task that arrived before its model's resident
+    server was ready waits for memory to load the model itself; once the server is ready it stops
+    waiting and runs there (needing no memory of its own)."""
+    with contextlib.ExitStack() as stack:
+        while True:
+            need = _gpu_need(envelope)
+
+            def should_stop(need: int = need) -> None:
+                ctx.check_canceled()
+                if need and envelope.get("kind") == "model" and resident.ready_servers(
+                        envelope.get("target", ""), envelope.get("media_type", "")):
+                    raise _ResidentReady()
+
+            try:
+                stack.enter_context(gpu_admission.admitted(
+                    task_id, need, on_wait=lambda need, free: _waiting(ctx, need, free), should_stop=should_stop))
+                break
+            except _ResidentReady:
+                ctx.log("The model's resident server is ready; running there")
+        yield
 
 
 def _gpu_need(envelope: dict[str, Any]) -> int:
