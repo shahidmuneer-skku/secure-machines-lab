@@ -14,6 +14,8 @@ Changes made for Secure Machines Lab's landing page (2026-10-02):
   no decoder needed); head-lite.glb is a simplified version (~42% of the triangles) for small devices
 - tangent-space normal map re-encoded as WebP (1024 px and 512 px)
 - the colour and specular maps are not used: the head is rendered as a neutral sculpture
+- the scan's eyes are closed; the site's shader paints open eyes over the lids (eyeball, iris,
+  pupil, lash lines) and animates the upper lids so the head blinks (the files are unchanged)
 
 The landing page credits the scan next to the 3D scene, as the license requires.
 The head is an illustrative sample. It is never analysed, classified or labelled as manipulated.

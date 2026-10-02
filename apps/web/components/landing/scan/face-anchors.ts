@@ -99,3 +99,71 @@ export const HEAD_BOUNDS = { min: [-1.897, -0.347, -1.987], max: [1.723, 3.973, 
 export const HEAD_PIVOT: Vec3 = [-0.07, 1.75, 0.25]
 /** Below this height the neck fades out into the background (model units). */
 export const NECK_FADE: readonly [number, number] = [-1.75, -0.55]
+
+/**
+ * Open eyes, painted by the face material over the scan's closed lids (the scan was captured with its
+ * eyes closed), so the head can blink.
+ *
+ * Each eye's plane comes from its corner landmarks; within it the eye runs between the corners of the
+ * scan's own lash line (`canthi`: position along the corner line in half widths, height in model units),
+ * measured where the closed upper lid overhangs the lower lid. The frame is `o` (between the corners),
+ * `u` (inner → outer), `v` (up) and `w` (facing). Shape, in model units: half width, how far the open
+ * upper lid rises above the corner line (`upper`), how far the lower lid dips below it (`lower`), where
+ * the lids meet when closed (`meet`, fitted to the lash line), the eyeball sphere used for shading
+ * (`ball`: centre and radius) and the iris (height of its centre, radius, pupil radius).
+ */
+export type EyeShape = {
+  o: Vec3; u: Vec3; v: Vec3; w: Vec3
+  halfWidth: number; upper: number; lower: number; meet: number
+  ball: readonly [number, number, number, number]
+  /** Iris centre (height `t`, offset along the eye `s` in half widths), radius and pupil radius. */
+  iris: { t: number; s: number; r: number; pupil: number }
+}
+
+type EyeInput = {
+  inner: Vec3; outer: Vec3
+  canthi: { inner: readonly [number, number]; outer: readonly [number, number] }
+  /** Depth of the lid surface in front of the corner line (along `w`), for placing the eyeball. */
+  surface: number
+  upper: number; lower: number; meet: number; radius: number
+  iris: EyeShape["iris"]
+}
+
+function eyeShape(e: EyeInput): EyeShape {
+  const mid = [(e.inner[0] + e.outer[0]) / 2, (e.inner[1] + e.outer[1]) / 2, (e.inner[2] + e.outer[2]) / 2]
+  const d = [e.outer[0] - e.inner[0], e.outer[1] - e.inner[1], e.outer[2] - e.inner[2]]
+  const len = Math.hypot(d[0], d[1], d[2])
+  const u0 = [d[0] / len, d[1] / len, d[2] / len]
+  // Facing: forward, turned with the eye line; up: perpendicular to both.
+  const f = [-u0[0] * u0[2], -u0[1] * u0[2], 1 - u0[2] * u0[2]]
+  const fl = Math.hypot(f[0], f[1], f[2])
+  const w: Vec3 = [f[0] / fl, f[1] / fl, f[2] / fl]
+  let v0 = [w[1] * u0[2] - w[2] * u0[1], w[2] * u0[0] - w[0] * u0[2], w[0] * u0[1] - w[1] * u0[0]]
+  if (v0[1] < 0) v0 = [-v0[0], -v0[1], -v0[2]]
+  // Re-centre and turn the frame onto the measured lash-line corners (a rotation within the eye plane).
+  const hw0 = len / 2
+  const ax = e.canthi.inner[0] * hw0, ay = e.canthi.inner[1]
+  const bx = e.canthi.outer[0] * hw0, by = e.canthi.outer[1]
+  const cx = (ax + bx) / 2, cy = (ay + by) / 2
+  const span = Math.hypot(bx - ax, by - ay)
+  const c = (bx - ax) / span, sn = (by - ay) / span
+  const at = (k: number) => mid[k] + u0[k] * cx + v0[k] * cy
+  const o: Vec3 = [at(0), at(1), at(2)]
+  const u: Vec3 = [u0[0] * c + v0[0] * sn, u0[1] * c + v0[1] * sn, u0[2] * c + v0[2] * sn]
+  const v: Vec3 = [v0[0] * c - u0[0] * sn, v0[1] * c - u0[1] * sn, v0[2] * c - u0[2] * sn]
+  // The eyeball sits behind the lid surface at the eye's centre.
+  const back = e.surface - e.radius
+  const ball = [o[0] + w[0] * back, o[1] + w[1] * back, o[2] + w[2] * back, e.radius] as const
+  return { o, u, v, w, halfWidth: span / 2, upper: e.upper, lower: e.lower, meet: e.meet, ball, iris: e.iris }
+}
+
+export const EYES: readonly [EyeShape, EyeShape] = [
+  eyeShape({
+    inner: [-0.27, 1.71, 1.938], outer: [-0.88, 1.76, 1.91], canthi: { inner: [-0.62, -0.008], outer: [1.0, -0.163] },
+    surface: 0.0, upper: 0.11, lower: 0.05, meet: 0.031, radius: 0.34, iris: { t: 0.03, s: -0.1, r: 0.104, pupil: 0.038 },
+  }),
+  eyeShape({
+    inner: [0.29, 1.69, 1.889], outer: [0.9, 1.74, 1.604], canthi: { inner: [-1.0, -0.028], outer: [0.8, -0.075] },
+    surface: 0.15, upper: 0.1, lower: 0.075, meet: 0.056, radius: 0.34, iris: { t: 0.012, s: -0.16, r: 0.104, pupil: 0.038 },
+  }),
+]

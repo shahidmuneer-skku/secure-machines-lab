@@ -37,6 +37,8 @@ export type ScanController = {
   hideField: boolean
   /** Whether the stage is on screen and the tab visible; no frames are requested otherwise. */
   visible: boolean
+  /** Set by the scene: the eyelids' opening (1 open, 0 closed), for visual checks. */
+  eyeOpen: number
   /** Set by the scene: request one frame (demand rendering). */
   invalidate: () => void
   /** Set by the scene: the region under a stage point, if any (raycast against the head). */
@@ -65,6 +67,7 @@ export function createScanController(): ScanController {
     navHeight: 72,
     hideField: false,
     visible: true,
+    eyeOpen: 1,
     invalidate: () => {},
     pick: () => null,
     dom: { labels: {}, card: null, frame: null },

@@ -63,7 +63,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 ### Changed
 - New homepage, the 3D scan design (ADR 0014): a 3D head goes through a scroll-driven forensic scan —
   map the face, inspect the regions, explain the evidence — and hands over to the free image check;
-  on phones and with reduced motion the steps are buttons. Below it: partners and publications, the
+  on phones and with reduced motion the steps are buttons. The head opens its eyes once it appears and
+  blinks every few seconds (not with reduced motion or "Pause motion"). Below it: partners and publications, the
   product suite, how it works, benefits, research with linked publications, a call to action, about and
   contact. Publication titles and venues are corrected and linked; benchmark figures without a source
   are no longer shown. The previous homepage stays available at `/landing-legacy` (git tag

@@ -1,6 +1,6 @@
 import * as THREE from "three"
 
-import { NECK_FADE, REGION_CAPSULES } from "./face-anchors"
+import { EYES, NECK_FADE, REGION_CAPSULES } from "./face-anchors"
 
 /** Palette shared with the CSS (validated for contrast in globals.css). */
 export const SCAN_COLORS = {
@@ -30,6 +30,16 @@ export type FaceUniforms = {
   uCapA: { value: THREE.Vector3[] }
   uCapB: { value: THREE.Vector4[] }
   uNeck: { value: THREE.Vector2 }
+  /** Eyelid opening: 1 open, 0 closed (animated for blinking). */
+  uOpen: { value: number }
+  /** Per eye: frame (origin, along, up, facing), shape (half width, upper, lower, meet), eyeball, iris (t, s, r, pupil). */
+  uEyeO: { value: THREE.Vector3[] }
+  uEyeU: { value: THREE.Vector3[] }
+  uEyeV: { value: THREE.Vector3[] }
+  uEyeW: { value: THREE.Vector3[] }
+  uEyeShape: { value: THREE.Vector4[] }
+  uEyeBall: { value: THREE.Vector4[] }
+  uEyeIris: { value: THREE.Vector4[] }
 }
 
 const CAPSULES = REGION_CAPSULES.length
@@ -42,7 +52,10 @@ const JAW_FIRST = REGION_CAPSULES.findIndex((c) => c.region === "jaw")
  *   the eyes, nose and mouth), revealed behind the scan band;
  * - the scan band itself;
  * - region outlines and an illustrative amber evidence overlay, computed from the region capsules;
- * - a fade of the neck into the background.
+ * - a fade of the neck into the background;
+ * - open eyes painted over the scan's closed lids (eyeball, iris, pupil, lash lines), shaded as a
+ *   glossy sphere by the same lights, with the upper lid driven by `uOpen` so the head can blink.
+ *   Fully closed, the painted lids meet on the scan's own lash line.
  */
 export function createFaceMaterial(normalMap: THREE.Texture | null) {
   const uniforms: FaceUniforms = {
@@ -62,6 +75,14 @@ export function createFaceMaterial(normalMap: THREE.Texture | null) {
     uCapA: { value: REGION_CAPSULES.map((c) => new THREE.Vector3(...c.a)) },
     uCapB: { value: REGION_CAPSULES.map((c) => new THREE.Vector4(c.b[0], c.b[1], c.b[2], c.r)) },
     uNeck: { value: new THREE.Vector2(NECK_FADE[0], NECK_FADE[1]) },
+    uOpen: { value: 1 },
+    uEyeO: { value: EYES.map((e) => new THREE.Vector3(...e.o)) },
+    uEyeU: { value: EYES.map((e) => new THREE.Vector3(...e.u)) },
+    uEyeV: { value: EYES.map((e) => new THREE.Vector3(...e.v)) },
+    uEyeW: { value: EYES.map((e) => new THREE.Vector3(...e.w)) },
+    uEyeShape: { value: EYES.map((e) => new THREE.Vector4(e.halfWidth, e.upper, e.lower, e.meet)) },
+    uEyeBall: { value: EYES.map((e) => new THREE.Vector4(...e.ball)) },
+    uEyeIris: { value: EYES.map((e) => new THREE.Vector4(e.iris.t, e.iris.s, e.iris.r, e.iris.pupil)) },
   }
 
   const material = new THREE.MeshStandardMaterial({
@@ -82,16 +103,22 @@ export function createFaceMaterial(normalMap: THREE.Texture | null) {
         `#include <common>
 attribute vec3 aBary;
 attribute float aFacet;
+uniform vec4 uEyeBall[2];
+uniform vec3 uEyeW[2];
 varying vec3 vObj;
 varying vec3 vBary;
-varying float vFacet;`,
+varying float vFacet;
+varying vec3 vEyeN;`,
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
 vObj = position;
 vBary = aBary;
-vFacet = aFacet;`,
+vFacet = aFacet;
+// Eyeball normal for the nearer eye, eased toward the eye's facing so the corners don't catch the rim light.
+int eyeI = distance(position, uEyeBall[0].xyz) < distance(position, uEyeBall[1].xyz) ? 0 : 1;
+vEyeN = normalMatrix * normalize(mix(normalize(position - uEyeBall[eyeI].xyz), uEyeW[eyeI], 0.35));`,
       )
 
     shader.fragmentShader = shader.fragmentShader
@@ -116,9 +143,18 @@ uniform vec4 uEvidence;
 uniform vec3 uCapA[CAPSULES];
 uniform vec4 uCapB[CAPSULES];
 uniform vec2 uNeck;
+uniform float uOpen;
+uniform vec3 uEyeO[2];
+uniform vec3 uEyeU[2];
+uniform vec3 uEyeV[2];
+uniform vec3 uEyeW[2];
+uniform vec4 uEyeShape[2];
+uniform vec4 uEyeBall[2];
+uniform vec4 uEyeIris[2];
 varying vec3 vObj;
 varying vec3 vBary;
 varying float vFacet;
+varying vec3 vEyeN;
 
 float capsuleD(vec3 p, vec3 a, vec4 b) {
   vec3 ab = b.xyz - a;
@@ -131,6 +167,63 @@ float wireEdge(vec3 bary, float width) {
   vec3 a = smoothstep(vec3(0.0), d * width, bary);
   return 1.0 - min(min(a.x, a.y), a.z);
 }`,
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+// ---- open eyes over the scan's closed lids, and blinking ----
+float eyeArea = 0.0;
+float eyeGloss = 0.0;
+float eyeCatch = 0.0;
+for (int i = 0; i < 2; i++) {
+  vec3 q = vObj - uEyeO[i];
+  vec4 sh = uEyeShape[i];
+  float s = dot(q, uEyeU[i]) / sh.x;
+  float t = dot(q, uEyeV[i]);
+  if (abs(s) > 1.2 || abs(t) > 0.25 || dot(q, uEyeW[i]) < -0.2) continue;
+  float k = max(1.0 - s * s, 0.0);
+  float upOpen = sh.y * pow(k, 0.6) * (1.0 - 0.15 * s);
+  float low = -sh.z * pow(k, 1.1);
+  float meet = -sh.w * pow(k, 1.1);
+  float up = mix(meet, upOpen, uOpen);
+  float lo = mix(meet, low, uOpen);
+  float aa = fwidth(t) + 0.0015;
+  float side = 1.0 - smoothstep(0.86, 1.0, abs(s));
+  float ball = smoothstep(lo - aa, lo + aa, t) * (1.0 - smoothstep(up - aa, up + aa, t)) * side;
+  // Sphere shading replaces the scan's only where it must: the visible eyeball (covering the scan's
+  // lash line) and the upper lid while it slides down over the eye. Open, the scan's own lids remain.
+  float edge = 1.0 - smoothstep(0.9, 1.08, abs(s));
+  float ballArea = smoothstep(low - 0.025, low + 0.005, t) * (1.0 - smoothstep(up - 0.004, up + 0.004, t)) * edge;
+  float lidArea = smoothstep(up - 0.004, up + 0.004, t) * (1.0 - smoothstep(upOpen - 0.02, upOpen + 0.05, t)) * edge * (1.0 - uOpen);
+  float area = max(ballArea, lidArea);
+  vec4 iris = uEyeIris[i];
+  float r = length(vec2((s - iris.y) * sh.x, t - iris.x));
+  vec3 eye = vec3(0.76, 0.79, 0.84);
+  vec3 irisCol = mix(vec3(0.10, 0.15, 0.24), vec3(0.03, 0.045, 0.07), smoothstep(iris.z * 0.55, iris.z, r));
+  eye = mix(eye, irisCol, 1.0 - smoothstep(iris.z - aa, iris.z + aa, r));
+  eye = mix(eye, vec3(0.006, 0.008, 0.012), 1.0 - smoothstep(iris.w - aa, iris.w + aa, r));
+  eye *= 1.0 - 0.5 * (1.0 - smoothstep(0.0, 0.045, up - t));
+  eye *= mix(0.72, 1.0, smoothstep(0.0, 0.3, 1.0 - abs(s)));
+  diffuseColor.rgb = mix(diffuseColor.rgb, eye, ball);
+  float lashUp = (1.0 - smoothstep(0.0, 0.011 + aa, abs(t - up))) * side;
+  float lashLo = (1.0 - smoothstep(0.0, 0.006 + aa, abs(t - lo))) * side * uOpen;
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.03, 0.04, 0.06), max(lashUp * 0.85, lashLo * 0.35));
+  vec3 irisC = uEyeO[i] + uEyeU[i] * (iris.y * sh.x) + uEyeV[i] * iris.x;
+  float glint = 1.0 - smoothstep(0.011, 0.019, length((vObj - irisC).xy - vec2(-0.034, 0.036)));
+  eyeArea = max(eyeArea, area);
+  eyeGloss = max(eyeGloss, ball);
+  eyeCatch = max(eyeCatch, glint * ball);
+}`,
+      )
+      .replace(
+        "#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+roughnessFactor = mix(roughnessFactor, 0.14, eyeGloss);`,
+      )
+      .replace(
+        "#include <normal_fragment_maps>",
+        `#include <normal_fragment_maps>
+normal = normalize(mix(normal, normalize(vEyeN), eyeArea));`,
       )
       .replace(
         "#include <opaque_fragment>",
@@ -157,6 +250,7 @@ float bandDist = abs(vObj.y - uBandY);
 float bandCore = (1.0 - smoothstep(0.0, 0.03, bandDist)) * uBand;
 float bandGlow = (1.0 - smoothstep(0.0, 0.32, bandDist)) * uBand * step(uBandY, vObj.y + 0.32);
 
+outgoingLight += vec3(0.82, 0.88, 0.95) * eyeCatch;
 vec3 lit = outgoingLight;
 // Dimmed surface for the mesh view: deep navy with a faint rim so the silhouette still reads.
 float rim = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.0);
@@ -182,7 +276,7 @@ diffuseColor.a = neck * uOpacity;
       )
   }
   // Every head shares one compiled program.
-  material.customProgramCacheKey = () => "sml-face-v1"
+  material.customProgramCacheKey = () => "sml-face-v2"
   return { material, uniforms }
 }
 

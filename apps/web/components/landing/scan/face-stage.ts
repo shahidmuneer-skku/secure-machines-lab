@@ -28,6 +28,21 @@ const LABEL_SIDE: Record<RegionId, "left" | "right"> = { eyeL: "left", eyeR: "ri
 type Rect = { x: number; y: number; w: number; h: number }
 const damp = (current: number, target: number, tau: number, dt: number) => current + (target - current) * (1 - Math.exp(-dt / tau))
 
+/** A blink, in seconds: the lid drops fast, rests a moment and lifts a little slower. */
+const BLINK_CLOSE = 0.09
+const BLINK_HOLD = 0.04
+const BLINK_OPEN = 0.16
+/** After loading, the head opens its eyes (the poster shows them closed) once the canvas has faded in. */
+const WAKE_DELAY = 0.8
+const WAKE_TIME = 0.6
+
+/** Lid opening (1 open, 0 closed) `t` seconds into a blink. */
+function blinkOpening(t: number) {
+  if (t < BLINK_CLOSE) return 1 - (t / BLINK_CLOSE) ** 2
+  if (t < BLINK_CLOSE + BLINK_HOLD) return 0
+  return 1 - (1 - Math.min(1, (t - BLINK_CLOSE - BLINK_HOLD) / BLINK_OPEN)) ** 3
+}
+
 /**
  * Everything the WebGL scene does, independent of React: loads the head, owns the THREE objects and
  * renders one frame from the controller's state. The React wrapper calls `frame()` from its single
@@ -57,6 +72,12 @@ export class FaceStage {
   private regionHover: Record<RegionId, number> = { eyeL: 0, eyeR: 0, mouth: 0, jaw: 0 }
   private regionSelect: Record<RegionId, number> = { eyeL: 0, eyeR: 0, mouth: 0, jaw: 0 }
   private labelSizes = new Map<HTMLElement, { w: number; h: number }>()
+  // Eyes (wall-clock time, so blinks keep their pace between on-demand frames).
+  private wakeAt = -1
+  private blinkAt = 0
+  private blinkStart = -1
+  private lastGapShort = false
+  private blinkTimer: ReturnType<typeof setTimeout> | null = null
   private tmp = new THREE.Vector3()
   private tmpN = new THREE.Vector3()
   private camPos = new THREE.Vector3()
@@ -219,6 +240,8 @@ export class FaceStage {
       const evMouth = evidence
       const evJaw = s.stage >= 3 && !pinned ? 0 : evidence * 0.8
       u.uEvidence.value.set(rs.eyeL * 0.5, rs.eyeR * 0.5, Math.max(evMouth, rs.mouth * 0.5), Math.max(evJaw, rs.jaw * 0.5))
+      if (this.updateEyes(u, instant)) moving = true
+      c.eyeOpen = u.uOpen.value
     }
     this.landmarks.update(landmarks, 0.9, this.tier === "full" ? 6 : 5, pixelRatio)
 
@@ -236,6 +259,67 @@ export class FaceStage {
 
     this.placeOverlay(s)
     return moving
+  }
+
+  /**
+   * Opens the eyes after loading, then blinks every few seconds (now and then twice). With reduced or
+   * paused motion the eyes simply stay open. Returns true while the lids are moving.
+   */
+  private updateEyes(u: FaceUniforms, still: boolean): boolean {
+    const now = performance.now()
+    if (still) {
+      this.stopBlinking()
+      this.wakeAt = 0
+      u.uOpen.value = 1
+      return false
+    }
+    if (this.wakeAt < 0) {
+      this.wakeAt = now + WAKE_DELAY * 1000
+      this.wakeUp(WAKE_DELAY * 1000)
+    }
+    const wake = Math.min(1, Math.max(0, (now - this.wakeAt) / (WAKE_TIME * 1000)))
+    if (wake < 1) {
+      u.uOpen.value = now < this.wakeAt ? 0 : 1 - (1 - wake) ** 2
+      return now >= this.wakeAt
+    }
+    if (this.blinkStart < 0 && this.blinkAt && now >= this.blinkAt) this.blinkStart = now
+    if (this.blinkStart >= 0) {
+      const t = (now - this.blinkStart) / 1000
+      if (t < BLINK_CLOSE + BLINK_HOLD + BLINK_OPEN) {
+        u.uOpen.value = blinkOpening(t)
+        return true
+      }
+      this.blinkStart = -1
+      this.blinkAt = 0
+    }
+    u.uOpen.value = 1
+    if (!this.blinkAt) this.scheduleBlink(now)
+    return false
+  }
+
+  private scheduleBlink(now: number) {
+    // Mostly 2.5–6 s apart; about one in six is followed quickly by a second blink.
+    const short = !this.lastGapShort && Math.random() < 0.16
+    this.lastGapShort = short
+    const gap = short ? 250 + Math.random() * 150 : 2500 + Math.random() * 3500
+    this.blinkAt = now + gap
+    this.wakeUp(gap)
+  }
+
+  /** Requests a frame after `ms` (the scene renders on demand; nothing runs while it is off screen). */
+  private wakeUp(ms: number) {
+    if (this.blinkTimer) clearTimeout(this.blinkTimer)
+    this.blinkTimer = setTimeout(() => {
+      this.blinkTimer = null
+      this.controller.invalidate()
+    }, ms + 5)
+  }
+
+  private stopBlinking() {
+    if (this.blinkTimer) clearTimeout(this.blinkTimer)
+    this.blinkTimer = null
+    this.blinkAt = 0
+    this.blinkStart = -1
   }
 
   /** Projects the region anchors into overlay coordinates and places labels, the selected card and the frame. */
@@ -405,6 +489,7 @@ export class FaceStage {
   dispose() {
     this.disposed = true
     this.ready = false
+    this.stopBlinking()
     this.landmarks.dispose()
     this.field.dispose()
     for (const d of this.disposables) d.dispose()

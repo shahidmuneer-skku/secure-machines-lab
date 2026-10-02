@@ -11,6 +11,12 @@
   per-frame React state). Phones and reduced motion get a manual mode driven by step buttons; without
   WebGL, or until the scene loads, a poster image is shown. All words and controls are HTML. Everything
   shown is an illustrative demonstration, never a detection result.
+- *Eyes (owner, 2026-10-02: "blinking eyes").* The scan was captured with closed eyes, so the face
+  material paints open eyes over the lids — eyeball, iris, pupil, lash lines, shaded as a glossy sphere
+  by the scene's lights — between lids fitted to the scan's own lash line (`EYES` in `face-anchors.ts`).
+  Fully closed, the painted lids meet on that line, so the head opens its eyes after loading (the poster
+  shows them closed) and then blinks every 2.5–6 s, now and then twice. Blinks request their own frames
+  only while on screen; with reduced motion or "Pause motion" the eyes stay open and still.
 - *Sections.* Credibility band (partners, publications), product suite, workflow, benefits, research
   with linked publications, final call to action, about and contact. Publication titles and venues were
   corrected and linked to their proceedings; benchmark figures without a source are no longer shown
