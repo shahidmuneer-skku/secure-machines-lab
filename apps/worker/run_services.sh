@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (Re)starts the background services: the API's Celery worker, the detector workers, the agents,
-# the resident model servers + image studio server, and the studio worker.
+# the resident model servers + image studio server, the studio worker and the long-form stream service.
 # Every service is stopped first if it is already running, so none ever runs twice.
 #
 #   apps/worker/run_services.sh               # everything (detector workers on GPUs 0 and 3)
@@ -37,6 +37,15 @@ start() {  # start <name> <args...>: a detached worker process logging to var/lo
   echo "started $name (log var/log/$name.log)"
 }
 
+start_stream() {  # long-form stream service (legacy `safe` env, its own GPU; port 8100)
+  set -a; . "$ROOT/.env"; set +a
+  local py="${CONDA_ROOT:-$HOME/anaconda3}/envs/${STREAM_CONDA_ENV:-safe}/bin/python"
+  (cd "$ROOT/apps/stream" && CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES="${SML_STREAM_GPU:-2}" \
+    PYTHONPATH="$ROOT/apps/stream" setsid -f nohup "$py" -m uvicorn sml_stream.app:app --host 127.0.0.1 --port 8100 \
+    >> "$LOGS/stream.log" 2>&1 < /dev/null)
+  echo "started stream (log var/log/stream.log)"
+}
+
 stop "sml_worker --detectors"
 stop "sml_worker --agents"
 stop "sml_worker --studio"
@@ -45,6 +54,7 @@ stop "sml_worker --studio"
 stop "sml_worker --resident"
 stop "sml_worker/resident/server.py --config"
 stop "sml_worker/studio/server.py --config"
+stop "uvicorn sml_stream.app:app"
 
 if [[ "${1:-}" == "stop" ]]; then
   STOP_TIMEOUT=$STOP_TIMEOUT "$ROOT/apps/api/run_celery_api.sh" --stop
@@ -59,5 +69,6 @@ done
 start agents --agents --concurrency "${SML_AGENT_PARALLEL:-2}"
 start resident --resident
 start studio --studio --concurrency 2
+start_stream
 echo "done. Workers appear in Admin → Queues & workers within a minute; resident models and the studio"
 echo "model need 1-2 minutes more (var/log/resident.log shows 'ready after')."
