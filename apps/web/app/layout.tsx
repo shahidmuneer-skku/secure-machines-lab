@@ -23,8 +23,9 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#ffffff" }, { media: "(prefers-color-scheme: dark)", color: "#1e2735" }],
-  colorScheme: "light dark",
+  // The site opens dark whatever the system setting (owner, 2026-10-02).
+  themeColor: "#1e2735",
+  colorScheme: "dark light",
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

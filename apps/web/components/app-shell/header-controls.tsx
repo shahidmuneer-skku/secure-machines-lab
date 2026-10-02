@@ -27,13 +27,14 @@ import { LOCALE_LABELS, LOCALES, type Locale } from "@/i18n/config"
 import { api } from "@/lib/api/client"
 import { qk } from "@/lib/api/keys"
 import { allauth } from "@/lib/auth/allauth"
+import { DEFAULT_THEME } from "@/lib/theme/palette"
 
-/** Light/dark switch (light is the default; the choice is remembered by next-themes). */
+/** Light/dark switch (dark is the default; the choice is remembered by next-themes). */
 export function ThemeButton() {
   const { resolvedTheme, setTheme } = useTheme()
   const hydrated = useHydrated()
   const t = useTranslations("common")
-  const dark = hydrated && resolvedTheme === "dark"
+  const dark = hydrated ? resolvedTheme === "dark" : DEFAULT_THEME === "dark"
   return (
     <Tooltip title={`${t("theme")}: ${dark ? t("dark") : t("light")}`}>
       <IconButton aria-label={`${t("theme")}: ${dark ? t("dark") : t("light")}`} onClick={() => setTheme(dark ? "light" : "dark")}

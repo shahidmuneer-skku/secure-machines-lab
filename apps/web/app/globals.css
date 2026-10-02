@@ -8,8 +8,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design tokens — the Modernize design (owner, 2026-10-02): light by default, dark when the user
- * chooses it. Same colours as lib/theme/palette.ts (MUI). Brand blue #5D87FF is for fills and icons;
+ * Design tokens — the Modernize design (owner, 2026-10-02): dark by default, light when the user
+ * chooses it (`:root` holds the light values, `.dark` the dark ones). Same colours as lib/theme/palette.ts (MUI). Brand blue #5D87FF is for fills and icons;
  * text uses the darker "ink" shades, which reach WCAG AA contrast.
  */
 :root {

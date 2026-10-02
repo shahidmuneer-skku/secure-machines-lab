@@ -8,6 +8,7 @@ import { MuiProvider } from "@/components/mui-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { isApiError } from "@/lib/api/errors"
+import { DEFAULT_THEME } from "@/lib/theme/palette"
 
 function makeClient() {
   return new QueryClient({
@@ -36,8 +37,8 @@ export function Providers({ children, nonce }: { children: ReactNode; nonce?: st
   const [client] = useState(makeClient)
   return (
     <QueryClientProvider client={client}>
-      {/* Light by default; dark only when the user chooses it (owner, 2026-10-02). */}
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} nonce={nonce} disableTransitionOnChange>
+      {/* Dark by default, whatever the system setting; light when the user chooses it (owner, 2026-10-02). */}
+      <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME} enableSystem={false} nonce={nonce} disableTransitionOnChange>
         <MuiProvider nonce={nonce}>
           <TooltipProvider delayDuration={200}>
             {children}

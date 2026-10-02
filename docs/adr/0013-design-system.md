@@ -32,3 +32,7 @@ contact content; Modernize blue (#5D87FF) as the brand colour.
 matters (shell, dashboards, marketing pages) and shadcn/ui where forms already work. New dashboard-like
 screens should use MUI and `DashboardCard`; shared colours change in `lib/theme/palette.ts` and
 `globals.css` together. Supersedes the homepage note in ADR 0002.
+
+*Update (2026-10-02):* the owner chose dark as the default theme (whatever the system setting); light is
+the user's choice from the header toggle. `DEFAULT_THEME` in `lib/theme/palette.ts` sets it for
+next-themes, MUI and the pre-hydration fallbacks.

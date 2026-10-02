@@ -1,11 +1,14 @@
 /**
  * Colours of the Modernize design (owner, 2026-10-02), shared by the MUI theme, the shadcn tokens in
- * globals.css and the charts. Light is the default theme; dark is chosen by the user.
+ * globals.css and the charts. Dark is the default theme; light is chosen by the user.
  *
  * The brand blue (#5D87FF) is for fills, icons and charts. Text and white-on-colour fills use the
  * darker "ink" shades so they reach WCAG AA contrast (4.5:1); Modernize's teal and coral are too light
  * for text on white.
  */
+/** The theme a visitor gets until they choose one (owner, 2026-10-02: dark). */
+export const DEFAULT_THEME: "light" | "dark" = "dark"
+
 export const brand = {
   primary: "#5D87FF",
   secondary: "#49BEFF",

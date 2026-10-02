@@ -61,8 +61,8 @@ All notable changes to this project. The format follows [Keep a Changelog](https
   with the per-frame timeline and the most suspicious frame's heatmap.
 
 ### Changed
-- New look after the Modernize template (ADR 0013): light theme by default, dark theme from the header
-  toggle (remembered per browser), Modernize blue, Plus Jakarta Sans. Material UI builds the app and
+- New look after the Modernize template (ADR 0013): dark theme by default whatever the system setting,
+  light theme from the header toggle (remembered per browser), Modernize blue, Plus Jakarta Sans. Material UI builds the app and
   admin shell (sidebar with the Secure Machines Lab logo, header with credits, language, theme and
   account menus), the dashboard (welcome banner, key figures, verdicts over time, verdict breakdown,
   credits trend, activity timeline, recent jobs, usage by type; each chart has a table view), and a

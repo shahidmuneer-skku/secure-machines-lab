@@ -12,7 +12,7 @@ import { SiteNav } from "./site-nav"
 import { TrialSection } from "./trial"
 
 /**
- * Landing page (owner, 2026-10-02): product-focused, Modernize design, light by default. Keeps the
+ * Landing page (owner, 2026-10-02): product-focused, Modernize design, dark by default. Keeps the
  * lab's content (research areas, publications, collaborators, contact) and the guest trial.
  */
 export function LandingPage() {
