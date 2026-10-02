@@ -4,6 +4,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { ThemeProvider } from "next-themes"
 import { useState, type ReactNode } from "react"
 
+import { MuiProvider } from "@/components/mui-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { isApiError } from "@/lib/api/errors"
@@ -35,11 +36,14 @@ export function Providers({ children, nonce }: { children: ReactNode; nonce?: st
   const [client] = useState(makeClient)
   return (
     <QueryClientProvider client={client}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} nonce={nonce} disableTransitionOnChange>
-        <TooltipProvider delayDuration={200}>
-          {children}
-          <Toaster richColors closeButton position="bottom-right" />
-        </TooltipProvider>
+      {/* Light by default; dark only when the user chooses it (owner, 2026-10-02). */}
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} nonce={nonce} disableTransitionOnChange>
+        <MuiProvider nonce={nonce}>
+          <TooltipProvider delayDuration={200}>
+            {children}
+            <Toaster richColors closeButton position="bottom-right" />
+          </TooltipProvider>
+        </MuiProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

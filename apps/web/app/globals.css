@@ -1,3 +1,5 @@
+/* MUI's styles sit between Tailwind's base and utilities, so utility classes can adjust MUI components. */
+@layer theme, base, mui, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -7,124 +9,121 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design tokens.
- * --sml-*  brand constants taken from the homepage (always dark, used by marketing + motifs)
- * shadcn semantic tokens switch between the dark (default) and light theme.
+ * Design tokens — the Modernize design (owner, 2026-10-02): light by default, dark when the user
+ * chooses it. Same colours as lib/theme/palette.ts (MUI). Brand blue #5D87FF is for fills and icons;
+ * text uses the darker "ink" shades, which reach WCAG AA contrast.
  */
 :root {
-  --sml-bg: #07080b;
-  --sml-bg-2: #0c0e14;
-  --sml-bg-elevated: #0c0e14;
-  --sml-ink: #f2f2f5;
-  --sml-ink-dim: #9aa0ae;
-  --sml-ink-faint: #555a66;
-  --sml-line: rgba(255, 255, 255, 0.08);
-  --sml-line-2: rgba(255, 255, 255, 0.14);
-  --sml-accent: #7cf0ff;
-  --sml-accent-2: #ff5b6a;
-  --sml-accent-3: #b69bff;
-  --sml-ok: #7bff9f;
-  --sml-radius: 18px;
-  --sml-sans: var(--font-space-grotesk), var(--font-noto-kr), system-ui, sans-serif;
+  --sml-sans: var(--font-jakarta), var(--font-noto-kr), Helvetica, Arial, sans-serif;
   --sml-mono: var(--font-jetbrains), var(--font-noto-kr), ui-monospace, monospace;
-  --sml-serif: var(--font-instrument), var(--font-noto-kr), "Times New Roman", serif;
+  --brand: #5d87ff;
+  --brand-2: #49beff;
+  --card-shadow: rgb(145 158 171 / 30%) 0px 0px 2px 0px, rgb(145 158 171 / 12%) 0px 12px 24px -4px;
 
-  /* light theme (long dashboard sessions, printing) */
-  --background: #f7f8fa;
-  --foreground: #0b0d12;
+  --background: #f5f8fc;
+  --foreground: #2a3547;
   --card: #ffffff;
-  --card-foreground: #0b0d12;
+  --card-foreground: #2a3547;
   --popover: #ffffff;
-  --popover-foreground: #0b0d12;
-  --primary: #0891b2;
+  --popover-foreground: #2a3547;
+  --primary: #426de8;
   --primary-foreground: #ffffff;
-  --secondary: #eef0f4;
-  --secondary-foreground: #0b0d12;
-  --muted: #eef0f4;
-  --muted-foreground: #5b6170;
-  --accent: #e8f7fb;
-  --accent-foreground: #0b0d12;
-  --destructive: #d92d3f;
-  --border: #dfe2e8;
-  --input: #d5d9e0;
-  --ring: #0891b2;
-  --fake: #d92d3f;
-  --real: #15803d;
-  --warn: #b45309;
-  --violet: #7c5cff;
-  --chart-1: #0891b2;
-  --chart-2: #d92d3f;
-  --chart-3: #7c5cff;
-  --chart-4: #15803d;
-  --chart-5: #b45309;
-  /* Validated chart palette (dataviz validator, light surface #fff, all pairs pass) */
-  --viz-fake: #d92d3f;
-  --viz-real: #0891b2;
-  --viz-other: #7c5cff;
-  /* One line per analysis in video timelines (categorical, validated light: dataviz validate_palette). */
-  --viz-analysis-face-swap: #0891b2;
-  --viz-analysis-ai-generated: #7c5cff;
-  --viz-grid: #e6e8ee;
-  --radius: 0.875rem;
+  --secondary: #f2f6fa;
+  --secondary-foreground: #2a3547;
+  --muted: #f2f6fa;
+  --muted-foreground: #5a6a85;
+  --accent: #ecf2ff;
+  --accent-foreground: #2a3547;
+  --destructive: #c93f23;
+  --border: #e5eaef;
+  --input: #dfe5ef;
+  --ring: #5d87ff;
+  /* status (text-safe on white) */
+  --fake: #c93f23;
+  --real: #047a65;
+  --warn: #9a6100;
+  --violet: #6a4cc9;
+  /* tints behind status text / badges */
+  --primary-soft: #ecf2ff;
+  --fake-soft: #fdede8;
+  --real-soft: #e6fffa;
+  --warn-soft: #fef5e5;
+  /* Charts: validated categorical palette on #fff (dataviz validate_palette: all checks pass). */
+  --chart-1: #4c74f0;
+  --chart-2: #e0603f;
+  --chart-3: #0e9f85;
+  --chart-4: #c2860a;
+  --chart-5: #7d5bd6;
+  --viz-fake: #e0603f;
+  --viz-real: #0e9f85;
+  --viz-other: #7d5bd6;
+  --viz-analysis-face-swap: #4c74f0;
+  --viz-analysis-ai-generated: #c2860a;
+  --viz-grid: #e5eaef;
+  --radius: 0.4375rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #0b0d12;
-  --sidebar-primary: #0891b2;
+  --sidebar-foreground: #2a3547;
+  --sidebar-primary: #426de8;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef0f4;
-  --sidebar-accent-foreground: #0b0d12;
-  --sidebar-border: #dfe2e8;
-  --sidebar-ring: #0891b2;
+  --sidebar-accent: #ecf2ff;
+  --sidebar-accent-foreground: #426de8;
+  --sidebar-border: #e5eaef;
+  --sidebar-ring: #5d87ff;
 }
 
 .dark {
-  --background: #07080b;
-  --foreground: #f2f2f5;
-  --card: #0c0e14;
-  --card-foreground: #f2f2f5;
-  --popover: #0e1118;
-  --popover-foreground: #f2f2f5;
-  --primary: #7cf0ff;
-  --primary-foreground: #03161a;
-  --secondary: #151821;
-  --secondary-foreground: #f2f2f5;
-  --muted: #151821;
-  --muted-foreground: #9aa0ae;
-  --accent: #171b25;
-  --accent-foreground: #f2f2f5;
-  --destructive: #ff5b6a;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.14);
-  --ring: #7cf0ff;
-  --fake: #ff5b6a;
-  --real: #7bff9f;
-  --warn: #ffc56b;
-  --violet: #b69bff;
-  --chart-1: #7cf0ff;
-  --chart-2: #ff5b6a;
-  --chart-3: #b69bff;
-  --chart-4: #7bff9f;
-  --chart-5: #ffc56b;
-  /* Validated chart palette (dark surface #0c0e14, OKLCH L 0.48–0.67, all pairs pass) */
-  --viz-fake: #e5484d;
-  --viz-real: #11a3c2;
-  --viz-other: #8b6cf0;
-  --viz-analysis-face-swap: #1aa3c2;
-  --viz-analysis-ai-generated: #8a6bff;
-  --viz-grid: rgba(255, 255, 255, 0.06);
-  --sidebar: #090b10;
-  --sidebar-foreground: #f2f2f5;
-  --sidebar-primary: #7cf0ff;
-  --sidebar-primary-foreground: #03161a;
-  --sidebar-accent: #151821;
-  --sidebar-accent-foreground: #f2f2f5;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #7cf0ff;
+  --card-shadow: none;
+  --background: #1e2735;
+  --foreground: #eaeff4;
+  --card: #2a3447;
+  --card-foreground: #eaeff4;
+  --popover: #2a3447;
+  --popover-foreground: #eaeff4;
+  --primary: #7da2ff;
+  --primary-foreground: #0b1530;
+  --secondary: #333f55;
+  --secondary-foreground: #eaeff4;
+  --muted: #333f55;
+  --muted-foreground: #9aa9c2;
+  --accent: #253662;
+  --accent-foreground: #eaeff4;
+  --destructive: #fa896b;
+  --border: #333f55;
+  --input: #465670;
+  --ring: #7da2ff;
+  --fake: #fa896b;
+  --real: #13deb9;
+  --warn: #ffae1f;
+  --violet: #a28bf2;
+  --primary-soft: #253662;
+  --fake-soft: #4b313d;
+  --real-soft: #1b3c48;
+  --warn-soft: #4d3a2a;
+  /* Charts: validated on the dark card #2a3447 (all checks pass). */
+  --chart-1: #5f86f5;
+  --chart-2: #e46a49;
+  --chart-3: #12a58a;
+  --chart-4: #b8820c;
+  --chart-5: #8b70e6;
+  --viz-fake: #e46a49;
+  --viz-real: #12a58a;
+  --viz-other: #8b70e6;
+  --viz-analysis-face-swap: #5f86f5;
+  --viz-analysis-ai-generated: #b8820c;
+  --viz-grid: rgba(255, 255, 255, 0.07);
+  --sidebar: #2a3447;
+  --sidebar-foreground: #eaeff4;
+  --sidebar-primary: #426de8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #253662;
+  --sidebar-accent-foreground: #eaeff4;
+  --sidebar-border: #333f55;
+  --sidebar-ring: #7da2ff;
 }
 
 @theme inline {
   --font-sans: var(--sml-sans);
   --font-mono: var(--sml-mono);
-  --font-serif: var(--sml-serif);
   --font-heading: var(--sml-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -161,10 +160,13 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-brand-cyan: var(--sml-accent);
-  --color-brand-red: var(--sml-accent-2);
-  --color-brand-violet: var(--sml-accent-3);
-  --color-brand-green: var(--sml-ok);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-primary-soft: var(--primary-soft);
+  --color-fake-soft: var(--fake-soft);
+  --color-real-soft: var(--real-soft);
+  --color-warn-soft: var(--warn-soft);
+  --shadow-card: var(--card-shadow);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -193,40 +195,25 @@
   }
 }
 
-/* ---- SML motifs for the app shell (subtle; marketing keeps the heavy effects) ---- */
+/* ---- Small labels (Modernize's sidebar sub-headings: small, bold, uppercase) ---- */
 
 @utility hud-eyebrow {
-  font-family: var(--sml-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
+  font-family: var(--sml-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
 @utility mono-label {
-  font-family: var(--sml-mono);
+  font-family: var(--sml-sans);
   font-size: 0.6875rem;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
-.app-gradient {
-  background:
-    radial-gradient(1100px 700px at 85% -10%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 60%),
-    radial-gradient(900px 600px at -10% 30%, color-mix(in oklab, var(--violet) 5%, transparent), transparent 60%),
-    var(--background);
-}
-
-.app-noise::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>");
-}
 
 /* Transparent images (image studio) are shown over a checkerboard. */
 .checkerboard {
@@ -283,11 +270,12 @@
 }
 
 .hud-card-hover {
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .hud-card-hover:hover {
-  border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+  transform: translateY(-2px);
+  box-shadow: rgb(145 158 171 / 30%) 0px 0px 2px 0px, rgb(145 158 171 / 22%) 0px 16px 32px -6px;
 }
 
 @media (prefers-reduced-motion: reduce) {

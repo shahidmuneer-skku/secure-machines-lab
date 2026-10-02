@@ -225,7 +225,10 @@
     "offline": "Offline",
     "liveHint": "Empfängt Live-Fortschrittsmeldungen.",
     "offlineHint": "Live-Updates nicht verfügbar; wird regelmäßig aktualisiert.",
-    "skipToContent": "Zum Inhalt springen"
+    "skipToContent": "Zum Inhalt springen",
+    "balance": "Ihr Guthaben",
+    "openMenu": "Menü öffnen",
+    "account": "Kontomenü"
   },
   "dashboard": {
     "eyebrow": "Arbeitsbereich · Übersicht",

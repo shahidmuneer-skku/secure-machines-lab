@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Instrument_Serif, JetBrains_Mono, Noto_Sans_KR, Space_Grotesk } from "next/font/google"
+import { JetBrains_Mono, Noto_Sans_KR, Plus_Jakarta_Sans } from "next/font/google"
 import { headers } from "next/headers"
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale } from "next-intl/server"
@@ -8,10 +8,10 @@ import { Providers } from "@/components/providers"
 
 import "./globals.css"
 
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" })
+// Plus Jakarta Sans: the Modernize design's typeface (owner, 2026-10-02).
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta" })
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" })
-const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"],
-  variable: "--font-instrument" })
 // Korean glyph fallback; loaded on demand (not preloaded) to keep LCP low for other locales.
 const notoKr = Noto_Sans_KR({ weight: ["400", "500", "700"], variable: "--font-noto-kr", preload: false })
 
@@ -22,7 +22,10 @@ export const metadata: Metadata = {
   applicationName: "Secure Machines Lab",
 }
 
-export const viewport: Viewport = { themeColor: "#07080b", colorScheme: "dark light" }
+export const viewport: Viewport = {
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#ffffff" }, { media: "(prefers-color-scheme: dark)", color: "#1e2735" }],
+  colorScheme: "light dark",
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale()
@@ -31,7 +34,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${spaceGrotesk.variable} ${jetbrains.variable} ${instrument.variable} ${notoKr.variable}`}
+      className={`${jakarta.variable} ${jetbrains.variable} ${notoKr.variable}`}
     >
       <body className="min-h-screen font-sans antialiased">
         <NextIntlClientProvider>

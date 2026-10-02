@@ -225,7 +225,10 @@
     "offline": "Offline",
     "liveHint": "Receiving live progress updates.",
     "offlineHint": "Live updates unavailable; refreshing periodically.",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "balance": "Your balance",
+    "openMenu": "Open menu",
+    "account": "Account menu"
   },
   "dashboard": {
     "eyebrow": "Workspace · Overview",
