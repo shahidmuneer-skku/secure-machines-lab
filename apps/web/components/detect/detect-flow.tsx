@@ -42,9 +42,13 @@ export function DetectFlow() {
   const canSubmit = request.media.length > 0 && !uploads.busy && !submit.isPending && quote.data?.affordable !== false
 
   const onSubmit = async () => {
-    const jobs = await submit.mutateAsync(request)
-    uploads.clear()
-    router.push(jobs.length === 1 ? `/app/results/${jobs[0].id}` : "/app/results")
+    try {
+      const jobs = await submit.mutateAsync(request)
+      uploads.clear()
+      router.push(jobs.length === 1 ? `/app/results/${jobs[0].id}` : "/app/results")
+    } catch {
+      // The mutation's onError has already told the user; the files stay ready for another try.
+    }
   }
 
   return (

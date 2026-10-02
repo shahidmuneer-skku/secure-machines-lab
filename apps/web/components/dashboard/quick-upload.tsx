@@ -16,8 +16,12 @@ export function QuickUpload() {
   const submit = useSubmitJobs()
 
   const send = async () => {
-    await submit.mutateAsync({ media: uploads.ready.map((r) => r.media!) })
-    uploads.clear()
+    try {
+      await submit.mutateAsync({ media: uploads.ready.map((r) => r.media!) })
+      uploads.clear()
+    } catch {
+      // The mutation's onError has already told the user; the files stay ready for another try.
+    }
   }
 
   return (

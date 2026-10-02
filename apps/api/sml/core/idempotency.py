@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from collections.abc import Callable
 from datetime import timedelta
 from functools import wraps
@@ -17,12 +18,15 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.utils.encoders import JSONEncoder
 
 from .exceptions import ApiError, IdempotencyConflict
 from .models import IdempotencyRecord
 
 HEADER = "HTTP_IDEMPOTENCY_KEY"
 TTL = timedelta(hours=24)
+
+log = logging.getLogger(__name__)
 
 
 class IdempotencyKeyRequired(ApiError):
@@ -91,9 +95,15 @@ def idempotent(required: bool = True) -> Callable:
                 record.delete()
                 raise
             if 200 <= response.status_code < 300:
-                record.response_status = response.status_code
-                record.response_body = response.data
-                record.save(update_fields=["response_status", "response_body"])
+                # The work is done: storing the replay copy must never turn it into an error. Response
+                # data may hold UUIDs, datetimes or decimals, which DRF renders; store it the same way.
+                try:
+                    record.response_status = response.status_code
+                    record.response_body = json.loads(json.dumps(response.data, cls=JSONEncoder))
+                    record.save(update_fields=["response_status", "response_body"])
+                except Exception:  # noqa: BLE001
+                    log.exception("Could not store the idempotent response for %s", request.path)
+                    record.delete()
             else:
                 record.delete()
             return response
