@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import re
+import smtplib
 
 import pytest
 from django.core import mail
+from django.core.mail.backends.base import BaseEmailBackend
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -76,3 +78,20 @@ def test_password_change_notifies_the_owner(user, client_for):
     assert len(mail.outbox) == 1
     assert "198.51.100.4" in mail.outbox[0].body
     assert mail.outbox[0].to == [user.email]
+
+
+class RefusingBackend(BaseEmailBackend):
+    """A mail server that turns every message away (e.g. the relay does not accept this server yet)."""
+
+    def send_messages(self, email_messages):  # type: ignore[no-untyped-def]
+        raise smtplib.SMTPSenderRefused(550, b"5.7.0 Mail relay denied", "no-reply@example.com")
+
+
+@pytest.mark.django_db
+def test_a_mail_server_that_refuses_the_message_does_not_break_signup(platform, settings, caplog):
+    settings.EMAIL_BACKEND = "sml.accounts.tests.test_emails.RefusingBackend"
+    res = APIClient().post("/api/_allauth/browser/v1/auth/signup", {
+        "email": "refused@example.com", "password": "Correct-Horse-Battery-2026!", "accept_terms": True,
+    }, format="json")
+    assert res.status_code in (200, 401), res.content  # signed up; the email can be sent again later
+    assert "Could not send the email_confirmation_signup email" in caplog.text

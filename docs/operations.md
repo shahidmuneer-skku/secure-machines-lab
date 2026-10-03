@@ -279,6 +279,14 @@ others finish. Reservations: `redis-cli HGETALL sml:gpu-reservations:<host>:<gpu
 `gpu_mem_mb` or delete its learned peak so it is re-measured. `GPU_UNSUPPORTED` means the worker
 landed on the Blackwell GPU (or the model cannot fit on the card).
 
+**Registration emails do not arrive.** With `EMAIL_BACKEND=…console.EmailBackend` emails are only
+printed into the API log (the confirmation link is there). For sending, see the Email block of
+`.env.example`; restart the API after changing `.env`. Test with
+`cd apps/api && uv run python manage.py sendtestemail you@example.com`. A refused message is logged
+("Could not send the … email") and never fails the sign-up; the user presses *Resend email* on the
+sign-in page once mail works. `550 5.7.0 Mail relay denied [IP]` from `smtp-relay.gmail.com` means the
+server's outgoing IP is not allowed in the Workspace SMTP relay setting (it changes if the network does).
+
 **News / explain-why runs wait.** At most `SML_AGENT_PARALLEL` (default 2) share the loaded model;
 `curl localhost:11434/api/ps` shows what Ollama has loaded.
 
