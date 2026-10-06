@@ -26,6 +26,7 @@ from .adapters.subprocess_cli import SubprocessAdapter
 from .clients import download, redis_client
 from .config import config
 from .context import RESULT_KEY, RESULT_TTL_SECONDS, Canceled, TaskContext
+from .inputs import script_input
 from .registry import audit_spec, long_video_spec, model_spec, raw_registry
 from .resident import supervisor as resident
 
@@ -141,6 +142,8 @@ def run_envelope(app: Any, envelope: dict[str, Any]) -> None:
             else:
                 media = envelope.get("media") or {}
                 local = download(media["storage_key"], workdir / f"source.{media.get('extension', 'bin')}")
+                if not (envelope["kind"] == "audit" and envelope.get("target") == "metadata"):
+                    local = script_input(local)  # e.g. AVIF -> PNG; the metadata check reads the original
                 ctx.progress(2, "File downloaded", force=True)
                 adapter = _adapter(envelope)
                 result = adapter.run(local, envelope.get("media_type", ""), ctx)
