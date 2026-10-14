@@ -211,6 +211,8 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+# Emails are sent inside the request; an unresponsive mail server must not hold sign-up open forever.
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Secure Machines Lab <no-reply@securemachineslab.com>")
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", default="support@securemachineslab.com")
 

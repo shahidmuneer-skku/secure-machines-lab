@@ -14,6 +14,7 @@ and one model worker per GPU run as systemd services behind nginx.
 | Agent worker (news, explain-why; shared Ollama model) | `sml-agents` | — |
 | Long-form stream service (GPU 2, `safe` env) | `sml-stream` | 127.0.0.1:8100 (`/stream/ws` via nginx) |
 | Infrastructure | `docker compose` (restart: unless-stopped) | 127.0.0.1:55432 / 56379 / 55672 / 55673 / 58333 |
+| Outgoing mail (Postfix, compose `smtp`) | `docker compose` | 127.0.0.1:25 |
 
 GPU note for this server: GPUs 0 and 3 (RTX A5000) run the model workers, GPU 2 (A5000) is
 dedicated to long-form streaming (`SML_STREAM_GPU`), and GPU 1
@@ -279,13 +280,19 @@ others finish. Reservations: `redis-cli HGETALL sml:gpu-reservations:<host>:<gpu
 `gpu_mem_mb` or delete its learned peak so it is re-measured. `GPU_UNSUPPORTED` means the worker
 landed on the Blackwell GPU (or the model cannot fit on the card).
 
-**Registration emails do not arrive.** With `EMAIL_BACKEND=…console.EmailBackend` emails are only
-printed into the API log (the confirmation link is there). For sending, see the Email block of
-`.env.example`; restart the API after changing `.env`. Test with
-`cd apps/api && uv run python manage.py sendtestemail you@example.com`. A refused message is logged
-("Could not send the … email") and never fails the sign-up; the user presses *Resend email* on the
-sign-in page once mail works. `550 5.7.0 Mail relay denied [IP]` from `smtp-relay.gmail.com` means the
-server's outgoing IP is not allowed in the Workspace SMTP relay setting (it changes if the network does).
+**Registration emails do not arrive.** The API hands every email to the compose Postfix on
+127.0.0.1:25, which delivers it to the recipient's mail server. Test with
+`cd apps/api && uv run python manage.py sendtestemail you@example.com`, then read the outcome in
+`docker compose -f deploy/compose/docker-compose.yml logs smtp`: `status=sent (250 …)` means the
+receiving server accepted it (look in the recipient's spam folder too); `status=deferred` is retried for
+days (`docker compose … exec smtp mailq` lists the queue); `status=bounced` gives the receiver's reason.
+Receivers that refuse mail from this IP (e.g. `550-5.7.25 … PTR record`) need reverse DNS for it and
+`ip4:<IP>` in the domain's SPF record, or set `SMTP_RELAYHOST` to send through Google (Email block of
+`.env.example`); `550 5.7.0 Mail relay denied [IP]` from `smtp-relay.gmail.com` means the server's
+outgoing IP is not allowed in the Workspace SMTP relay setting (it changes if the network does).
+Recreate the container after changing `SMTP_*` (`docker compose … up -d smtp`) and restart the API
+after changing `EMAIL_*`. If the mail server is unreachable, the API logs "Could not send the … email"
+and never fails the sign-up; the user presses *Resend email* on the sign-in page once mail works.
 
 **News / explain-why runs wait.** At most `SML_AGENT_PARALLEL` (default 2) share the loaded model;
 `curl localhost:11434/api/ps` shows what Ollama has loaded.

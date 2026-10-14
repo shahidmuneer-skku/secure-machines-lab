@@ -1,0 +1,157 @@
+{
+  "file": "13.png",
+  "sha256": "01f8e59fb11b055f6f892d59a9a6c0e57883e7356c0f684d640107c2165663fb",
+  "analyzed_at": "2026-10-06T01:56:46+00:00",
+  "exiftool_version": 13.52,
+  "exief": {
+    "id": "0be2c3924141d9b4",
+    "path": "/home/shahidmuneer/securemachineslab/sample_metadata_images/13.png",
+    "relPath": null,
+    "directory": "/home/shahidmuneer/securemachineslab/sample_metadata_images",
+    "fileName": "13.png",
+    "fileType": "PNG",
+    "mimeType": "image/png",
+    "modality": "image",
+    "width": null,
+    "height": null,
+    "imageSize": "1920x1080",
+    "megapixels": 2.1,
+    "fileSize": 3460300,
+    "durationSeconds": null,
+    "createDate": "2026:10:06 01:53:29+00:00",
+    "score": 7,
+    "verdict": "unknown",
+    "signals": {
+      "aigc_chunk": false,
+      "comfyui_workflow": false,
+      "signed_comment": false,
+      "recraft_sig": false,
+      "c2pa_trained": false,
+      "c2pa_ai_flag": false,
+      "generator_software": false,
+      "diffusion_params": false,
+      "chunk_after_idat": false,
+      "c2pa_unsigned_claim": false,
+      "size_proven": false,
+      "size_native": false,
+      "no_camera_exif": true,
+      "no_thumbnail": true,
+      "photoshop_web": false,
+      "generative_edit": false,
+      "image_editor": false
+    },
+    "evidence": {
+      "no_camera_exif": [
+        {
+          "tag": "EXIF:Make",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:Model",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:ExposureTime",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:FNumber",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:ISO",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:DateTimeOriginal",
+          "value": null,
+          "present": false,
+          "note": null
+        },
+        {
+          "tag": "EXIF:FocalLength",
+          "value": null,
+          "present": false,
+          "note": null
+        }
+      ],
+      "no_thumbnail": [
+        {
+          "tag": "EXIF:ThumbnailLength",
+          "value": null,
+          "present": false,
+          "note": null
+        }
+      ]
+    },
+    "firedSignals": [
+      "no_camera_exif",
+      "no_thumbnail"
+    ],
+    "categories": [
+      "absence signal"
+    ],
+    "generator": null,
+    "cameraMake": null,
+    "cameraModel": null,
+    "software": null,
+    "warnings": null,
+    "tagCount": 26,
+    "metadata": {
+      "File:FileName": "13.png",
+      "File:Directory": "/home/shahidmuneer/securemachineslab/sample_metadata_images",
+      "File:FileSize": "3.3 MB",
+      "File:FileModifyDate": "2026:10:06 01:53:29+00:00",
+      "File:FileAccessDate": "2026:10:06 01:54:52+00:00",
+      "File:FileInodeChangeDate": "2026:10:06 01:53:29+00:00",
+      "File:FilePermissions": "-rw-rw-r--",
+      "File:FileType": "PNG",
+      "File:FileTypeExtension": "png",
+      "File:MIMEType": "image/png",
+      "PNG:ImageWidth": 1920,
+      "PNG:ImageHeight": 1080,
+      "PNG:BitDepth": 8,
+      "PNG:ColorType": "RGB with Alpha",
+      "PNG:Compression": "Deflate/Inflate",
+      "PNG:Filter": "Adaptive",
+      "PNG:Interlace": "Noninterlaced",
+      "PNG:PixelsPerUnitX": 2835,
+      "PNG:PixelsPerUnitY": 2835,
+      "PNG:PixelUnits": "meters",
+      "PNG:SRGBRendering": "Perceptual",
+      "PNG:Gamma": 2.2,
+      "Composite:ImageSize": "1920x1080",
+      "Composite:Megapixels": 2.1
+    }
+  },
+  "fired_signals": [
+    {
+      "id": "no_camera_exif",
+      "label": "No camera EXIF",
+      "tier": 4,
+      "weight": 5,
+      "category": "absence signal"
+    },
+    {
+      "id": "no_thumbnail",
+      "label": "No embedded thumbnail",
+      "tier": 4,
+      "weight": 2,
+      "category": "absence signal"
+    }
+  ],
+  "untrustworthy": [],
+  "c2pa": {
+    "status": "none"
+  }
+}

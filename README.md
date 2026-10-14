@@ -64,8 +64,9 @@ uv run python manage.py create_superadmin
 cd ../.. && scripts/dev.sh                  # API, background worker, model workers (GPUs 0, 3), web
 ```
 
-Open http://localhost:3000. Emails (verification, password reset) are printed to
-`var/log/api.log` until SMTP is configured. Staff accounts must enrol an authenticator app
+Open http://localhost:3000. Emails (verification, password reset) go out through the compose
+Postfix on 127.0.0.1:25 to real inboxes; `docker compose -f deploy/compose/docker-compose.yml logs smtp`
+shows each delivery. Staff accounts must enrol an authenticator app
 before the admin console opens.
 
 ## Quality checks
@@ -92,5 +93,5 @@ CI runs the same checks (`.github/workflows/ci.yml`).
 ## Before launch
 
 The following are placeholders until the owner provides them: company legal details
-(`apps/web/lib/company.ts`), SMTP credentials, live Toss and Stripe keys, Cloudflare Turnstile
+(`apps/web/lib/company.ts`), SPF and reverse DNS for the mail server's IP (or an SMTP relay), live Toss and Stripe keys, Cloudflare Turnstile
 keys, and the production domains/TLS certificates.

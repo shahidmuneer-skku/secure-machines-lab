@@ -5,6 +5,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 ## [Unreleased] — first release candidate
 
 ### Added
+- Outgoing mail server: Postfix in the compose stack (`smtp`) listens on 127.0.0.1:25 and delivers
+  account emails (verification, password reset, security notices) to real inboxes, directly or
+  through `SMTP_RELAYHOST`. The API now uses it by default instead of printing emails into its log,
+  and gives up on an unresponsive mail server after `EMAIL_TIMEOUT` (10 s) instead of waiting forever.
 - Assistant (`/assistant`; the dashboard's *Assistant* link opens it in a new tab): chat about images
   and videos with the platform's AI model (the Qwen model the agents use, through Ollama). Attached
   files are analysed at the normal price per file; chatting is free. The assistant describes what it
